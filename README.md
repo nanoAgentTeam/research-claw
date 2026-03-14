@@ -13,10 +13,9 @@ A self-hosted AI assistant for academic research — manages your papers, search
 
 <!-- TODO: 在此放置产品演示 GIF 或视频 -->
 
-<video controls width="600">
-  <source src="https://github.com/nanoAgentTeam/open-overleaf-claw/raw/refs/heads/main/README/video/openoverleaf.mp4" type="video/mp4">
-  Demo
-</video>
+Demo video
+<iframe src="//player.bilibili.com/player.html?isOutside=true&aid=116227871737051&bvid=BV1ZJwtzcEcm&cid=36698458561&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
+
 <!-- ![Demo](docs/assets/demo.gif) -->
 
 **[English](#english)** · **[中文](#中文)**
