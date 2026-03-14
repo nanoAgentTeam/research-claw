@@ -13,6 +13,10 @@ A self-hosted AI assistant for academic research — manages your papers, search
 
 <!-- TODO: 在此放置产品演示 GIF 或视频 -->
 
+<video controls width="600">
+  <source src="README/video/openoverleaf.mp4" type="video/mp4">
+  Demo
+</video>
 <!-- ![Demo](docs/assets/demo.gif) -->
 
 **[English](#english)** · **[中文](#中文)**
@@ -312,7 +316,7 @@ Other config files:
 | [Overleaf Sync](README/guide/06_Overleaf同步.md)                     | [English](README/guide/06_Overleaf_Sync_en.md)                 |
 | [Usage Guide](README/guide/07_使用指南.md)                           | [English](README/guide/07_Usage_Guide_en.md)                   |
 | [Configuration &amp; Quick Start](README/guide/08_配置与快速开始.md) | [English](README/guide/08_Configuration_and_Quick_Start_en.md) |
-| [Web UI Guide](README/guide/webui操作手册.md) | [English](README/guide/webui_guide_en.md)|
+| [Web UI Guide](README/guide/webui操作手册.md)                        | [English](README/guide/webui_guide_en.md)                      |
 
 ### IM Setup Guides
 
@@ -433,8 +437,6 @@ python cli/main.py gateway --port 18790
 
 > 所有配置存储在 `settings.json` 中。高级用户也可以直接编辑该文件 — 参见[配置参考](#配置参考)。
 
-<!-- TODO: 在此放置 Web UI 配置页面截图 -->
-
 ![Config UI](README/images/configui_ch.png)
 
 <!-- ![Config UI](docs/assets/config-ui.png) -->
@@ -509,8 +511,6 @@ workspace/
 → FINALIZE      Bot 合并产出、提交，自动退出
 ```
 
-<!-- TODO: 在此放置 Task 模式执行截图 -->
-
 ![Task Mode](README/images/task_ch.png)
 
 <!-- ![Task Mode](docs/assets/task-mode.png) -->
@@ -553,8 +553,6 @@ You: "写一篇关于 MoE 的论文"
 4. 结果推送到配置的通知渠道（Telegram、飞书、邮件等）
 
 **推送通知** — 在 Web UI 的**推送订阅**中配置。支持 Telegram、飞书、钉钉、邮件（SMTP）及任何 Apprise 兼容地址。
-
-<!-- TODO: 在此放置自动化任务页面截图 -->
 
 ![Automation](README/images/auto_ch.png)
 
@@ -623,7 +621,7 @@ You: "写一篇关于 MoE 的论文"
 | [Overleaf 同步](README/guide/06_Overleaf同步.md)           | [English](README/guide/06_Overleaf_Sync_en.md)                 |
 | [使用指南](README/guide/07_使用指南.md)                    | [English](README/guide/07_Usage_Guide_en.md)                   |
 | [配置与快速开始](README/guide/08_配置与快速开始.md)        | [English](README/guide/08_Configuration_and_Quick_Start_en.md) |
-| [Web 界面功能说明](README/guide/webui操作手册.md)          | [English](README/guide/webui_guide_en.md) |
+| [Web 界面功能说明](README/guide/webui操作手册.md)          | [English](README/guide/webui_guide_en.md)                      |
 
 ### IM 配置指南
 
