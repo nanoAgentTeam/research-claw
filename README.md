@@ -13,11 +13,11 @@ A self-hosted AI assistant for academic research — manages your papers, search
 
 <!-- TODO: 在此放置产品演示 GIF 或视频 -->
 
-<video id="video" controls="" preload="none" poster="封面">
+[<video id="video" controls="" preload="none" poster="封面">
 <source id="mp4" src="https://github.com/user-attachments/assets/ab6dac7c-013e-498b-870a-360a2e3ce347" type="video/mp4">
 </videos>
     Demo
-</iframe>
+</iframe>](https://github.com/user-attachments/assets/83ae8365-66a2-493c-ac19-5a962bb5ad09)
 
 
 
