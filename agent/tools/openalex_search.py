@@ -53,10 +53,9 @@ class OpenAlexSearchTool(BaseTool):
         return (
             "Search OpenAlex for academic papers across ALL research domains "
             "(CS, Medicine, Biology, Physics, Chemistry, Economics, etc.). "
-            "Supports full-text search, field/topic filtering, date range, "
-            "citation sorting, and open-access filtering. "
-            "Use as cross-domain search or fallback when arxiv/pubmed are insufficient. "
-            "Prefer arxiv_search for CS/AI preprints, pubmed_search for biomedical."
+            "Returns formal publication metadata (venue, DOI) and ready-to-use BibTeX entries. "
+            "PREFERRED for paper writing — provides published venue info instead of preprint-only references. "
+            "Use arxiv_search only for tracking latest preprints/trends, not for writing references."
         )
 
     @property
@@ -276,9 +275,66 @@ class OpenAlexSearchTool(BaseTool):
             if abstract:
                 entry.append(f"    Abstract  : {abstract}")
 
+            # Generate BibTeX
+            bib = _generate_bibtex(work, i)
+            if bib:
+                entry.append(f"    BibTeX    :\n{bib}")
+
             lines.append("\n".join(entry))
 
         return "\n\n---\n\n".join(lines)
+
+
+def _generate_bibtex(work: dict, index: int) -> str:
+    """Generate a BibTeX entry from an OpenAlex work record."""
+    import re
+
+    title = work.get("title", "")
+    year = work.get("publication_year", "")
+    doi = work.get("doi", "")
+    authorships = work.get("authorships", [])
+    primary_loc = work.get("primary_location") or {}
+    source = primary_loc.get("source") or {}
+    venue = source.get("display_name", "")
+    work_type = work.get("type", "article")
+
+    if not title:
+        return ""
+
+    # Build author string: "Last1, First1 and Last2, First2"
+    author_names = []
+    for a in authorships:
+        name = (a.get("author") or {}).get("display_name", "")
+        if name:
+            author_names.append(name)
+    author_str = " and ".join(author_names)
+
+    # Generate citation key: firstauthor_lastname + year
+    first_author = author_names[0] if author_names else "unknown"
+    last_name = first_author.split()[-1] if first_author else "unknown"
+    # Sanitize: keep only ascii letters
+    last_name_clean = re.sub(r'[^a-zA-Z]', '', last_name).lower()
+    cite_key = f"{last_name_clean}{year}" if year else f"{last_name_clean}"
+    # Deduplicate with index
+    if index > 1:
+        cite_key = f"{cite_key}_{index}"
+
+    bib_type = "article" if work_type in ("article", "review") else "inproceedings"
+
+    lines = [f"      @{bib_type}{{{cite_key},"]
+    lines.append(f"        title = {{{title}}},")
+    if author_str:
+        lines.append(f"        author = {{{author_str}}},")
+    if year:
+        lines.append(f"        year = {{{year}}},")
+    if venue:
+        field = "journal" if bib_type == "article" else "booktitle"
+        lines.append(f"        {field} = {{{venue}}},")
+    if doi:
+        lines.append(f"        doi = {{{doi}}},")
+    lines.append("      }")
+
+    return "\n".join(lines)
 
 
 def _reconstruct_abstract(inverted_index: Optional[Dict[str, List[int]]]) -> str:

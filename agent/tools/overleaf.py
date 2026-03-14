@@ -27,11 +27,12 @@ class OverleafTool(BaseTool):
     Supports: list, download (full), sync (incremental upload/delete).
     """
 
-    def __init__(self, workspace: Path, work_dir: Optional[Path] = None):
+    def __init__(self, workspace: Path, work_dir: Optional[Path] = None, project: Any = None):
         self.workspace = workspace
         self.work_dir = work_dir or workspace
-        self.projects_root = self.workspace.parent / "manuscript"
+        self.projects_root = self.workspace
         self.projects_root.mkdir(parents=True, exist_ok=True)
+        self._project = project  # Core Project instance for sync delegation
         
         # Cookie search paths
         repo_root = Path(__file__).resolve().parent.parent
@@ -54,7 +55,13 @@ class OverleafTool(BaseTool):
 
     @property
     def description(self) -> str:
-        return "Interact with Overleaf: list projects, download projects, and sync local changes (upload/delete) back to Overleaf."
+        return (
+            "Interact with Overleaf.\n"
+            "- list: List all Overleaf projects.\n"
+            "- create_project: Create a new blank project on Overleaf (returns project ID).\n"
+            "- download: Download an Overleaf project to local.\n"
+            "- sync: Push local changes to Overleaf (requires active project context)."
+        )
 
     @property
     def parameters_schema(self) -> Dict[str, Any]:
@@ -111,42 +118,20 @@ class OverleafTool(BaseTool):
                 return self._download_project(api, project_id, project_name)
             
             elif action == "sync":
-                # For sync, we need to know which local folder to sync.
-                # User can provide project_name (which maps to folder name)
-                # Or we can try to guess if there's only one? No, safer to require it.
-                if not project_name:
-                    # List local projects to help user
-                    local_projects = self._scan_local_projects()
-                    if not local_projects:
-                        return "[ERROR] No local projects found to sync. Please download one first."
-                    if len(local_projects) == 1:
-                        # Auto-select if only one
-                        project_name = local_projects[0]['metadata'].get('project_name')
-                        folder_name = os.path.basename(local_projects[0]['folder'])
-                        return self._sync_project_by_folder(api, folder_name)
-                    
-                    names = [p['metadata'].get('project_name', 'Unknown') for p in local_projects]
-                    return f"[ERROR] project_name is required for sync. Available local projects: {', '.join(names)}"
-                
-                # Check if current work_dir has metadata
-                current_meta = self.work_dir / ".overleaf.json"
-                if current_meta.exists():
-                    try:
-                        with open(current_meta, 'r', encoding='utf-8') as f:
-                            metadata = json.load(f)
-                        if metadata.get("project_name") == project_name or metadata.get("project_id") == project_id:
-                            return self._sync_project_by_folder(api, self.work_dir, is_absolute=True)
-                    except:
-                        pass
-
-                # Check if project_name matches a folder
-                # We assume project_name passed is the folder name or project name
-                # We try to match loosely
-                target_folder = self._find_local_folder(project_name)
-                if not target_folder:
-                     return f"[ERROR] Could not find local folder for project '{project_name}' in {self.projects_root}."
-                
-                return self._sync_project_by_folder(api, target_folder)
+                # Delegate to Project.sync_to_overleaf() — the canonical push path
+                if not self._project:
+                    return "[ERROR] No active project. Switch to a project first, then use /sync push."
+                if self._project.is_default:
+                    return "[ERROR] Cannot sync Default project. Switch to a specific project first."
+                result = self._project.sync_to_overleaf()
+                if not result.success:
+                    errors = ', '.join(result.errors) if result.errors else 'unknown'
+                    return f"[ERROR] Sync failed: {errors}"
+                pushed = len(result.pushed) if result.pushed else 0
+                msg = f"Pushed {pushed} files to Overleaf."
+                if result.errors:
+                    msg += f"\nErrors: {'; '.join(result.errors)}"
+                return msg
 
             elif action == "create_project":
                 if not project_name:

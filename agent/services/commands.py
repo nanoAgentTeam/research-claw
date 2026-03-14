@@ -94,8 +94,8 @@ _MESSAGES = {
         "en": "📝 Context Summarization Result:\n{result}",
     },
     "no_projects_found": {
-        "zh": "❌ 在手稿目录中未找到项目。",
-        "en": "❌ No projects found in manuscript directory.",
+        "zh": "❌ 未找到任何项目。",
+        "en": "❌ No projects found.",
     },
     "recommend_detected": {
         "zh": "🔍 [推荐] 检测到项目：`{name}`\n主题：*{topic}*\n正在启动调研...",
@@ -384,6 +384,11 @@ class TaskHandler(BaseCommandHandler):
         from agent.tools.registry import ToolRegistry
         self.services.tools = ToolRegistry()
         self.services._register_default_tools()
+
+        # Block git in task mode (auto-commit handles versioning)
+        bash_tool = self.services.tools.get("bash")
+        if bash_tool:
+            bash_tool.block_git = True
 
         # Register task tools on the new registry (they depend on TaskSession, can't be in profile)
         from agent.tools.task_tools import TaskProposeTool, TaskBuildTool, TaskModifyTool, TaskExecuteTool, TaskCommitTool

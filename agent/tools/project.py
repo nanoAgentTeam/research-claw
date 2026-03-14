@@ -26,10 +26,10 @@ class ProjectTool(BaseTool):
     def description(self) -> str:
         return (
             "项目管理工具（仅在 Default 工作区可用，switch 进入项目后此工具不可用）。\n"
-            "正确流程：create → link_overleaf（可选）→ switch。必须在 switch 之前完成所有配置。\n"
+            "正确流程：create → switch。必须在 switch 之前完成所有配置。\n"
             "- list: 列出工作区中的所有项目。\n"
-            "- create: 创建新项目（不会自动切换）。\n"
-            "- link_overleaf: 关联 Overleaf 项目并拉取文件。必须在 switch 之前调用。不传 overleaf_id 时列出可选的 Overleaf 项目。\n"
+            "- create: 创建新项目。传 create_on_overleaf=true 可同时在 Overleaf 上创建并自动关联（推荐）。\n"
+            "- link_overleaf: 关联已有的 Overleaf 项目并拉取文件。不传 overleaf_id 时列出可选的 Overleaf 项目。\n"
             "- info: 查看指定项目的配置和状态（git、overleaf、main_tex 等）。\n"
             "- switch: 切换到指定项目，进入工作模式。切换后此工具将不可用。"
         )
@@ -56,6 +56,10 @@ class ProjectTool(BaseTool):
                     "type": "string",
                     "description": "Overleaf 项目 ID（URL 中的 ID）。用于 link_overleaf。"
                 },
+                "create_on_overleaf": {
+                    "type": "boolean",
+                    "description": "create 时是否同时在 Overleaf 上创建项目并自动关联。默认 false。"
+                },
             },
             "required": ["action"],
         }
@@ -65,13 +69,14 @@ class ProjectTool(BaseTool):
 
     async def execute(self, action: str, project_name: Optional[str] = None,
                       session_name: Optional[str] = None, overleaf_id: Optional[str] = None,
+                      create_on_overleaf: bool = False,
                       **kwargs) -> str:
         if action == "list":
             return self._list()
         elif action == "create":
             if not project_name:
                 return "[ERROR] 'project_name' is required."
-            return await self._create(project_name)
+            return await self._create(project_name, create_on_overleaf=create_on_overleaf)
         elif action == "switch":
             if not project_name:
                 return "[ERROR] 'project_name' is required."
@@ -122,7 +127,7 @@ class ProjectTool(BaseTool):
     # create
     # ------------------------------------------------------------------
 
-    async def _create(self, project_name: str) -> str:
+    async def _create(self, project_name: str, create_on_overleaf: bool = False) -> str:
         from core.project import Project
         from core.automation.bootstrap import ensure_project_automation_jobs
 
@@ -132,34 +137,38 @@ class ProjectTool(BaseTool):
 
         proj = Project(project_name, self.workspace)
         bootstrap = ensure_project_automation_jobs(proj)
-        created = int((bootstrap.get("radar_applied") or {}).get("created", 0))
-        created_autoplan = bool(bootstrap.get("created_autoplan"))
         autoplan_line = await self._run_initial_autoplan(proj)
 
-        bootstrap_line = "  3. Default radar jobs initialized."
-        if not created_autoplan and created == 0:
-            bootstrap_line = "  3. Default radar jobs already present."
-        try:
-            from config.diagnostics import is_overleaf_logged_in
-            ol_logged_in = is_overleaf_logged_in()
-        except Exception:
-            ol_logged_in = False
+        lines = [f"✅ Project '{project_name}' created."]
 
-        if ol_logged_in:
-            overleaf_step = f"  1. (Recommended) Use 'link_overleaf' with project_name='{project_name}' to associate an Overleaf project."
-        else:
-            overleaf_step = (
-                f"  1. (Optional) To sync with Overleaf, an admin needs to run "
-                f"'ols login' on the server first."
-            )
+        # Optionally create on Overleaf and auto-link
+        if create_on_overleaf:
+            try:
+                from agent.tools.overleaf import OverleafTool
+                ol = OverleafTool(workspace=self.workspace)
+                ol_result = ol.execute(action="create_project", project_name=project_name)
+                if "ERROR" in ol_result:
+                    lines.append(f"⚠️ Overleaf creation failed: {ol_result}")
+                else:
+                    lines.append(f"✅ {ol_result}")
+                    # Extract project ID and link
+                    import re
+                    id_match = re.search(r'ID:\s*([a-f0-9]+)', ol_result)
+                    if id_match:
+                        overleaf_id = id_match.group(1)
+                        proj.link_overleaf(overleaf_id)
+                        sync_result = proj.sync_from_overleaf()
+                        if sync_result.success:
+                            pulled = len(sync_result.pulled) if sync_result.pulled else 0
+                            lines.append(f"✅ Linked and pulled {pulled} files from Overleaf.")
+                        else:
+                            lines.append(f"✅ Linked to Overleaf (ID: {overleaf_id}), but initial pull failed. Use /sync pull after switching.")
+                    else:
+                        lines.append("⚠️ Overleaf project created but could not extract ID for auto-linking. Use 'link_overleaf' manually.")
+            except Exception as e:
+                lines.append(f"⚠️ Overleaf creation failed: {e}")
 
-        lines = [
-            f"Project '{project_name}' created. You are still in the Default workspace.\n"
-            f"Next steps (all done here in Default):\n"
-            f"{overleaf_step}\n"
-            f"  2. Use 'switch' with project_name='{project_name}' to enter the project.\n"
-            f"{bootstrap_line}",
-        ]
+        lines.append(f"\nNext: use 'switch' with project_name='{project_name}' to enter the project.")
         if autoplan_line:
             lines.append(autoplan_line)
         return "\n".join(lines)

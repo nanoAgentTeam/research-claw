@@ -1442,13 +1442,11 @@ class AgentLoop:
         progress_hint = _TOOL_PROGRESS_HINTS.get(tool_call.name)
         if tool_call.name == "overleaf":
             action = args.get("action", "")
-            if action == "sync":
-                # 这个提示也改为英文吧，不然感觉怪怪的
-                progress_hint = "⏳ Syncing with Overleaf, please wait..."
-            elif action == "download":
+            if action == "download":
                 progress_hint = "⏳ Downloading project from Overleaf..."
             elif action == "list":
                 progress_hint = "📋 Fetching Overleaf project list..."
+            # sync 的进度提示不在这里发，因为工具内部可能直接报错（无项目等）
         if progress_hint:
             msg = getattr(self, '_current_msg', None)
             if msg:
@@ -1563,11 +1561,11 @@ class AgentLoop:
 
     async def _handle_recommend_command(self, on_token: Any = None) -> Optional[tuple[str, Path, str]]:
         """Finds the latest project and extracts topic."""
-        manuscript_dir = self.workspace / "manuscript"
-        if not manuscript_dir.exists():
+        projects_dir = self.workspace
+        if not projects_dir.exists():
             return None
-            
-        projects = [d for d in manuscript_dir.iterdir() if d.is_dir() and not d.name.startswith(".")]
+
+        projects = [d for d in projects_dir.iterdir() if d.is_dir() and not d.name.startswith(".") and d.name != "Default"]
         if not projects:
             return None
             

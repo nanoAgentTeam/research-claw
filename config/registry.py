@@ -67,7 +67,6 @@ class ModeDef:
 class RolePermissions:
     """Permission set for a role type."""
     project_core_write: bool = False
-    manuscript_direct_write: bool = False
     can_switch_mode: bool = False
     can_spawn_agents: bool = False
     git_commit: bool = False
@@ -254,7 +253,7 @@ class ConfigRegistry:
         return self._vfs_config
 
     def get_special_path(self, key: str, default: str = "") -> str:
-        """Get a special path from vfs.json, e.g. 'manuscript_root' -> 'manuscript'."""
+        """Get a special path from vfs.json, e.g. 'shared_notes' -> 'shared/SHARED_NOTES.md'."""
         return self.vfs_config.special_paths.get(key, default)
 
     def get_memory_path(self, key: str, default: str = "") -> str:

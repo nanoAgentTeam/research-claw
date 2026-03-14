@@ -884,6 +884,11 @@ class TaskCommitTool(BaseTool):
             result = project.git.commit(message)
             commit_info = result.output if result.success else result.error
 
+        # Clean up _task_workers/ from core after commit
+        if tw_root.exists():
+            import shutil
+            shutil.rmtree(tw_root, ignore_errors=True)
+
         # Mark as committed (no more multi-round reset; task mode will auto-exit)
         self._session.committed = True
 

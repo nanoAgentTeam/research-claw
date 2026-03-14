@@ -42,16 +42,23 @@ When the task involves converting a LaTeX document from one template/class to an
 A template conversion task is **not complete** until `latex_compile` passes without class-related errors.
 
 [LITERATURE SEARCH — TOOL SELECTION]
-Use the most domain-appropriate tool. Domain-specific tools have better coverage and metadata quality than general ones.
+**Step 1 — Pick by domain:**
 
-| Tool | Best For | Avoid For |
-|------|----------|-----------|
-| `arxiv_search` | CS, AI, ML, Physics, Math, Stats preprints | Clinical/biomedical topics |
-| `pubmed_search` | Biomedicine, clinical medicine, biology, pharmacology, neuroscience | Pure CS/AI, physics |
-| `openalex_search` | Cross-domain topics, social sciences, economics; or as fallback when the above return insufficient results | As first choice when arxiv/pubmed fit |
-| `semantic_scholar_search` | Deep citation analysis, finding influential papers, reference graphs | Primary discovery search |
+| Domain | Primary Tool | Fallback |
+|--------|-------------|----------|
+| CS, AI, ML, Physics, Math | `openalex_search` or `arxiv_search` | each other |
+| Biomedicine, clinical, biology, pharmacology | `pubmed_search` | `openalex_search` |
+| Cross-domain, social sciences, economics | `openalex_search` | — |
 
-**Priority rule**: domain-specific first (`arxiv_search` for CS/AI, `pubmed_search` for biomedical) → `openalex_search` as cross-domain fallback → `semantic_scholar_search` for citation depth.
+**Step 2 — Within the same domain, pick by goal:**
+
+| Goal | Tool | Why |
+|------|------|-----|
+| **Writing papers** (need references/BibTeX) | `openalex_search` | Returns published venue, DOI, and ready-to-use BibTeX. References cite the formal publication, not preprints. |
+| **Tracking latest trends/hotspots** | `arxiv_search` | Covers the freshest preprints before they appear in any index. Essential for cutting-edge survey. |
+| **Citation analysis / influence graphs** | `semantic_scholar_search` | Deep citation chains, not for primary search. |
+
+**Summary**: Domain first, then goal. Same domain: writing → `openalex_search`, tracking trends → `arxiv_search`.
 
 **Reading full paper PDFs**: Search tools return abstracts. For in-depth analysis tasks (e.g., comparing methods, understanding technical details, verifying claims), use `web_fetch` on the paper's PDF URL to read the full text.
 - `arxiv_search` returns both `URL` (abstract page) and `PDF` (direct PDF link). **Always use the `PDF` URL with `web_fetch`**, not the abstract URL.

@@ -12,9 +12,10 @@ class BashTool(BaseTool):
     Tool to execute bash commands via Session-anchored environment.
     """
 
-    def __init__(self, session: Any = None, workspace: Any = None, **kwargs):
+    def __init__(self, session: Any = None, workspace: Any = None, block_git: bool = False, **kwargs):
         self.session = session
         self.workspace = Path(workspace) if workspace else None
+        self.block_git = block_git
 
     @property
     def name(self) -> str:
@@ -44,19 +45,17 @@ class BashTool(BaseTool):
     def execute(self, command: str, cwd: Optional[str] = None, **kwargs) -> str:
         """Execute a bash command via VFS."""
         try:
-            # [STRICT PROTOCOL] Block git commands — use /git mode instead
             import shlex, re
             try:
                 tokens = shlex.split(command)
             except ValueError:
                 tokens = command.split()
-            first_cmd = tokens[0] if tokens else ""
-            # Handle pipes/chains: "echo x | git push" or "cd foo && git reset"
-            if first_cmd == "git" or re.search(r'(?:^|[;&|]\s*)git\s', command):
-                return (
-                    "[ERROR] [Protocol Violation] Direct git commands via bash are blocked. "
-                    "Use /git mode for version management (it enforces safety checks before destructive operations)."
-                )
+
+            # Block git commands in task mode (has auto-commit, git ops would interfere)
+            if self.block_git:
+                first_cmd = tokens[0] if tokens else ""
+                if first_cmd == "git" or re.search(r'(?:^|[;&|]\s*)git\s', command):
+                    return "[ERROR] Git commands are not available in Task mode. Git is managed automatically."
 
             # [STRICT PROTOCOL] Block direct TODO.md modifications
             if "TODO.md" in command and (">" in command or "sed" in command or "rm" in command or "mv" in command):

@@ -189,6 +189,33 @@ Main Agent:
 
 Sub-agents work in isolated overlay directories. Their outputs go through a merge process before touching the project core — no accidental overwrites.
 
+### Automation & Research Radar
+
+Each project can have scheduled tasks that run automatically via cron expressions. Configure them through the Web UI's **Automation** tab or via `project.yaml`.
+
+**Built-in radar jobs** (auto-created when a project is linked to Overleaf):
+
+| Job | What it does | Default Schedule |
+|-----|-------------|-----------------|
+| **Daily Scan** | Search for new papers in the project's research area, summarize findings | Every morning |
+| **Direction Drift** | Detect if the research field is shifting, alert on emerging trends | Daily |
+| **Deadline Watch** | Track upcoming conference deadlines relevant to the project | Daily |
+| **Conference Track** | Monitor new calls-for-papers from target venues | Weekly |
+| **Weekly Digest** | Compile a weekly summary of all radar findings | Monday morning |
+| **Profile Refresh** | Update the project's research profile based on latest edits | Daily |
+| **Autoplan** | Reconcile and adjust radar job schedules based on project state | Twice daily |
+
+**How it works:**
+1. Gateway starts the APScheduler automation runtime
+2. Each job fires at its cron schedule, spawns an agent session with the job's prompt
+3. The agent reads project memory, runs searches, writes findings to project files
+4. Results are pushed to configured notification channels (Telegram, Feishu, Email, etc.)
+
+**Push notifications** — configure in Web UI under **Push Subscriptions**. Supports Telegram, Feishu, DingTalk, Email (SMTP), and any Apprise-compatible URL.
+
+<!-- TODO: Add Web UI automation tab screenshot -->
+<!-- ![Automation](docs/assets/automation.png) -->
+
 ### Architecture
 
 ```
@@ -435,6 +462,33 @@ You: "写一篇关于 MoE 的论文"
 ```
 
 子 Agent 在隔离的 overlay 目录中工作，产出需要经过 merge 流程才能进入项目核心目录 — 不会意外覆盖。
+
+### 自动化与研究雷达
+
+每个项目可配置定时任务，通过 cron 表达式自动执行。在 Web UI 的**自动化任务**页面或 `project.yaml` 中配置。
+
+**内置雷达任务**（关联 Overleaf 后自动创建）：
+
+| 任务 | 功能 | 默认频率 |
+|------|------|---------|
+| **每日扫描** | 搜索项目研究方向的新论文，总结发现 | 每天早上 |
+| **方向漂移检测** | 检测研究领域是否出现新趋势，提醒关注 | 每天 |
+| **截稿日期监控** | 追踪与项目相关的会议截稿时间 | 每天 |
+| **会议征稿追踪** | 监控目标会议的最新征稿通知 | 每周 |
+| **周报汇总** | 汇总本周所有雷达发现 | 每周一 |
+| **研究画像刷新** | 根据最新编辑更新项目研究画像 | 每天 |
+| **自动规划** | 根据项目状态自动调整雷达任务计划 | 每天两次 |
+
+**工作原理：**
+1. Gateway 启动时初始化 APScheduler 自动化运行时
+2. 每个任务按 cron 计划触发，生成一个独立的 Agent 会话执行任务 prompt
+3. Agent 读取项目记忆，执行搜索，将发现写入项目文件
+4. 结果推送到配置的通知渠道（Telegram、飞书、邮件等）
+
+**推送通知** — 在 Web UI 的**推送订阅**中配置。支持 Telegram、飞书、钉钉、邮件（SMTP）及任何 Apprise 兼容地址。
+
+<!-- TODO: 在此放置自动化任务页面截图 -->
+<!-- ![Automation](docs/assets/automation.png) -->
 
 ### 架构
 

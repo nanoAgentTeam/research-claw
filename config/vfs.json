@@ -5,7 +5,6 @@
     "research_dirs": ["artifacts", "subagents", "tasks"]
   },
   "special_paths": {
-    "manuscript_root": "manuscript",
     "shared_notes": "shared/SHARED_NOTES.md",
     "todo_file": "shared/TODO.md",
     "status_file": "shared/STATUS.json",

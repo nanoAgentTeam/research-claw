@@ -5,6 +5,7 @@
 """
 
 import json
+import os
 import shutil
 import subprocess
 import threading
@@ -288,6 +289,25 @@ class OverleafSync:
             json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
         )
 
+    # Files/dirs to exclude from Overleaf sync
+    _SYNC_SKIP_DIRS = {"_subagent_results", "_task_workers", "papers"}
+    _SYNC_SKIP_EXTS = {
+        ".aux", ".log", ".bbl", ".blg", ".fls", ".fdb_latexmk",
+        ".out", ".toc", ".synctex.gz", ".pid", ".pdf",
+    }
+
+    def _should_sync(self, rel: str) -> bool:
+        """Return True if the relative path should be included in Overleaf sync."""
+        if rel.startswith("."):
+            return False
+        parts = rel.split("/")
+        if parts[0] in self._SYNC_SKIP_DIRS:
+            return False
+        _, ext = os.path.splitext(rel)
+        if ext in self._SYNC_SKIP_EXTS:
+            return False
+        return True
+
     def _rebuild_metadata(self, fetch_ids: bool = False):
         """重建 metadata（扫描 core 目录，更新所有文件 hash）。
 
@@ -312,7 +332,7 @@ class OverleafSync:
             if not f.is_file():
                 continue
             rel = str(f.relative_to(self.core_path))
-            if rel.startswith(".") or rel.startswith("_subagent_results"):
+            if not self._should_sync(rel):
                 continue
             entry = files.get(rel, {})
             entry["hash"] = self._file_hash(f)
@@ -389,8 +409,13 @@ class OverleafSync:
 
     # -- Push --
 
-    def push(self) -> SyncResult:
-        """将 project core 的变更推送到 Overleaf。"""
+    def push(self, incremental: bool = False) -> SyncResult:
+        """将 project core 的变更推送到 Overleaf。
+
+        Args:
+            incremental: 如果为 True，仅推送 hash 有变化的文件（增量模式）。
+                         默认 False，推送所有可同步文件（全量模式）。
+        """
         result = SyncResult(success=True)
         try:
             api = self._get_api()
@@ -405,37 +430,37 @@ class OverleafSync:
                 if not f.is_file():
                     continue
                 rel = str(f.relative_to(self.core_path))
-                if rel.startswith(".") or rel.startswith("_subagent_results"):
+                if not self._should_sync(rel):
                     continue
-                recorded = metadata.get("files", {}).get(rel, {})
-                if not recorded or self._file_hash(f) != recorded.get("hash", ""):
-                    changed_files.append(rel)
+                if incremental:
+                    recorded = metadata.get("files", {}).get(rel, {})
+                    if recorded and self._file_hash(f) == recorded.get("hash", ""):
+                        continue
+                changed_files.append(rel)
 
+            logger.info(f"Overleaf push: {len(changed_files)} files to sync: {changed_files}")
+
+            root_folder_id = metadata.get("root_folder_id", "")
             for rel in changed_files:
                 local_file = self.core_path / rel
-                file_info = metadata.get("files", {}).get(rel)
                 try:
-                    if file_info and "id" in file_info:
-                        api.update_file(
-                            self.config.project_id, file_info["id"],
-                            local_file.read_bytes(),
-                        )
-                    else:
-                        api.create_file(
-                            self.config.project_id,
-                            metadata.get("root_folder_id"),
-                            rel,
-                            local_file.read_bytes(),
-                        )
+                    # pyoverleaf uses project_upload_file for both create and update
+                    api.project_upload_file(
+                        self.config.project_id,
+                        root_folder_id,
+                        rel,
+                        local_file.read_bytes(),
+                    )
                     result.pushed.append(rel)
                 except Exception as e:
                     result.errors.append(f"{rel}: {e}")
+                    logger.warning(f"Overleaf push failed for {rel}: {e}")
 
             # 检测删除
             for rel, info in metadata.get("files", {}).items():
                 if not (self.core_path / rel).exists():
                     try:
-                        api.delete_file(self.config.project_id, info["id"])
+                        api.project_delete_entity(self.config.project_id, info.get("id", ""))
                         result.pushed.append(f"(deleted) {rel}")
                     except Exception as e:
                         result.errors.append(f"delete {rel}: {e}")
