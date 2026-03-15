@@ -40,6 +40,9 @@ Bot: 🔎 Searching arXiv... 📝 Writing introduction... ✅ Compiled successfu
 
 You: /sync push
 Bot: ✅ Pushed 3 files to Overleaf.
+
+You: compile it and send it to me
+Bot: ⏳ Compiling PDF，please wait......
 ```
 
 <!-- TODO: 在此放置 CLI 会话截图 -->
@@ -354,6 +357,9 @@ Bot: 🔎 搜索 arXiv... 📝 撰写 Introduction... ✅ 编译通过。
 
 You: /sync push
 Bot: ✅ 已推送 3 个文件到 Overleaf。
+
+You: 编译一下论文并发给我
+Bot: ⏳ 编译中，请稍候......
 ```
 
 <!-- TODO: 在此放置 CLI 会话截图 -->
