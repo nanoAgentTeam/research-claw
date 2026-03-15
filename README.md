@@ -427,7 +427,7 @@ pip install -r requirements.txt
 python cli/main.py gateway --port 18790
 ```
 
-打开浏览器访问 **http://localhost:18790/ui**：
+打开浏览器访问 ** http://localhost:18790/ui **：
 
 1. **模型管理** — 添加 LLM 提供商（API Key、模型名、Base URL）。支持任何 OpenAI 兼容 API（GPT、DeepSeek、通义千问、Claude 等）
 2. **通讯账号** — *（可选）* 添加 IM 机器人凭证（飞书 / Telegram / QQ / 钉钉）
