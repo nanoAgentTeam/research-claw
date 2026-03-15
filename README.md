@@ -196,17 +196,39 @@ workspace/
 
 ### Task Mode
 
-For multi-step goals, `/task` breaks work into phases:
+For multi-step goals, `/task` decomposes work into a multi-agent pipeline with 5 phases. Each phase transition is driven by a tool call, and the bot reports its current phase to you throughout.
+
+**Your workflow:**
 
 ```
-/task Write a survey on Mixture-of-Experts
+1. You type:  /task Write a survey on Mixture-of-Experts
 
-→ UNDERSTAND    Bot reads your project files
-→ PROPOSE       Bot generates a proposal for review
-→ PLAN          Bot builds a task DAG for confirmation
-→ EXECUTE       Sub-agents run tasks in parallel batches
-→ FINALIZE      Bot merges all outputs, commits, and auto-exits
+2. [UNDERSTAND]  Bot reads your project files automatically.
+
+3. [PROPOSE]     Bot shows you a proposal (scope, deliverables, approach).
+   → You review it. Reply with feedback to revise, or say "ok" to proceed.
+
+4. [PLAN]        Bot shows you a task DAG (sub-tasks, dependencies, assigned agents).
+   → You review it. Reply with changes, or type /start to begin execution.
+
+5. [EXECUTE]     Sub-agents run tasks in parallel batches. You see real-time progress:
+                 📦 Batch 1 | 2 tasks in parallel: [t1, t2]
+                 ✅ Batch 1 complete (45s) — Progress: 2/8
+                 📦 Batch 2 | 3 tasks in parallel: [t3, t4, t5]
+                 ...
+   → Just wait. No input needed.
+
+6. [FINALIZE]    Bot merges all worker outputs into your project and commits.
+   → Type /done to exit task mode.
 ```
+
+| Phase | What the bot does | What you do |
+|-------|------------------|-------------|
+| **UNDERSTAND** | Reads project files to understand context | Nothing — automatic |
+| **PROPOSE** | Generates a proposal via `task_propose` | Review and reply with feedback, or confirm |
+| **PLAN** | Builds a task DAG via `task_build` | Review, optionally adjust, then type **`/start`** |
+| **EXECUTE** | Runs sub-agents in parallel batches via `task_execute` | Wait — progress is streamed to you |
+| **FINALIZE** | Merges outputs and commits via `task_commit` | Type **`/done`** to exit task mode |
 
 <!-- TODO: 在此放置 Task 模式执行截图 -->
 
@@ -511,17 +533,39 @@ workspace/
 
 ### Task 模式
 
-面对多步骤目标，`/task` 将工作分为阶段：
+面对多步骤目标，`/task` 将工作分解为多 Agent 流水线，共 5 个阶段。每个阶段通过工具调用驱动推进，Bot 会实时向你汇报当前所处阶段。
+
+**你的操作流程：**
 
 ```
-/task 写一篇关于 Mixture-of-Experts 的综述
+1. 你输入：/task 写一篇关于 Mixture-of-Experts 的综述
 
-→ UNDERSTAND    Bot 阅读项目文件，理解上下文
-→ PROPOSE       Bot 生成方案供审阅
-→ PLAN          Bot 构建任务 DAG，等待确认
-→ EXECUTE       子 Agent 按批并行执行
-→ FINALIZE      Bot 合并产出、提交，自动退出
+2. [UNDERSTAND]  Bot 自动阅读项目文件。
+
+3. [PROPOSE]     Bot 展示方案（范围、交付物、方法）。
+   → 你审阅方案。回复修改意见让 Bot 修改，或回复"可以"继续。
+
+4. [PLAN]        Bot 展示任务 DAG（子任务、依赖关系、分配的 Agent）。
+   → 你审阅计划。回复修改意见，或输入 /start 开始执行。
+
+5. [EXECUTE]     子 Agent 按批次并行执行。你会看到实时进度：
+                 📦 批次 1 | 并行 2 个任务: [t1, t2]
+                 ✅ 批次 1 完成 (45s) — 总进度: 2/8
+                 📦 批次 2 | 并行 3 个任务: [t3, t4, t5]
+                 ...
+   → 等待即可，无需操作。
+
+6. [FINALIZE]    Bot 将所有 Worker 产出整合到项目中并提交。
+   → 输入 /done 退出 Task 模式。
 ```
+
+| 阶段 | Bot 做什么 | 你做什么 |
+|------|-----------|---------|
+| **UNDERSTAND** | 阅读项目文件，理解上下文 | 无需操作 — 自动进行 |
+| **PROPOSE** | 通过 `task_propose` 生成方案 | 审阅并回复修改意见，或确认 |
+| **PLAN** | 通过 `task_build` 构建任务 DAG | 审阅，可调整，然后输入 **`/start`** |
+| **EXECUTE** | 通过 `task_execute` 分批并行执行子 Agent | 等待 — 进度会实时推送给你 |
+| **FINALIZE** | 整合产出并通过 `task_commit` 提交 | 输入 **`/done`** 退出 Task 模式 |
 
 ![Task Mode](README/images/task_ch.png)
 

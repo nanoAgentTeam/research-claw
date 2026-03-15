@@ -1079,9 +1079,11 @@ class AgentLoop:
                     else:
                         # Success: Add tool execution to tasks
                         _this_iter_tools.append(tc.name)
+                        # Task tools need on_token for phase hints even on IM channels
+                        _needs_on_token = stream_progress or tc.name.startswith("task_")
                         execution_tasks.append(self._execute_tool(
                             tc,
-                            on_token=iter_on_token if stream_progress else None,
+                            on_token=iter_on_token if _needs_on_token else None,
                             on_event=on_event,
                             message_context=message_context,
                             agent_messages=messages,

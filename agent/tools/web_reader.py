@@ -11,8 +11,19 @@ import pymupdf4llm
 import requests
 from loguru import logger
 
-# Cache directory for downloaded files (original PDFs, etc.)
+# Cache directory for downloaded files
 _CACHE_DIR = Path.home() / ".context_bot" / "cache" / "papers"
+_COMMON_CACHE_DIR = Path.home() / ".context_bot" / "cache" / "common"
+
+# File extensions that should be downloaded and cached directly (not sent to Jina Reader)
+_DOWNLOADABLE_EXTENSIONS = {
+    ".tex", ".sty", ".cls", ".bst", ".bib",  # LaTeX
+    ".md", ".txt", ".rst", ".csv", ".tsv",   # text
+    ".zip", ".tar", ".gz", ".tgz", ".bz2",   # archives
+    ".py", ".js", ".json", ".yaml", ".yml", ".toml", ".xml",  # code/config
+    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".eps",  # images
+    ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",  # office
+}
 
 
 class WebReaderTool:
@@ -25,7 +36,8 @@ class WebReaderTool:
     description = (
         "Fetch and read the content of a URL. "
         "Specialized for converting PDFs (via pymupdf4llm) and Web Pages to clean Markdown. "
-        "For PDFs, the original file is cached locally and can be sent to the user via send_file."
+        "For PDFs and other downloadable files (tex, sty, bib, md, zip, images, etc.), "
+        "the original file is cached locally and can be sent to the user via send_file."
     )
 
     def __init__(self, session: Any = None, workspace: Any = None, config: Any | None = None, **kwargs):
@@ -70,6 +82,12 @@ class WebReaderTool:
             if "application/pdf" in content_type or url.lower().endswith(".pdf"):
                 logger.info("Detected PDF content, using pymupdf4llm...")
                 return self._process_pdf(response.content, url)
+
+            # Handle downloadable files (tex, sty, bib, md, zip, images, etc.)
+            url_ext = self._get_extension(url)
+            if url_ext in _DOWNLOADABLE_EXTENSIONS:
+                logger.info("Detected downloadable file (%s), caching...", url_ext)
+                return self._process_downloadable(response.content, url, url_ext, content_type)
 
             # Handle HTML (using Jina Reader)
             logger.info("Detected HTML content, using Jina Reader...")
@@ -141,3 +159,58 @@ class WebReaderTool:
 
         except Exception as e:
             return "Error processing PDF with pymupdf4llm: %s" % str(e)
+
+    @staticmethod
+    def _get_extension(url: str) -> str:
+        """Extract file extension from URL (lowercase, ignoring query params)."""
+        path = url.rstrip("/").split("?")[0].split("#")[0]
+        name = path.split("/")[-1]
+        dot = name.rfind(".")
+        if dot == -1:
+            return ""
+        return name[dot:].lower()
+
+    def _process_downloadable(self, content: bytes, url: str, ext: str, content_type: str) -> str:
+        """Cache a downloadable file and return its content (text) or a download summary (binary)."""
+        filename = url.rstrip("/").split("/")[-1].split("?")[0].split("#")[0]
+        if not filename:
+            filename = "download" + ext
+
+        _COMMON_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        cached_path = _COMMON_CACHE_DIR / filename
+        cached_path.write_bytes(content)
+        logger.info("Cached file: %s", cached_path)
+
+        # For text-readable files, return content inline
+        _TEXT_EXTENSIONS = {
+            ".tex", ".sty", ".cls", ".bst", ".bib",
+            ".md", ".txt", ".rst", ".csv", ".tsv",
+            ".py", ".js", ".json", ".yaml", ".yml", ".toml", ".xml",
+        }
+        if ext in _TEXT_EXTENSIONS:
+            try:
+                text = content.decode("utf-8")
+            except UnicodeDecodeError:
+                text = content.decode("latin-1")
+            MAX_CHARS = 100000
+            header = (
+                "✅ File downloaded and cached: `%s`\n"
+                "   ↳ Use `send_file` with this path to send the file to the user.\n"
+                "📄 Type: %s | Size: %d bytes\n\n---\n\n"
+                % (str(cached_path), ext, len(content))
+            )
+            if len(text) > MAX_CHARS:
+                return (
+                    "%s%s\n\n... [CONTENT TRUNCATED] (Original length: %d chars)."
+                    % (header, text[:MAX_CHARS], len(text))
+                )
+            return "%s%s" % (header, text)
+
+        # For binary files (images, archives, office docs), just report the cached path
+        return (
+            "✅ File downloaded and cached: `%s`\n"
+            "   ↳ Use `send_file` with this path to send the file to the user.\n"
+            "📦 Type: %s | Size: %d bytes\n"
+            "   (Binary file, content not displayed.)"
+            % (str(cached_path), ext, len(content))
+        )
