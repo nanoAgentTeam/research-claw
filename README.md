@@ -332,6 +332,30 @@ Other config files:
 | `config/agent_profiles/`           | Agent role profiles (tools available per role)        |
 | `workspace/{project}/project.yaml` | Per-project settings (Overleaf ID, LaTeX engine, Git) |
 
+### Skills
+
+Skills are domain-specific SOPs (Standard Operating Procedures) that the agent can activate on demand. To add a custom skill, create a folder under `config/.skills/` with a `SKILL.md` file:
+
+```
+config/.skills/
+└── my-skill/
+    ├── SKILL.md          # Required — skill definition
+    └── templates/        # Optional — resource files the skill can reference
+```
+
+`SKILL.md` uses YAML frontmatter:
+
+```markdown
+---
+name: my-skill
+description: "When to activate this skill"
+---
+
+Your SOP instructions here...
+```
+
+The system auto-discovers all skill folders at startup — no additional registration needed. Agent profiles can optionally restrict available skills via a `"skills"` field in their JSON config (`config/agent_profiles/`).
+
 ## Documentation
 
 | Guide                                                             |                                                             |
@@ -664,6 +688,30 @@ You: "写一篇关于 MoE 的论文"
 | `config/commands.json`          | 斜杠命令定义                               |
 | `config/agent_profiles/`        | Agent 角色 Profile（各角色可用工具）       |
 | `workspace/{项目}/project.yaml` | 项目级配置（Overleaf ID、LaTeX 引擎、Git） |
+
+### Skill 配置
+
+Skill 是特定领域的标准操作规程（SOP），Agent 可按需激活。在 `config/.skills/` 下创建文件夹并添加 `SKILL.md` 即可新增自定义 Skill：
+
+```
+config/.skills/
+└── my-skill/
+    ├── SKILL.md          # 必需 — Skill 定义文件
+    └── templates/        # 可选 — Skill 可引用的资源文件
+```
+
+`SKILL.md` 使用 YAML frontmatter：
+
+```markdown
+---
+name: my-skill
+description: "何时激活这个 Skill"
+---
+
+在此编写 SOP 指令...
+```
+
+系统启动时自动扫描所有 Skill 文件夹，无需额外注册。Agent Profile 的 JSON 配置（`config/agent_profiles/`）中可通过 `"skills"` 字段限制该角色可使用的 Skill。
 
 ## 文档
 

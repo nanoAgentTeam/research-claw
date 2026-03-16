@@ -44,4 +44,5 @@ backups/
 .idea/
 .vscode/
 .codex/
-others/用户体验指南.md
+others/
+tests/
