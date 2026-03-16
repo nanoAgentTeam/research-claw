@@ -33,29 +33,55 @@ def _get_planner_provider_and_model(ctx):
     return ctx.provider, ctx.model
 
 
-_PHASE_HINTS = {
+_PHASE_ENTER_HINTS = {
     TaskPhase.PROPOSE: (
-        "\n\n📋 **阶段 [1/5] PROPOSE** — 方案已生成\n"
-        "👉 请查看方案，回复修改意见或确认满意后继续。\n"
+        "\n\n📋 **阶段 [1/5] PROPOSE** — 正在生成方案...\n"
     ),
     TaskPhase.PLAN: (
-        "\n\n📋 **阶段 [2/5] PLAN** — 执行计划已生成\n"
-        "👉 可要求调整计划，确认后输入 /start 开始执行。\n"
+        "\n\n📋 **阶段 [2/5] PLAN** — 正在生成执行计划...\n"
     ),
     TaskPhase.EXECUTE: (
         "\n\n📋 **阶段 [3/5] EXECUTE** — 开始执行任务\n"
         "⏳ 子 Agent 正在并行工作，请等待完成...\n"
     ),
     TaskPhase.FINALIZE: (
-        "\n\n📋 **阶段 [4/5] FINALIZE** — 执行完毕，整合产出中\n"
+        "\n\n📋 **阶段 [4/5] FINALIZE** — 正在整合产出...\n"
         "⏳ 正在将 Worker 产出合并到项目文件...\n"
     ),
 }
 
+_PHASE_DONE_HINTS = {
+    TaskPhase.PROPOSE: (
+        "\n✅ 方案已生成\n"
+        "👉 请查看方案，回复修改意见或确认满意后继续。\n"
+    ),
+    TaskPhase.PLAN: (
+        "\n✅ 执行计划已生成\n"
+        "👉 可要求调整计划，确认后输入 /start 开始执行。\n"
+    ),
+    TaskPhase.EXECUTE: (
+        "\n✅ 所有任务执行完毕\n"
+    ),
+    TaskPhase.FINALIZE: (
+        "\n✅ 产出整合完成\n"
+    ),
+}
 
-async def _notify_phase_change(on_token: Any, phase: TaskPhase) -> None:
-    """Push a phase-change notification to the user via on_token callback."""
-    hint = _PHASE_HINTS.get(phase)
+
+async def _notify_phase_enter(on_token: Any, phase: TaskPhase) -> None:
+    """Push a phase-enter notification to the user via on_token callback."""
+    hint = _PHASE_ENTER_HINTS.get(phase)
+    if not hint or not on_token:
+        return
+    if asyncio.iscoroutinefunction(on_token):
+        await on_token(hint)
+    else:
+        on_token(hint)
+
+
+async def _notify_phase_done(on_token: Any, phase: TaskPhase) -> None:
+    """Push a phase-done notification to the user via on_token callback."""
+    hint = _PHASE_DONE_HINTS.get(phase)
     if not hint or not on_token:
         return
     if asyncio.iscoroutinefunction(on_token):
@@ -171,6 +197,8 @@ class TaskProposeTool(BaseTool):
                                         goal=goal, context_block=context_block,
                                         previous_proposal_block=previous_proposal_block)
 
+        await _notify_phase_enter(on_token, TaskPhase.PROPOSE)
+
         planner_provider, planner_model = _get_planner_provider_and_model(self._ctx)
         max_attempts = 3
         for attempt in range(max_attempts):
@@ -201,7 +229,7 @@ class TaskProposeTool(BaseTool):
                 return f"[ERROR] Proposal 生成失败: {e}"
 
         self._session.phase = TaskPhase.PROPOSE
-        await _notify_phase_change(on_token, TaskPhase.PROPOSE)
+        await _notify_phase_done(on_token, TaskPhase.PROPOSE)
 
         if self._session.auto_mode:
             # Simulate a conservative, affirmative user review
@@ -389,6 +417,8 @@ class TaskBuildTool(BaseTool):
                                      context_block=context_block,
                                      project_id=project.id)
 
+        await _notify_phase_enter(on_token, TaskPhase.PLAN)
+
         planner_provider, planner_model = _get_planner_provider_and_model(self._ctx)
         max_retries = 3
         for attempt in range(max_retries):
@@ -434,7 +464,8 @@ class TaskBuildTool(BaseTool):
 
                     # Skip PLAN phase — go straight to EXECUTE
                     self._session.phase = TaskPhase.EXECUTE
-                    await _notify_phase_change(on_token, TaskPhase.EXECUTE)
+                    await _notify_phase_done(on_token, TaskPhase.PLAN)
+                    await _notify_phase_enter(on_token, TaskPhase.EXECUTE)
                     return (
                         f"{display}\n\n"
                         f"[Virtual User Confirmation]: {virtual_confirm}\n\n"
@@ -443,7 +474,7 @@ class TaskBuildTool(BaseTool):
                     )
 
                 self._session.phase = TaskPhase.PLAN
-                await _notify_phase_change(on_token, TaskPhase.PLAN)
+                await _notify_phase_done(on_token, TaskPhase.PLAN)
                 return (
                     f"{display}\n\n"
                     f"[INSTRUCTION] The plan above is already formatted. "
@@ -627,6 +658,8 @@ class TaskExecuteTool(BaseTool):
         if self._session.phase != TaskPhase.EXECUTE:
             return f"[BLOCKED] task_execute 仅在 EXECUTE 阶段可用（当前: {self._session.phase.value}）。"
 
+        await _notify_phase_enter(on_token, TaskPhase.EXECUTE)
+
         # Restore _task_workers/ permissions from previous round's FINALIZE chmod
         project_core = self._ctx.session.project.core if self._ctx.session else None
         if project_core:
@@ -775,7 +808,8 @@ class TaskExecuteTool(BaseTool):
 
         # Transition to FINALIZE
         self._session.phase = TaskPhase.FINALIZE
-        await _notify_phase_change(on_token, TaskPhase.FINALIZE)
+        await _notify_phase_done(on_token, TaskPhase.EXECUTE)
+        await _notify_phase_enter(on_token, TaskPhase.FINALIZE)
 
         # Build result summary
         graph = self._session.task_graph
