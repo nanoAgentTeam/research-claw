@@ -1889,4 +1889,4 @@ else:
 def start_gateway_server(host: str = "127.0.0.1", port: int = 18790):
     import uvicorn
     logger.info(f"Starting Gateway Server on http://{host}:{port}/ui")
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run(app, host=host, port=port, access_log=False)
