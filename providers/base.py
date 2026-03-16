@@ -1,8 +1,11 @@
 """Base LLM provider interface."""
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Optional
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -64,6 +67,46 @@ class LLMProvider(ABC):
         """
         pass
     
+    @staticmethod
+    def _sanitize_messages(messages: list) -> list:
+        """Remove orphaned tool result messages whose tool_call_id
+        has no matching tool_use in any preceding assistant message,
+        and strip dangling tool_calls entries from assistant messages
+        that have no corresponding tool result."""
+        # Collect all valid tool_call_ids from assistant messages
+        valid_call_ids = set()
+        for m in messages:
+            if m.get("role") == "assistant" and m.get("tool_calls"):
+                for tc in m["tool_calls"]:
+                    valid_call_ids.add(tc.get("id"))
+
+        # Collect all tool_call_ids that actually have a tool result
+        answered_ids = set()
+        for m in messages:
+            if m.get("role") == "tool" and m.get("tool_call_id"):
+                answered_ids.add(m["tool_call_id"])
+
+        cleaned = []
+        for m in messages:
+            if m.get("role") == "tool":
+                # Drop orphaned tool results (no matching assistant tool_call)
+                if m.get("tool_call_id") not in valid_call_ids:
+                    _logger.debug(f"[Sanitize] Dropping orphaned tool result: {m.get('tool_call_id')}")
+                    continue
+            elif m.get("role") == "assistant" and m.get("tool_calls"):
+                # Strip tool_calls whose results are missing
+                kept = [tc for tc in m["tool_calls"] if tc.get("id") in answered_ids]
+                if len(kept) != len(m["tool_calls"]):
+                    _logger.debug(f"[Sanitize] Trimmed {len(m['tool_calls']) - len(kept)} dangling tool_calls from assistant message")
+                    m = dict(m)  # shallow copy to avoid mutating original
+                    if kept:
+                        m["tool_calls"] = kept
+                    else:
+                        # No tool_calls left — remove the key entirely
+                        m = {k: v for k, v in m.items() if k != "tool_calls"}
+            cleaned.append(m)
+        return cleaned
+
     @abstractmethod
     def get_default_model(self) -> str:
         """Get the default model for this provider."""

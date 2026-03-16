@@ -135,6 +135,10 @@ class OpenAIProvider(LLMProvider):
         """
         model = model or self.default_model
 
+        # Sanitize messages: remove orphaned tool results / dangling tool_calls
+        # that can arise from context resets or compression.
+        messages = self._sanitize_messages(messages)
+
         # Reasoning models (e.g. step-3.5-flash) auto-adjust output length;
         # passing max_tokens causes context_length_exceeded on StepFun API.
         is_reasoning = self._is_reasoning_model(model)

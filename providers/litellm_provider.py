@@ -78,6 +78,10 @@ class LiteLLMProvider(LLMProvider):
         """
         model = model or self.default_model
 
+        # Sanitize messages: remove orphaned tool results / dangling tool_calls
+        # that can arise from context resets or compression.
+        messages = self._sanitize_messages(messages)
+
         # For OpenRouter, prefix model name if not already prefixed
         if self.is_openrouter and not model.startswith("openrouter/"):
             model = f"openrouter/{model}"

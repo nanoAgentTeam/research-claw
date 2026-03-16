@@ -1183,6 +1183,12 @@ class AgentLoop:
                     return None  # the re-queued message will produce the real response
 
                 # Add results to history
+                if has_reset:
+                    # Meta-reset truncated the messages list; the assistant message
+                    # with tool_calls was already removed.  Adding tool_results now
+                    # would create orphaned references → API 400 error.  Skip.
+                    continue  # skip to next while-loop iteration
+
                 for tc, res_obj in zip(response.tool_calls, tool_results):
                     result = res_obj["output"]
                     warning = res_obj["warning"]
