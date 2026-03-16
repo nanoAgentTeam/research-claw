@@ -297,6 +297,45 @@ async def set_language(payload: dict):
         raise HTTPException(status_code=500, detail=f"failed to save language: {e}")
     return {"ok": True, "language": lang}
 
+
+@app.get("/api/llm-language")
+async def get_llm_language():
+    """Return the current LLM reply language from settings.json."""
+    config_path = get_config_path()
+    llm_lang = "auto"
+    try:
+        if config_path.exists():
+            data = json.loads(config_path.read_text(encoding="utf-8"))
+            llm_lang = data.get("userInfo", data.get("user_info", {})).get("llmLanguage",
+                       data.get("userInfo", data.get("user_info", {})).get("llm_language", "auto"))
+    except Exception:
+        pass
+    return {"llmLanguage": llm_lang}
+
+
+@app.put("/api/llm-language")
+async def set_llm_language(payload: dict):
+    """Persist LLM reply language to settings.json and update Config at runtime."""
+    llm_lang = str(payload.get("llmLanguage", "auto")).strip().lower()
+    valid_langs = ("auto", "zh", "en", "ja", "ko", "fr", "de", "es", "ru", "pt", "ar")
+    if llm_lang not in valid_langs:
+        raise HTTPException(status_code=400, detail=f"llmLanguage must be one of {valid_langs}")
+    config_path = get_config_path()
+    try:
+        data = json.loads(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
+        user_info = data.setdefault("userInfo", {})
+        user_info["llmLanguage"] = llm_lang
+        data.pop("user_info", None)
+        config_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        try:
+            from core.infra.config import Config
+            Config.LLM_LANGUAGE = llm_lang
+        except Exception:
+            pass
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"failed to save llm language: {e}")
+    return {"ok": True, "llmLanguage": llm_lang}
+
 @app.get("/api/config")
 async def get_config():
     from config.loader import convert_to_camel

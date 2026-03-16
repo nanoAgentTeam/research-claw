@@ -59,6 +59,7 @@
     "profiles": []
   },
   "userInfo": {
-    "language": "zh"
+    "language": "zh",
+    "llmLanguage": "auto"
   }
 }

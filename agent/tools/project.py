@@ -7,6 +7,7 @@ from typing import Any, Optional, TYPE_CHECKING
 from loguru import logger
 
 from core.tools.base import BaseTool
+from config.i18n import t
 
 if TYPE_CHECKING:
     from agent.services.tool_context import ToolContext
@@ -99,7 +100,7 @@ class ProjectTool(BaseTool):
 
     def _list(self) -> str:
         if not self.workspace.exists():
-            return "工作区为空。使用 create 创建新项目。"
+            return t("project.workspace_empty")
         current = self.ctx.project_id
         projects = []
         for d in sorted(self.workspace.iterdir()):
@@ -115,12 +116,12 @@ class ProjectTool(BaseTool):
                         overleaf_tag = " [Overleaf]"
                 except Exception:
                     pass
-            active_tag = " ← 当前" if d.name == current else ""
+            active_tag = t("project.current_marker") if d.name == current else ""
             projects.append(f"  {d.name}{overleaf_tag}{active_tag}")
 
         if not projects:
-            return "工作区没有项目。使用 create 创建新项目。"
-        header = f"项目列表 (当前: {current}):"
+            return t("project.no_projects")
+        header = t("project.list_header", current=current)
         return header + "\n" + "\n".join(projects)
 
     # ------------------------------------------------------------------
@@ -226,15 +227,7 @@ class ProjectTool(BaseTool):
                 pass
 
             # Append quick commands guide
-            msg += (
-                "\n\n📖 常用命令："
-                "\n  /compile — 编译 PDF"
-                "\n  /sync pull — 从 Overleaf 拉取"
-                "\n  /sync push — 推送到 Overleaf"
-                "\n  /git — Git 版本管理"
-                "\n  /task <目标> — 启动任务会话"
-                "\n  /help — 查看全部命令"
-            )
+            msg += t("project.quick_commands")
 
             return msg
         except Exception as e:

@@ -295,6 +295,33 @@ class ContextManager:
             )
             pb.set("greeting_guidance", greeting_guidance)
 
+            # Language instruction for LLM replies
+            try:
+                from core.infra.config import Config as InfraConfig
+                llm_lang = getattr(InfraConfig, 'LLM_LANGUAGE', 'auto')
+            except Exception:
+                llm_lang = 'auto'
+            if llm_lang and llm_lang != 'auto':
+                lang_names = {
+                    'zh': 'Chinese (简体中文)',
+                    'en': 'English',
+                    'ja': 'Japanese (日本語)',
+                    'ko': 'Korean (한국어)',
+                    'fr': 'French (Français)',
+                    'de': 'German (Deutsch)',
+                    'es': 'Spanish (Español)',
+                    'ru': 'Russian (Русский)',
+                    'pt': 'Portuguese (Português)',
+                    'ar': 'Arabic (العربية)',
+                }
+                lang_display = lang_names.get(llm_lang, llm_lang)
+                pb.set("language_instruction",
+                    f"[LANGUAGE INSTRUCTION]\n"
+                    f"You MUST always reply in {lang_display}. "
+                    f"Regardless of the language the user writes in, "
+                    f"all your responses must be in {lang_display}."
+                )
+
         # 2. Memory Assembly
         is_default_project = self._project.is_default if self._project else (self.project_id == "Default")
         memory_sections = []

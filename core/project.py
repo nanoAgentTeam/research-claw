@@ -293,7 +293,7 @@ class OverleafSync:
     _SYNC_SKIP_DIRS = {"_subagent_results", "_task_workers", "papers"}
     _SYNC_SKIP_EXTS = {
         ".aux", ".log", ".bbl", ".blg", ".fls", ".fdb_latexmk",
-        ".out", ".toc", ".synctex.gz", ".pid", ".pdf",
+        ".out", ".toc", ".synctex.gz", ".pid", ".pdf", ".xdv",
     }
 
     def _should_sync(self, rel: str) -> bool:
@@ -357,6 +357,58 @@ class OverleafSync:
                     "id": getattr(child, "id", ""),
                     "type": getattr(child, "type", "file"),
                 }
+
+    def _ensure_folder(self, api, project_id: str, root_folder, folder_path: str):
+        """在 Overleaf 上查找或创建子文件夹，返回最终文件夹对象。
+
+        Args:
+            api: pyoverleaf API 实例
+            project_id: Overleaf 项目 ID
+            root_folder: 根文件夹对象 (ProjectFolder)
+            folder_path: 相对文件夹路径，如 "neurips_format" 或 "a/b/c"
+        Returns:
+            目标文件夹对象 (ProjectFolder)
+        """
+        if not folder_path or folder_path == ".":
+            return root_folder
+
+        current_folder = root_folder
+        for part in folder_path.split("/"):
+            found = None
+            for child in getattr(current_folder, "children", []):
+                if getattr(child, "name", "") == part and hasattr(child, "children"):
+                    found = child
+                    break
+            if found:
+                current_folder = found
+            else:
+                try:
+                    current_folder = api.project_create_folder(
+                        project_id, current_folder.id, part
+                    )
+                except Exception:
+                    # 文件夹可能已存在（400），重新获取文件树查找
+                    refreshed = api.project_get_files(project_id)
+                    target = self._find_folder_in_tree(refreshed, folder_path)
+                    if target:
+                        return target
+                    raise
+        return current_folder
+
+    @staticmethod
+    def _find_folder_in_tree(root_folder, folder_path: str):
+        """在文件树中按路径查找文件夹。"""
+        current = root_folder
+        for part in folder_path.split("/"):
+            found = None
+            for child in getattr(current, "children", []):
+                if getattr(child, "name", "") == part and hasattr(child, "children"):
+                    found = child
+                    break
+            if not found:
+                return None
+            current = found
+        return current
 
     # -- Pull --
 
@@ -457,15 +509,28 @@ class OverleafSync:
 
             logger.info(f"Overleaf push: {len(changed_files)} files to sync: {changed_files}")
 
-            root_folder_id = metadata.get("root_folder_id", "")
+            # 获取根文件夹对象（用于遍历和创建子文件夹）
+            root_folder = api.project_get_files(self.config.project_id)
+            # 缓存已解析的文件夹，避免重复 API 调用
+            folder_cache = {}
             for rel in changed_files:
                 local_file = self.core_path / rel
                 try:
-                    # pyoverleaf uses project_upload_file for both create and update
+                    folder_path = os.path.dirname(rel)
+                    filename = os.path.basename(rel)
+                    # 查找或创建目标文件夹
+                    if folder_path in folder_cache:
+                        target_folder_id = folder_cache[folder_path]
+                    else:
+                        target_folder = self._ensure_folder(
+                            api, self.config.project_id, root_folder, folder_path
+                        )
+                        target_folder_id = getattr(target_folder, "id", "")
+                        folder_cache[folder_path] = target_folder_id
                     api.project_upload_file(
                         self.config.project_id,
-                        root_folder_id,
-                        rel,
+                        target_folder_id,
+                        filename,
                         local_file.read_bytes(),
                     )
                     result.pushed.append(rel)

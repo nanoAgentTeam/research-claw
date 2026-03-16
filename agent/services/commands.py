@@ -11,175 +11,7 @@ from typing import Any, Optional, Protocol, runtime_checkable
 from loguru import logger
 
 from agent.services.protocols import CommandContext, CommandResult
-
-
-# ---------------------------------------------------------------------------
-# i18n: lightweight message translations keyed by Config.LANGUAGE
-# ---------------------------------------------------------------------------
-
-_MESSAGES = {
-    "sync_auth_error": {
-        "zh": (
-            "❌ Overleaf 同步失败：认证错误。\n\n"
-            ".olauth 认证文件不存在或已过期，请在服务器上运行 ols login 重新登录。"
-        ),
-        "en": (
-            "❌ Overleaf sync failed: authentication error.\n\n"
-            "The .olauth cookie file is missing or expired. "
-            "Please run 'ols login' on the server."
-        ),
-    },
-    "sync_failed": {
-        "zh": "❌ 同步失败：{detail}",
-        "en": "❌ Sync failed: {detail}",
-    },
-    "sync_no_config": {
-        "zh": (
-            "❌ 同步失败：当前项目尚未关联 Overleaf。\n\n"
-            "请按以下步骤操作：\n"
-            "1. 输入 /sync list 查看你的 Overleaf 项目列表\n"
-            "2. 找到要关联的项目 ID（Overleaf URL 中的那串字符）\n"
-            "3. 告诉我项目 ID，我来帮你关联"
-        ),
-        "en": (
-            "❌ Sync failed: this project is not linked to Overleaf.\n\n"
-            "Follow these steps:\n"
-            "1. Run /sync list to see your Overleaf projects\n"
-            "2. Find the project ID (the string in the Overleaf URL)\n"
-            "3. Tell me the project ID and I'll link it for you"
-        ),
-    },
-    "sync_pull_progress": {
-        "zh": "⏳ 正在从 Overleaf 拉取文件，请稍候...",
-        "en": "⏳ Pulling files from Overleaf, please wait...",
-    },
-    "sync_push_progress": {
-        "zh": "⏳ 正在推送文件到 Overleaf，请稍候...",
-        "en": "⏳ Pushing files to Overleaf, please wait...",
-    },
-    "compile_progress": {
-        "zh": "⏳ 正在编译 PDF，请稍候...",
-        "en": "⏳ Compiling PDF, please wait...",
-    },
-    "compile_overleaf_linked": {
-        "zh": "\n\n---\n该项目已关联 Overleaf。可以运行 /sync push 上传最新版本。",
-        "en": "\n\n---\nThis project is linked to Overleaf. Consider running /sync push to upload the latest version.",
-    },
-    "compile_overleaf_no_auth": {
-        "zh": "\n\n---\n该项目已关联 Overleaf，但认证未配置。请在服务器上运行 ols login 以启用同步。",
-        "en": "\n\n---\nThis project is linked to Overleaf, but authentication is not set up. Run 'ols login' on the server to enable syncing.",
-    },
-    "compile_overleaf_not_linked": {
-        "zh": "\n\n---\n该项目尚未关联 Overleaf。你可以关联它以实现在线协作同步。",
-        "en": "\n\n---\nThis project is not linked to Overleaf. You can link it to sync your LaTeX files for online collaboration.",
-    },
-    "session_reset": {
-        "zh": "🔄 会话已重置（ID: {sid}）。\n已清除近期对话历史。",
-        "en": "🔄 Session has been reset (ID: {sid}).\nI have forgotten our recent conversation history.",
-    },
-    "already_chat_mode": {
-        "zh": "你已经在聊天模式中。",
-        "en": "You are already in Chat Mode.",
-    },
-    "switched_chat_mode": {
-        "zh": "⬅️ 已切回聊天模式，项目上下文已清除。",
-        "en": "⬅️ Switched back to CHAT mode. Project context cleared.",
-    },
-    "stop_signal": {
-        "zh": "🛑 收到停止信号。本轮进行中的操作将完成，但不会开始新操作。",
-        "en": "🛑 Received stop signal. Any pending actions for this turn will be completed, but no new ones will start.",
-    },
-    "summarize_result": {
-        "zh": "📝 上下文摘要结果：\n{result}",
-        "en": "📝 Context Summarization Result:\n{result}",
-    },
-    "no_projects_found": {
-        "zh": "❌ 未找到任何项目。",
-        "en": "❌ No projects found.",
-    },
-    "recommend_detected": {
-        "zh": "🔍 [推荐] 检测到项目：`{name}`\n主题：*{topic}*\n正在启动调研...",
-        "en": "🔍 [Recommend] Detected project: `{name}`\nTopic: *{topic}*\nInitiating research...",
-    },
-    "no_projects_to_pull": {
-        "zh": "❌ 未找到可拉取的本地项目。",
-        "en": "❌ No local projects found to pull.",
-    },
-    "err_no_project": {
-        "zh": "[错误] 无项目上下文，请先切换到某个项目。",
-        "en": "[ERROR] No project context. Switch to a project first.",
-    },
-    "err_no_project_available": {
-        "zh": "[错误] 无可用项目上下文。",
-        "en": "[ERROR] No project context available.",
-    },
-    "err_task_needs_project": {
-        "zh": "[错误] Task 模式需要具体项目。请先用 /project 创建或切换到一个项目。",
-        "en": "[ERROR] Task mode requires a concrete project. Use /project to create or switch to one first.",
-    },
-    "err_tool_context": {
-        "zh": "[错误] 工具上下文不可用。",
-        "en": "[ERROR] Tool context not available.",
-    },
-    "already_default": {
-        "zh": "已在默认项目中。",
-        "en": "Already in Default project.",
-    },
-    "returned_default": {
-        "zh": "已返回默认项目。",
-        "en": "Returned to Default project.",
-    },
-    "compile_success": {
-        "zh": "PDF 编译完成：{name}（{duration:.0f}ms）",
-        "en": "PDF compiled: {name} ({duration:.0f}ms)",
-    },
-    "compile_warnings": {
-        "zh": "\n  {count} 个警告",
-        "en": "\n  {count} warnings",
-    },
-    "compile_failed": {
-        "zh": "编译失败",
-        "en": "Compilation failed",
-    },
-    "pulled_files": {
-        "zh": "已从 Overleaf 拉取 {count} 个文件",
-        "en": "Pulled {count} files from Overleaf",
-    },
-    "pushed_files": {
-        "zh": "已推送 {count} 个文件到 Overleaf",
-        "en": "Pushed {count} files to Overleaf",
-    },
-    "sync_usage": {
-        "zh": "用法：/sync [pull|push]",
-        "en": "Usage: /sync [pull|push]",
-    },
-    "err_llm_provider": {
-        "zh": "[错误] LLM 提供者不可用。",
-        "en": "[ERROR] LLM provider not available.",
-    },
-    "err_no_session": {
-        "zh": "[错误] 无可用会话上下文。",
-        "en": "[ERROR] No session context available.",
-    },
-    "cleanup_done": {
-        "zh": "子 Agent 工作目录已清理。",
-        "en": "Subagent directories cleaned up.",
-    },
-}
-
-
-def _t(key: str, **kwargs: Any) -> str:
-    """Return a translated message based on Config.LANGUAGE."""
-    try:
-        from core.infra.config import Config
-        lang = getattr(Config, "LANGUAGE", "en")
-    except Exception:
-        lang = "en"
-    entry = _MESSAGES.get(key, {})
-    text = entry.get(lang) or entry.get("en") or key
-    if kwargs:
-        text = text.format(**kwargs)
-    return text
+from config.i18n import t
 
 
 # ---------------------------------------------------------------------------
@@ -253,23 +85,23 @@ class ResetHandler(BaseCommandHandler):
             self.services.project_id,
             new_session,
         )
-        res = _t("session_reset", sid=self.services.session_id)
+        res = t("session_reset", sid=self.services.session_id)
         return CommandResult(response=res)
 
 
 class ExitHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         if self.services.current_mode == "CHAT":
-            res = _t("already_chat_mode")
+            res = t("already_chat_mode")
         else:
             await self.services.switch_mode("CHAT")
-            res = _t("switched_chat_mode")
+            res = t("switched_chat_mode")
         return CommandResult(response=res)
 
 
 class StopHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
-        res = _t("stop_signal")
+        res = t("stop_signal")
         return CommandResult(response=res)
 
 
@@ -280,7 +112,7 @@ class SummarizeHandler(BaseCommandHandler):
             limit=50,
             on_token=ctx.publish_chunk,
         )
-        res = _t("summarize_result", result=summary_result)
+        res = t("summarize_result", result=summary_result)
         return CommandResult(response=res)
 
 
@@ -288,7 +120,7 @@ class RecommendHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         project_info = await self.services.handle_recommend(on_token=ctx.publish_chunk)
         if not project_info:
-            return CommandResult(response=_t("no_projects_found"))
+            return CommandResult(response=t("no_projects_found"))
 
         project_name, project_path, topic = project_info
         macro_prompt = (
@@ -298,7 +130,7 @@ class RecommendHandler(BaseCommandHandler):
         )
 
         # Pre-send detection confirmation
-        res = _t("recommend_detected", name=project_name, topic=topic)
+        res = t("recommend_detected", name=project_name, topic=topic)
         if ctx.publish_chunk:
             ctx.publish_chunk(res)
 
@@ -310,7 +142,7 @@ class PullProjectHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         project_info = await self.services.handle_recommend(on_token=ctx.publish_chunk)
         if not project_info:
-            return CommandResult(response=_t("no_projects_to_pull"))
+            return CommandResult(response=t("no_projects_to_pull"))
 
         project_name, project_path, _ = project_info
         macro_prompt = (
@@ -345,19 +177,19 @@ class TaskHandler(BaseCommandHandler):
         # Interactive mode: register task tools into main agent
         project = getattr(self.services, '_project', None)
         if not project:
-            return CommandResult(response=_t("err_no_project"))
+            return CommandResult(response=t("err_no_project"))
         if project.id == "Default":
-            return CommandResult(response=_t("err_task_needs_project"))
+            return CommandResult(response=t("err_task_needs_project"))
 
         tool_context = getattr(self.services, '_tool_context', None)
         if not tool_context:
-            return CommandResult(response=_t("err_tool_context"))
+            return CommandResult(response=t("err_tool_context"))
 
         # Check if already in task mode
         context_manager = getattr(self.services, 'context', None)
         if context_manager and context_manager._task_session:
             phase = context_manager._task_session.phase.value.upper()
-            return CommandResult(response=f"已在 Task 模式中（阶段: {phase}）。输入 /done 退出。")
+            return CommandResult(response=t("already_in_task", phase=phase))
 
         # Create or restore TaskSession
         from agent.task_agent import TaskSession
@@ -408,27 +240,17 @@ class TaskHandler(BaseCommandHandler):
             context_manager._task_session = task_session
 
         phase = task_session.phase.value.upper()
-        goal_info = f"\n目标: {task_session.goal}" if task_session.goal else ""
+        goal_info = f"\n{t('task_goal_label')}: {task_session.goal}" if task_session.goal else ""
         plan_info = ""
         if task_session.task_graph:
             n = len(task_session.task_graph.tasks)
-            plan_info = f"\n已有计划: {n} 个任务"
+            plan_info = f"\n{t('task_plan_exists', count=n)}"
 
         restored_hint = ""
         if not fresh_mode and state_path and state_path.exists():
-            restored_hint = "\n\n已恢复上次的任务会话。如需重新开始，请用 `/task --new`。"
+            restored_hint = f"\n\n{t('task_restored_hint')}"
 
-        intro = (
-            f"[Task 模式] 进入交互式任务会话。\n"
-            f"当前阶段: {phase}{goal_info}{plan_info}{restored_hint}\n\n"
-            f"Task 模式共 5 个阶段:\n"
-            f"  1. PROPOSE  — 生成方案 → 你确认或提修改意见\n"
-            f"  2. PLAN     — 生成执行计划 → 你确认后输入 /start\n"
-            f"  3. EXECUTE  — 子 Agent 并行执行（自动，等待即可）\n"
-            f"  4. FINALIZE — 整合产出到项目文件（自动）\n"
-            f"  5. DONE     — 提交完成，自动退出\n\n"
-            f"可用命令: /start (确认计划) | /done (退出 task 模式)"
-        )
+        intro = t("task_intro", phase=phase, goal_info=goal_info, plan_info=plan_info, restored_hint=restored_hint)
 
         # Build modified message for LLM to process
         if task_session.goal:
@@ -471,12 +293,12 @@ class TaskStartHandler(BaseCommandHandler):
         task_session = context_manager._task_session if context_manager else None
 
         if not task_session:
-            return CommandResult(response="当前不在 Task 模式。请先 /task 进入。")
+            return CommandResult(response=t("not_in_task_mode"))
 
         from agent.task_agent import TaskPhase
         if task_session.phase != TaskPhase.PLAN:
             return CommandResult(
-                response=f"/start 仅在 PLAN 阶段可用（当前: {task_session.phase.value}）。"
+                response=t("start_only_plan_phase", phase=task_session.phase.value)
             )
 
         task_session.phase = TaskPhase.EXECUTE
@@ -495,13 +317,13 @@ class TaskDoneHandler(BaseCommandHandler):
         if not task_session:
             # Not in task mode — fall back to ExitHandler behavior
             if self.services.current_mode == "CHAT":
-                return CommandResult(response=_t("already_chat_mode"))
+                return CommandResult(response=t("already_chat_mode"))
             else:
                 await self.services.switch_mode("CHAT")
-                return CommandResult(response=_t("switched_chat_mode"))
+                return CommandResult(response=t("switched_chat_mode"))
 
         summary = self.services._exit_task_mode()
-        return CommandResult(response=f"退出 Task 模式。\n\n{summary}")
+        return CommandResult(response=t("exit_task_mode", summary=summary))
 
 
 class BackToDefaultHandler(BaseCommandHandler):
@@ -509,9 +331,9 @@ class BackToDefaultHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         if hasattr(self.services, '_project') and self.services._project:
             if self.services._project.is_default:
-                return CommandResult(response=_t("already_default"))
+                return CommandResult(response=t("already_default"))
         await self.services.switch_mode("CHAT")
-        res = _t("returned_default")
+        res = t("returned_default")
         return CommandResult(response=res)
 
 
@@ -520,28 +342,28 @@ class CompileHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         project = getattr(self.services, '_project', None)
         if not project:
-            return CommandResult(response=_t("err_no_project_available"))
-        await self._send_progress(ctx, _t("compile_progress"))
+            return CommandResult(response=t("err_no_project_available"))
+        await self._send_progress(ctx, t("compile_progress"))
         result = project.compile_pdf()
         if result.success:
-            res = _t("compile_success", name=result.pdf_path.name, duration=result.duration_ms)
+            res = t("compile_success", name=result.pdf_path.name, duration=result.duration_ms)
             if result.warnings:
-                res += _t("compile_warnings", count=len(result.warnings))
+                res += t("compile_warnings", count=len(result.warnings))
             try:
                 from config.diagnostics import is_overleaf_logged_in
                 ol_cfg = getattr(project.config, "overleaf", None)
                 has_overleaf = ol_cfg and getattr(ol_cfg, "project_id", None)
                 if has_overleaf:
                     if is_overleaf_logged_in():
-                        res += _t("compile_overleaf_linked")
+                        res += t("compile_overleaf_linked")
                     else:
-                        res += _t("compile_overleaf_no_auth")
+                        res += t("compile_overleaf_no_auth")
                 else:
-                    res += _t("compile_overleaf_not_linked")
+                    res += t("compile_overleaf_not_linked")
             except Exception:
                 pass
         else:
-            res = _t("compile_failed")
+            res = t("compile_failed")
             for e in result.errors[:5]:
                 res += f"\n  {e}"
         return CommandResult(response=res)
@@ -552,28 +374,28 @@ class SyncHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         project = getattr(self.services, '_project', None)
         if not project:
-            return CommandResult(response=_t("err_no_project_available"))
+            return CommandResult(response=t("err_no_project_available"))
 
         action = args.strip().lower() or "pull"
         if action == "pull":
-            await self._send_progress(ctx, _t("sync_pull_progress"))
+            await self._send_progress(ctx, t("sync_pull_progress"))
             try:
                 result = project.sync_from_overleaf()
             except Exception as e:
                 err_text = str(e).lower()
                 if any(kw in err_text for kw in ("unauthenticated", "cookie", "login", "401", "olauth")):
-                    res = _t("sync_auth_error")
+                    res = t("sync_auth_error")
                 else:
-                    res = _t("sync_failed", detail=str(e))
+                    res = t("sync_failed", detail=str(e))
                 return CommandResult(response=res)
             if not result.success:
                 errors_text = ', '.join(result.errors)
                 if "No Overleaf config" in errors_text or "overleaf" in errors_text.lower() and "not" in errors_text.lower():
-                    res = _t("sync_no_config")
+                    res = t("sync_no_config")
                 else:
-                    res = _t("sync_failed", detail=errors_text)
+                    res = t("sync_failed", detail=errors_text)
             else:
-                res = _t("pulled_files", count=len(result.pulled))
+                res = t("pulled_files", count=len(result.pulled))
                 if result.conflicts:
                     res += f"\n  Conflicts: {', '.join(result.conflicts)}"
                 refreshed_legacy = False
@@ -637,22 +459,22 @@ class SyncHandler(BaseCommandHandler):
                 except Exception as e:
                     logger.debug(f"Automation bootstrap on /sync pull skipped: {e}")
         elif action == "push":
-            await self._send_progress(ctx, _t("sync_push_progress"))
+            await self._send_progress(ctx, t("sync_push_progress"))
             try:
                 result = project.sync_to_overleaf()
             except Exception as e:
                 err_text = str(e).lower()
                 if any(kw in err_text for kw in ("unauthenticated", "cookie", "login", "401", "olauth")):
-                    res = _t("sync_auth_error")
+                    res = t("sync_auth_error")
                 else:
-                    res = _t("sync_failed", detail=str(e))
+                    res = t("sync_failed", detail=str(e))
                 return CommandResult(response=res)
             if not result.success:
-                res = _t("sync_failed", detail=', '.join(result.errors))
+                res = t("sync_failed", detail=', '.join(result.errors))
             else:
-                res = _t("pushed_files", count=len(result.pushed))
+                res = t("pushed_files", count=len(result.pushed))
         else:
-            res = _t("sync_usage")
+            res = t("sync_usage")
 
         return CommandResult(response=res)
 
@@ -662,18 +484,18 @@ class GitHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         project = getattr(self.services, '_project', None)
         if not project or not project.git:
-            return CommandResult(response="当前项目未启用 Git。")
+            return CommandResult(response=t("git_not_enabled"))
 
         from agent.git_agent import GitAgent
         provider = getattr(self.services, 'provider', None)
         model = getattr(self.services, 'model', None)
         if not provider:
-            return CommandResult(response=_t("err_llm_provider"))
+            return CommandResult(response=t("err_llm_provider"))
 
         git_agent = GitAgent(project=project, provider=provider, model=model)
 
         history = project.git.log(5)
-        intro = f"🔧 [Git 模式] 进入版本管理。输入 /done 退出。\n最近提交：\n{history}"
+        intro = t("git_mode_intro", history=history)
 
         return CommandResult(response=intro, subagent=git_agent)
 
@@ -684,7 +506,7 @@ class RadarHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         project = getattr(self.services, "_project", None)
         if not project or project.is_default:
-            return CommandResult(response="请先切换到具体项目后再使用 /radar。")
+            return CommandResult(response=t("radar_need_project"))
 
         from core.automation.bootstrap import ensure_project_automation_jobs
         from core.automation.settings import (
@@ -741,12 +563,12 @@ class RadarHandler(BaseCommandHandler):
 
         if sub == "subscribe":
             store.add_subscription(ctx.channel, ctx.chat_id)
-            return CommandResult(response=f"已订阅当前项目推送：{ctx.channel}:{ctx.chat_id}")
+            return CommandResult(response=t("radar_subscribed", channel=ctx.channel, chat_id=ctx.chat_id))
 
         if sub == "jobs":
             jobs = store.list_jobs()
             if not jobs:
-                return CommandResult(response="当前项目没有任务。")
+                return CommandResult(response=t("radar_no_jobs"))
             lines = []
             for j in jobs:
                 origin = (j.metadata or {}).get("origin", "-")
@@ -768,14 +590,10 @@ class RadarHandler(BaseCommandHandler):
                 disable_other_system_radar_jobs=replace_mode,
             )
             return CommandResult(
-                response=(
-                    f"已安装默认雷达模板任务（{project.id}）。\n"
-                    f"- created: {applied.get('created', 0)}\n"
-                    f"- updated: {applied.get('updated', 0)}\n"
-                    f"- disabled: {applied.get('disabled', 0)}\n"
-                    f"- skipped: {applied.get('skipped', 0)}\n"
-                    f"- mode: {'replace' if replace_mode else 'merge'}"
-                )
+                response=t("radar_bootstrap_done", project_id=project.id,
+                    created=applied.get('created', 0), updated=applied.get('updated', 0),
+                    disabled=applied.get('disabled', 0), skipped=applied.get('skipped', 0),
+                    mode='replace' if replace_mode else 'merge')
             )
 
         def _build_run_note(job: Any, run: Any, trigger: str) -> str:
@@ -952,16 +770,16 @@ class RadarHandler(BaseCommandHandler):
                 return CommandResult(response="Usage: /radar freeze <job_id>")
             target_id = parts[1].strip()
             if store.freeze_job(target_id):
-                return CommandResult(response=f"已锁定任务 {target_id}，autoplan 将不再修改它。")
-            return CommandResult(response=f"[ERROR] 任务不存在: {target_id}")
+                return CommandResult(response=t("radar_frozen", target_id=target_id))
+            return CommandResult(response=f"[ERROR] {t('radar_job_not_found', target_id=target_id)}")
 
         if sub == "unfreeze":
             if len(parts) < 2:
                 return CommandResult(response="Usage: /radar unfreeze <job_id>")
             target_id = parts[1].strip()
             if store.unfreeze_job(target_id):
-                return CommandResult(response=f"已解锁任务 {target_id}，autoplan 可以再次管理它。")
-            return CommandResult(response=f"[ERROR] 任务不存在: {target_id}")
+                return CommandResult(response=t("radar_unfrozen", target_id=target_id))
+            return CommandResult(response=f"[ERROR] {t('radar_job_not_found', target_id=target_id)}")
 
         if sub in {"freeze-all-autoplan", "freeze_all_autoplan"}:
             frozen_ids = []
@@ -970,8 +788,8 @@ class RadarHandler(BaseCommandHandler):
                     store.freeze_job(j.id)
                     frozen_ids.append(j.id)
             if frozen_ids:
-                return CommandResult(response=f"已锁定 {len(frozen_ids)} 个 autoplan 任务: {', '.join(frozen_ids)}")
-            return CommandResult(response="没有需要锁定的 autoplan 任务。")
+                return CommandResult(response=t("radar_freeze_all_done", count=len(frozen_ids), ids=', '.join(frozen_ids)))
+            return CommandResult(response=t("radar_freeze_all_none"))
 
         if sub == "disable":
             if len(parts) < 2:
@@ -979,11 +797,11 @@ class RadarHandler(BaseCommandHandler):
             target_id = parts[1].strip()
             job = store.get_job(target_id)
             if not job:
-                return CommandResult(response=f"[ERROR] 任务不存在: {target_id}")
+                return CommandResult(response=f"[ERROR] {t('radar_job_not_found', target_id=target_id)}")
             job.enabled = False
             job.frozen = True
             store.upsert_job(job)
-            return CommandResult(response=f"已禁用并锁定任务 {target_id}。")
+            return CommandResult(response=t("radar_disabled", target_id=target_id))
 
         if sub == "enable":
             if len(parts) < 2:
@@ -991,10 +809,10 @@ class RadarHandler(BaseCommandHandler):
             target_id = parts[1].strip()
             job = store.get_job(target_id)
             if not job:
-                return CommandResult(response=f"[ERROR] 任务不存在: {target_id}")
+                return CommandResult(response=f"[ERROR] {t('radar_job_not_found', target_id=target_id)}")
             job.enabled = True
             store.upsert_job(job)
-            return CommandResult(response=f"已启用任务 {target_id}。")
+            return CommandResult(response=t("radar_enabled", target_id=target_id))
 
         if sub == "push":
             # Read the most recent job_run entry and push via NotifyPushTool
@@ -1003,7 +821,7 @@ class RadarHandler(BaseCommandHandler):
             memory_store = ProjectMemoryStore(project)
             entries = memory_store.list_recent_entries(kind="job_run", limit=limit)
             if not entries:
-                return CommandResult(response="没有最近的 radar 运行记录可推送。")
+                return CommandResult(response=t("radar_no_recent_runs"))
 
             # Build push message with full content
             lines = [f"📡 Radar 最近扫描报告 ({project.id})"]
@@ -1019,14 +837,14 @@ class RadarHandler(BaseCommandHandler):
                     lines.append(content)
                 else:
                     summary = str(entry.get("summary", "")).strip()
-                    lines.append(summary or "(无内容)")
+                    lines.append(summary or t("radar_no_content"))
             push_text = "\n".join(lines)
 
             # Reuse NotifyPushTool for consistent delivery
             from agent.tools.notify import NotifyPushTool
             tool_context = getattr(self.services, "_tool_context", None)
             if not tool_context:
-                return CommandResult(response=f"[推送上下文不可用] 报告内容：\n{push_text}")
+                return CommandResult(response=f"[{t('radar_push_no_context')}]\n{push_text}")
             notifier = NotifyPushTool(tool_context)
             result = await notifier.execute(content=push_text)
             return CommandResult(response=result)
@@ -1055,57 +873,30 @@ class CleanupHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         session = getattr(self.services, '_session', None)
         if not session:
-            return CommandResult(response=_t("err_no_session"))
+            return CommandResult(response=t("err_no_session"))
         session.cleanup_all_subagents()
-        res = _t("cleanup_done")
+        res = t("cleanup_done")
         return CommandResult(response=res)
 
 
 def build_help_text(in_project: bool = False) -> str:
     """Build user-facing help text with available commands."""
-    lines = ["📖 可用命令：", ""]
-
-    lines.append("通用：")
-    lines.append("  /help        — 显示本帮助信息")
-    lines.append("  /reset       — 重置会话，清除对话历史")
-    lines.append("  /stop        — 停止当前操作")
-    lines.append("  /exit        — 退出当前模式，返回聊天")
-    lines.append("")
-
-    lines.append("项目：")
-    lines.append("  /switch <名称> — 切换到指定项目")
-    lines.append("  /back         — 返回默认项目")
     if in_project:
-        lines.append("  /compile      — 编译 LaTeX 生成 PDF")
-        lines.append("  /sync pull    — 从 Overleaf 拉取最新文件")
-        lines.append("  /sync push    — 推送本地修改到 Overleaf")
-        lines.append("  /git          — 进入 Git 版本管理模式")
+        return t("help.text_zh")
     else:
-        lines.append("  /compile      — 编译 LaTeX（需先进入项目）")
-        lines.append("  /sync [pull|push] — Overleaf 同步（需先进入项目）")
-        lines.append("  /git          — Git 版本管理（需先进入项目）")
-    lines.append("")
+        return t("help.text_zh_no_project")
 
-    lines.append("研究：")
-    lines.append("  /task <目标>  — 启动交互式任务会话")
-    lines.append("  /recommend    — 检测项目并调研最新进展")
-    lines.append("  /radar        — 管理研究雷达自动化任务")
-    lines.append("")
 
-    lines.append("💡 直接用自然语言对话也可以，我会自动调用合适的工具。")
-    return "\n".join(lines)
+def build_greeting_text() -> str:
+    """Build a short self-introduction with core capabilities."""
+    return t("greeting.text")
 
 
 class HelpHandler(BaseCommandHandler):
-    """Show available commands — delegates to LLM for localized output."""
+    """Show available commands — direct output without LLM."""
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
-        return CommandResult(
-            should_continue=True,
-            modified_message=(
-                "The user asked for help. List all available commands with brief descriptions, "
-                "and mention core capabilities. Reply in the same language the user has been using."
-            ),
-        )
+        in_project = hasattr(self.services, '_project') and self.services._project and not self.services._project.is_default
+        return CommandResult(response=build_help_text(in_project=in_project))
 
 
 # ---------------------------------------------------------------------------

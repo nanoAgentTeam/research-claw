@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional, TYPE_CHECKING
 from loguru import logger
 
 from core.tools.base import BaseTool
+from config.i18n import t
 from agent.scheduler.planner import PlannerAgent
 from agent.scheduler.executor import SDDExecutor
 from agent.scheduler.engine import SchedulerEngine
@@ -54,39 +55,23 @@ class OpenTaskPlannerTool(BaseTool):
             "required": ["request"]
         }
 
-    def _t(self, en: str, zh: str) -> str:
-        """Return localized text based on user language setting."""
-        config = getattr(self.ctx, 'config', None)
-        lang = getattr(config, 'user_info', None)
-        lang = getattr(lang, 'language', 'en') if lang else 'en'
-        return zh if lang.startswith('zh') or lang == 'ch' else en
-
     async def execute(self, request: str, message_context: Optional[Dict[str, Any]] = None, on_token: Any | None = None) -> str:
         """Execute the planning and launch scheduler."""
         # [T2] Prevent concurrent task launches
         if OpenTaskPlannerTool._is_running:
-            return self._t(
-                "[ERROR] A task is already running. Wait for it to complete before launching another.",
-                "[错误] 已有任务在运行中，请等待完成后再启动新任务。"
-            )
+            return t("scheduler.task_running")
 
         if not message_context:
-            return self._t(
-                "[ERROR] System context missing. Cannot launch background task.",
-                "[错误] 缺少系统上下文，无法启动后台任务。"
-            )
+            return t("scheduler.no_context")
 
         chat_id = message_context.get("chat_id")
         channel = message_context.get("channel")
 
         if not chat_id or not channel:
-            return self._t(
-                "[ERROR] Invalid context (missing chat_id or channel).",
-                "[错误] 无效上下文（缺少 chat_id 或 channel）。"
-            )
+            return t("scheduler.invalid_context")
 
         if on_token:
-            on_token(self._t("🤔 Analyzing request and generating plan...\n", "🤔 正在分析请求并生成计划...\n"))
+            on_token(t("scheduler.analyzing"))
         logger.info(f"🤔 Analyzing request and generating plan for: {request[:50]}...")
 
         # 1. Create a dedicated project directory for this research (Session-Centric)
@@ -113,10 +98,7 @@ class OpenTaskPlannerTool(BaseTool):
         graph = await planner.create_plan(request, project_root=project_root)
 
         if not graph or not graph.tasks:
-            return self._t(
-                "[ERROR] Failed to generate a valid plan for your request.",
-                "[错误] 无法为你的请求生成有效计划。"
-            )
+            return t("scheduler.plan_failed")
 
         # 3. Setup Executor and Scheduler
         executor = SDDExecutor(self.ctx)
@@ -190,11 +172,8 @@ class OpenTaskPlannerTool(BaseTool):
             for t in graph.tasks.values()
         ])
         
-        return self._t(
-            f"Plan created with {len(graph.tasks)} tasks:\n"
-            f"{task_list_str}\n\n"
-            f"Task Research running in background. You will receive progress updates.",
-            f"已创建包含 {len(graph.tasks)} 个任务的计划：\n"
-            f"{task_list_str}\n\n"
-            f"任务研究正在后台运行，你将收到进度更新。"
+        return t(
+            "scheduler.plan_created",
+            count=len(graph.tasks),
+            task_list=task_list_str
         )

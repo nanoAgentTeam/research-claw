@@ -128,6 +128,18 @@ class Config:
     USER_ID = _user_info.get('user_id', 'default_user')
     AVATAR_ID = _user_info.get('avatar_id', 'default_avatar')
     LANGUAGE = _user_info.get('language', 'zh') # 默认中文
+    LLM_LANGUAGE = _user_info.get('llm_language', 'auto')  # LLM 回复语言
+
+    @classmethod
+    def get_reply_language(cls):
+        """Return the effective language for auto-replies.
+
+        LLM_LANGUAGE takes priority; 'auto' falls back to LANGUAGE.
+        """
+        llm_lang = getattr(cls, 'LLM_LANGUAGE', 'auto')
+        if llm_lang and llm_lang != 'auto':
+            return llm_lang
+        return getattr(cls, 'LANGUAGE', 'zh')
 
     @classmethod
     def load_runtime_keys(cls, keys_path: str):

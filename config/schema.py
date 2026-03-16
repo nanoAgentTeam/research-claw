@@ -238,6 +238,7 @@ class SmtpConfig(BaseModel):
 class UserInfoConfig(BaseModel):
     """User information and preferences."""
     language: str = "zh"
+    llm_language: str = "auto"  # LLM 回复语言: auto, zh, en, ja, ko, etc.
 
 
 _PROVIDER_DEFAULT_BASES: Dict[str, str] = {

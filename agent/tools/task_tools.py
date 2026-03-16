@@ -18,6 +18,7 @@ from typing import Any, Dict, Optional, TYPE_CHECKING
 from loguru import logger
 
 from core.tools.base import BaseTool
+from config.i18n import t
 from agent.task_agent import TaskPhase, TaskSession, has_cycle, format_plan_display
 
 if TYPE_CHECKING:
@@ -33,46 +34,27 @@ def _get_planner_provider_and_model(ctx):
     return ctx.provider, ctx.model
 
 
-_PHASE_ENTER_HINTS = {
-    TaskPhase.PROPOSE: (
-        "\n\n📋 **阶段 [1/5] PROPOSE** — 正在生成方案...\n"
-    ),
-    TaskPhase.PLAN: (
-        "\n\n📋 **阶段 [2/5] PLAN** — 正在生成执行计划...\n"
-    ),
-    TaskPhase.EXECUTE: (
-        "\n\n📋 **阶段 [3/5] EXECUTE** — 开始执行任务\n"
-        "⏳ 子 Agent 正在并行工作，请等待完成...\n"
-    ),
-    TaskPhase.FINALIZE: (
-        "\n\n📋 **阶段 [4/5] FINALIZE** — 正在整合产出...\n"
-        "⏳ 正在将 Worker 产出合并到项目文件...\n"
-    ),
+_PHASE_ENTER_KEY = {
+    TaskPhase.PROPOSE: "phase.propose.enter",
+    TaskPhase.PLAN: "phase.plan.enter",
+    TaskPhase.EXECUTE: "phase.execute.enter",
+    TaskPhase.FINALIZE: "phase.finalize.enter",
 }
 
-_PHASE_DONE_HINTS = {
-    TaskPhase.PROPOSE: (
-        "\n✅ 方案已生成\n"
-        "👉 请查看方案，回复修改意见或确认满意后继续。\n"
-    ),
-    TaskPhase.PLAN: (
-        "\n✅ 执行计划已生成\n"
-        "👉 可要求调整计划，确认后输入 /start 开始执行。\n"
-    ),
-    TaskPhase.EXECUTE: (
-        "\n✅ 所有任务执行完毕\n"
-    ),
-    TaskPhase.FINALIZE: (
-        "\n✅ 产出整合完成\n"
-    ),
+_PHASE_DONE_KEY = {
+    TaskPhase.PROPOSE: "phase.propose.done",
+    TaskPhase.PLAN: "phase.plan.done",
+    TaskPhase.EXECUTE: "phase.execute.done",
+    TaskPhase.FINALIZE: "phase.finalize.done",
 }
 
 
 async def _notify_phase_enter(on_token: Any, phase: TaskPhase) -> None:
     """Push a phase-enter notification to the user via on_token callback."""
-    hint = _PHASE_ENTER_HINTS.get(phase)
-    if not hint or not on_token:
+    key = _PHASE_ENTER_KEY.get(phase)
+    if not key or not on_token:
         return
+    hint = t(key)
     if asyncio.iscoroutinefunction(on_token):
         await on_token(hint)
     else:
@@ -81,9 +63,10 @@ async def _notify_phase_enter(on_token: Any, phase: TaskPhase) -> None:
 
 async def _notify_phase_done(on_token: Any, phase: TaskPhase) -> None:
     """Push a phase-done notification to the user via on_token callback."""
-    hint = _PHASE_DONE_HINTS.get(phase)
-    if not hint or not on_token:
+    key = _PHASE_DONE_KEY.get(phase)
+    if not key or not on_token:
         return
+    hint = t(key)
     if asyncio.iscoroutinefunction(on_token):
         await on_token(hint)
     else:
@@ -137,17 +120,17 @@ class TaskProposeTool(BaseTool):
     async def execute(self, goal: str = "", revision_notes: str = "", _agent_messages: list = None, on_token: Any = None, **kwargs) -> str:
         # Phase gate: allowed in UNDERSTAND and PROPOSE (for revisions)
         if self._session.phase not in (TaskPhase.UNDERSTAND, TaskPhase.PROPOSE):
-            return f"[BLOCKED] task_propose 仅在 UNDERSTAND/PROPOSE 阶段可用（当前: {self._session.phase.value}）。"
+            return t("task.propose_blocked", phase=self._session.phase.value)
 
         if not goal:
             goal = self._session.goal
         if not goal:
-            return "[ERROR] 未指定目标。请提供 goal 参数。"
+            return t("task.no_goal")
         self._session.goal = goal
 
         project = self._ctx.session.project if self._ctx.session else None
         if not project:
-            return "[ERROR] 无法获取项目上下文。"
+            return t("task.no_project_context")
 
         # Collect project context
         tree = project.file_tree(max_depth=2)
@@ -226,7 +209,7 @@ class TaskProposeTool(BaseTool):
             except Exception as e:
                 if attempt < max_attempts - 1:
                     continue
-                return f"[ERROR] Proposal 生成失败: {e}"
+                return t("task.propose_failed", error=e)
 
         self._session.phase = TaskPhase.PROPOSE
         await _notify_phase_done(on_token, TaskPhase.PROPOSE)
@@ -245,7 +228,7 @@ class TaskProposeTool(BaseTool):
                 )
                 virtual_user_reply = review_resp.content.strip()
             except Exception:
-                virtual_user_reply = "方案看起来合理，请继续。"
+                virtual_user_reply = t("task.proposal_auto_confirm")
 
             return (
                 f"[Proposal]\n\n{self._session.proposal}\n\n"
@@ -371,14 +354,14 @@ class TaskBuildTool(BaseTool):
     async def execute(self, _agent_messages: list = None, on_token: Any = None, **kwargs) -> str:
         # Phase gate
         if self._session.phase != TaskPhase.PROPOSE:
-            return f"[BLOCKED] task_build 仅在 PROPOSE 阶段可用（当前: {self._session.phase.value}）。"
+            return t("task.build_blocked", phase=self._session.phase.value)
 
         if not self._session.proposal:
-            return "[ERROR] 尚无 Proposal。请先调用 task_propose。"
+            return t("task.no_proposal")
 
         project = self._ctx.session.project if self._ctx.session else None
         if not project:
-            return "[ERROR] 无法获取项目上下文。"
+            return t("task.no_project_context")
 
         # Collect project context
         tree = project.file_tree(max_depth=2)
@@ -460,7 +443,7 @@ class TaskBuildTool(BaseTool):
                         )
                         virtual_confirm = confirm_resp.content.strip()
                     except Exception:
-                        virtual_confirm = "任务计划合理，请开始执行。"
+                        virtual_confirm = t("task.plan_auto_confirm")
 
                     # Skip PLAN phase — go straight to EXECUTE
                     self._session.phase = TaskPhase.EXECUTE
@@ -486,14 +469,14 @@ class TaskBuildTool(BaseTool):
                 if attempt < max_retries - 1:
                     graph_prompt += f"\n\n[RETRY] JSON parse error: {e}. Return valid JSON only."
                     continue
-                return f"[ERROR] TaskGraph JSON 解析失败（{max_retries} 次尝试）: {e}"
+                return t("task.graph_parse_failed", max_retries=max_retries, error=e)
             except Exception as e:
                 if attempt < max_retries - 1:
                     graph_prompt += f"\n\n[RETRY] Validation error: {e}. Fix and retry."
                     continue
-                return f"[ERROR] TaskGraph 验证失败: {e}"
+                return t("task.graph_validation_failed", error=e)
 
-        return "[ERROR] TaskGraph 生成失败。"
+        return t("task.graph_generation_failed")
 
 
 # ---------------------------------------------------------------------------
@@ -558,10 +541,10 @@ class TaskModifyTool(BaseTool):
     async def execute(self, action: str = "", task_id: str = "", task_data: dict = None, **kwargs) -> str:
         # Phase gate
         if self._session.phase != TaskPhase.PLAN:
-            return f"[BLOCKED] task_modify 仅在 PLAN 阶段可用（当前: {self._session.phase.value}）。"
+            return t("task.modify_blocked", phase=self._session.phase.value)
 
         if not self._session.task_graph:
-            return "[ERROR] 尚无计划。请先调用 task_propose + task_build。"
+            return t("task.no_plan")
 
         task_data = task_data or {}
         graph = self._session.task_graph
@@ -582,37 +565,37 @@ class TaskModifyTool(BaseTool):
             # Cycle detection: rollback if adding this task creates a cycle
             if has_cycle(graph):
                 del graph.tasks[task.id]
-                return f"[ERROR] 添加任务 [{task.id}] 会导致循环依赖，已回滚。"
-            result = f"已添加任务 [{task.id}] {task.title}"
+                return t("task.cycle_error", task_id=task.id)
+            result = t("task.added", task_id=task.id, title=task.title)
             return result + "\n\n" + format_plan_display(graph)
 
         elif action == "remove_task":
             if task_id not in graph.tasks:
-                return f"[ERROR] 任务 {task_id} 不存在。当前任务列表:\n" + format_plan_display(graph)
-            for t in graph.tasks.values():
-                if task_id in t.dependencies:
-                    t.dependencies.remove(task_id)
+                return t("task.not_found", task_id=task_id) + t("task.current_list") + format_plan_display(graph)
+            for tsk in graph.tasks.values():
+                if task_id in tsk.dependencies:
+                    tsk.dependencies.remove(task_id)
             del graph.tasks[task_id]
-            result = f"已删除任务 [{task_id}]"
+            result = t("task.deleted", task_id=task_id)
             return result + "\n\n" + format_plan_display(graph)
 
         elif action == "update_task":
             if task_id not in graph.tasks:
-                return f"[ERROR] 任务 {task_id} 不存在。当前任务列表:\n" + format_plan_display(graph)
-            task = graph.tasks[task_id]
+                return t("task.not_found", task_id=task_id) + t("task.current_list") + format_plan_display(graph)
+            task_obj = graph.tasks[task_id]
             # Save old dependencies for rollback if cycle detected
-            old_deps = list(task.dependencies) if task.dependencies else []
+            old_deps = list(task_obj.dependencies) if task_obj.dependencies else []
             for key, val in task_data.items():
-                if hasattr(task, key):
-                    setattr(task, key, val)
+                if hasattr(task_obj, key):
+                    setattr(task_obj, key, val)
             # Cycle detection: rollback if update creates a cycle
             if has_cycle(graph):
-                task.dependencies = old_deps
-                return f"[ERROR] 更新任务 [{task_id}] 的依赖会导致循环依赖，已回滚。"
-            result = f"已更新任务 [{task_id}]"
+                task_obj.dependencies = old_deps
+                return t("task.update_cycle_error", task_id=task_id)
+            result = t("task.updated", task_id=task_id)
             return result + "\n\n" + format_plan_display(graph)
 
-        return f"[ERROR] 未知操作: {action}"
+        return t("task.unknown_action", action=action)
 
 
 # ---------------------------------------------------------------------------
@@ -652,11 +635,11 @@ class TaskExecuteTool(BaseTool):
     async def execute(self, on_token: Any = None, **kwargs) -> str:
         # Phase gate
         if not self._session.task_graph:
-            return "[ERROR] 尚无计划。"
+            return t("task.execute_no_plan")
         if self._session.phase == TaskPhase.PLAN:
-            return "[BLOCKED] 计划尚未确认。请向用户展示计划，等待用户输入 /start 确认后再执行。"
+            return t("task.execute_not_confirmed")
         if self._session.phase != TaskPhase.EXECUTE:
-            return f"[BLOCKED] task_execute 仅在 EXECUTE 阶段可用（当前: {self._session.phase.value}）。"
+            return t("task.execute_blocked", phase=self._session.phase.value)
 
         await _notify_phase_enter(on_token, TaskPhase.EXECUTE)
 
@@ -697,7 +680,7 @@ class TaskExecuteTool(BaseTool):
 
         # ── Execution header ──
         emit(f"\n{'='*50}")
-        emit(f"  🚀 开始执行任务计划 ({total_tasks} 个任务)")
+        emit(t("task.execute_start", total_tasks=total_tasks))
         emit(f"{'='*50}")
         for _tid, _task in graph.tasks.items():
             _deps_str = f" <- [{', '.join(_task.dependencies)}]" if _task.dependencies else ""
@@ -751,9 +734,9 @@ class TaskExecuteTool(BaseTool):
                 if not _hb_running[0]:
                     break
                 elapsed = time.time() - exec_start
-                completed = sum(1 for t in graph.tasks.values() if t.status == TaskStatus.COMPLETED)
-                running = sum(1 for t in graph.tasks.values() if t.status == TaskStatus.RUNNING)
-                emit(f"  💓 执行中... {completed}/{total_tasks} 完成, {running} 运行中 ({elapsed:.0f}s)")
+                completed = sum(1 for _tk in graph.tasks.values() if _tk.status == TaskStatus.COMPLETED)
+                running = sum(1 for _tk in graph.tasks.values() if _tk.status == TaskStatus.RUNNING)
+                emit(t("task.execute_progress", completed=completed, total_tasks=total_tasks, running=running, elapsed=elapsed))
 
         heartbeat_task = asyncio.ensure_future(_heartbeat())
 
@@ -770,12 +753,12 @@ class TaskExecuteTool(BaseTool):
 
                 if ready:
                     elapsed = time.time() - exec_start
-                    ready_names = ", ".join(t.id for t in ready)
+                    ready_names = ", ".join(tk.id for tk in ready)
                     emit(f"\n{'─'*40}")
-                    emit(f"  📦 批次 {batch_num} | 并行 {len(ready)} 个任务: [{ready_names}]")
+                    emit(t("task.batch_start", batch_num=batch_num, count=len(ready), names=ready_names))
                     for _rt in ready:
                         emit(f"    🔄 [{_rt.id}] {_rt.title}")
-                    emit(f"    (已运行 {elapsed:.0f}s)")
+                    emit(t("task.batch_elapsed", elapsed=elapsed))
                     emit("")
 
                 batch_start = time.time()
@@ -784,23 +767,23 @@ class TaskExecuteTool(BaseTool):
 
                 if result.tasks_run:
                     total_run.extend(result.tasks_run)
-                    completed = sum(1 for t in graph.tasks.values() if t.status == TaskStatus.COMPLETED)
-                    emit(f"\n  ✅ 批次 {batch_num} 完成 ({batch_elapsed:.0f}s) — 总进度: {completed}/{total_tasks}")
+                    completed = sum(1 for _tk in graph.tasks.values() if _tk.status == TaskStatus.COMPLETED)
+                    emit(t("task.batch_complete", batch_num=batch_num, batch_elapsed=batch_elapsed, completed=completed, total_tasks=total_tasks))
                 if result.failed:
                     total_failed.extend(result.failed)
-                    emit(f"  ❌ 批次 {batch_num} 失败任务: {', '.join(result.failed)}")
+                    emit(t("task.batch_failed", batch_num=batch_num, failed=', '.join(result.failed)))
                 if result.logs:
                     all_logs.extend(result.logs)
                 if result.all_complete:
                     total_elapsed = time.time() - exec_start
                     emit(f"\n{'='*50}")
-                    emit(f"  🎉 全部任务执行完毕 (总耗时 {total_elapsed:.0f}s)")
+                    emit(t("task.all_complete", total_elapsed=total_elapsed))
                     emit(f"{'='*50}\n")
                     break
                 # No more ready tasks but not all complete — stuck (deps failed)
                 if not result.tasks_run:
                     total_elapsed = time.time() - exec_start
-                    emit(f"\n  ⚠️ 无可执行任务，可能被失败任务阻塞 (总耗时 {total_elapsed:.0f}s)")
+                    emit(t("task.no_executable", total_elapsed=total_elapsed))
                     break
         finally:
             _hb_running[0] = False
@@ -813,22 +796,22 @@ class TaskExecuteTool(BaseTool):
 
         # Build result summary
         graph = self._session.task_graph
-        completed = sum(1 for t in graph.tasks.values() if t.status == TaskStatus.COMPLETED)
-        failed = sum(1 for t in graph.tasks.values() if t.status == TaskStatus.FAILED)
+        completed = sum(1 for _tk in graph.tasks.values() if _tk.status == TaskStatus.COMPLETED)
+        failed = sum(1 for _tk in graph.tasks.values() if _tk.status == TaskStatus.FAILED)
         total = len(graph.tasks)
 
-        lines = [f"执行完毕: {completed}/{total} 个任务完成"]
+        lines = [t("task.execution_summary", completed=completed, total=total)]
         if failed:
-            failed_ids = [tid for tid, t in graph.tasks.items() if t.status == TaskStatus.FAILED]
-            lines.append(f"失败: {', '.join(failed_ids)}")
+            failed_ids = [tid for tid, _tk in graph.tasks.items() if _tk.status == TaskStatus.FAILED]
+            lines.append(t("task.failed_list", failed_ids=', '.join(failed_ids)))
         lines.append("")
-        lines.append("进入 FINALIZE 阶段。Worker 产出在 _task_workers/ 目录下。")
+        lines.append(t("task.finalize_intro"))
         if self._session.auto_mode:
             lines.append("[INSTRUCTION] Auto mode — use read_file to review each worker output, "
                          "then write_file/str_replace to merge content into the core project files, "
                          "then immediately call task_commit() to finalize.")
         else:
-            lines.append("用 bash/read_file 查看产出，用 write_file/str_replace 合并到 core，最后 task_commit 提交。")
+            lines.append(t("task.finalize_instructions"))
 
         # Per-task output summary
         project_core = self._ctx.session.project.core if self._ctx.session else None
@@ -896,11 +879,11 @@ class TaskCommitTool(BaseTool):
     async def execute(self, on_token: Any = None, **kwargs) -> str:
         # Phase gate
         if self._session.phase != TaskPhase.FINALIZE:
-            return f"[BLOCKED] task_commit 仅在 FINALIZE 阶段可用（当前: {self._session.phase.value}）。"
+            return t("task.commit_blocked", phase=self._session.phase.value)
 
         project = self._ctx.session.project if self._ctx.session else None
         if not project:
-            return "[ERROR] 无法获取项目上下文。"
+            return t("task.no_project_context")
 
         # Restore _task_workers/ permissions before commit
         tw_root = project.core / "_task_workers"
@@ -932,8 +915,8 @@ class TaskCommitTool(BaseTool):
             self._session.save(state_path)
 
         return (
-            f"已提交: {commit_info}\n\n"
-            f"Task 已完成。<task_done/>"
+            t("task.committed", commit_info=commit_info)
+            + "<task_done/>"
         )
 
     async def _generate_commit_summary(self, on_token: Any = None) -> str:

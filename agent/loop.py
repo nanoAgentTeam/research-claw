@@ -28,6 +28,7 @@ from core.llm.middleware import (
 )
 from agent.services.commands import HANDLER_CLASSES, BaseCommandHandler
 from agent.services.protocols import CommandContext, CommandResult
+from config.i18n import t
 
 class ManualToolCall:
     """Represents a tool call triggered manually (e.g. via /command)."""
@@ -46,12 +47,6 @@ class AgentLoop:
     """
     The agent loop is the core processing engine.
     """
-
-    def _t(self, en: str, zh: str) -> str:
-        """Return localized text based on user language setting."""
-        lang = getattr(self.config, 'user_info', None)
-        lang = getattr(lang, 'language', 'en') if lang else 'en'
-        return zh if lang.startswith('zh') or lang == 'ch' else en
 
     @property
     def model(self) -> str:
@@ -692,10 +687,7 @@ class AgentLoop:
             return diag_response.content
         except Exception as e:
             logger.error(f"Meta-diagnosis failed: {e}")
-            return self._t(
-                "System intervention: You are in a loop. Stop repeating the same action. Try a different tool or approach immediately.",
-                "系统干预：你正在循环中。停止重复相同的操作，立即尝试其他工具或方法。"
-            )
+            return t("loop.system_intervention")
 
     async def _process_message(self, msg: InboundMessage, on_token: Any | None = None, on_event: Any | None = None) -> OutboundMessage | None:
         """
@@ -800,6 +792,44 @@ class AgentLoop:
             if cmd_result.modified_message:
                 msg.content = cmd_result.modified_message
 
+        # [GREETING / HELP INTERCEPTION]
+        # Detect short greeting or help-like messages and respond directly without LLM.
+        _text_lower = msg.content.strip().lower()
+        _text_clean = _text_lower.rstrip("?？!！.。")
+        _GREETING_PATTERNS = {
+            "hello", "hi", "hey", "你好", "您好", "嗨", "哈喽",
+        }
+        _CAPABILITY_PATTERNS = {
+            "你能做什么", "你会什么", "你可以做什么", "有什么功能",
+            "你是谁", "你是什么", "介绍一下", "介绍下自己",
+            "what can you do", "what do you do", "who are you",
+            "怎么用", "怎么使用", "如何使用",
+        }
+        _HELP_ONLY_PATTERNS = {
+            "help", "帮助",
+        }
+        _is_greeting = _text_lower in _GREETING_PATTERNS or _text_clean in _GREETING_PATTERNS
+        _is_capability = _text_lower in _CAPABILITY_PATTERNS or _text_clean in _CAPABILITY_PATTERNS
+        _is_help_only = _text_lower in _HELP_ONLY_PATTERNS or _text_clean in _HELP_ONLY_PATTERNS
+
+        if _is_greeting or _is_capability or _is_help_only:
+            from agent.services.commands import build_greeting_text, build_help_text
+            in_project = bool(self._project and not self._project.is_default)
+            if _is_help_only and not _is_greeting:
+                # Pure help request (e.g. "help", "帮助") → command list only
+                content = build_help_text(in_project=in_project)
+            else:
+                # Greeting or capability inquiry → intro + command list
+                content = build_greeting_text() + "\n\n" + build_help_text(in_project=in_project)
+            if on_token:
+                on_token(content)
+            trace.emit(AgentEvent(type=EventType.TURN_END, data={"reason": "greeting_intercept"}))
+            return OutboundMessage(
+                channel=msg.channel,
+                chat_id=msg.chat_id,
+                content=content,
+            )
+
         # 1. Load history for current turn
         try:
             history_enabled = self.config.features.history.enabled
@@ -903,10 +933,7 @@ class AgentLoop:
             # Check for global termination signal
             if self.is_terminated and self.is_terminated():
                 logger.info("🛑 Termination signal detected. Stopping agent loop.")
-                final_content = self._t(
-                    "Research process terminated by system.",
-                    "研究流程已被系统终止。"
-                )
+                final_content = t("loop.terminated")
                 break
 
             # Setup iteration-specific streaming
@@ -1086,11 +1113,7 @@ class AgentLoop:
                                 return {"output": warning_msg, "warning": "Context reset requested.", "meta_reset": diagnosis}
                              execution_tasks.append(meta_diagnosis_wrapper())
                         else:
-                            warning_msg = self._t(
-                                f"🚨 [SYSTEM LOOP DETECTION]: You have called '{tc.name}' with identical arguments {repeat_count + 1} times. "
-                                "It is NOT working. STOP repeating. Try a different approach.",
-                                f"🚨 [系统循环检测]：你已经用相同的参数调用了 '{tc.name}' {repeat_count + 1} 次。这不起作用，停止重复，尝试其他方法。"
-                            )
+                            warning_msg = t("loop.loop_detection", tool_name=tc.name, count=repeat_count + 1)
                             async def warning_wrapper(msg=warning_msg):
                                 return {"output": msg, "warning": "Loop detected."}
                             execution_tasks.append(warning_wrapper())
@@ -1144,10 +1167,7 @@ class AgentLoop:
                 # we MUST stop the current turn to prevent "history pollution".
                 if self.mode != start_of_turn_mode:
                     logger.info(f"🔄 Clean Mode Switch Detected ({start_of_turn_mode} -> {self.mode}). Stopping current turn.")
-                    final_content = self._t(
-                        "✅ Mode switch successful. I am now in the new context.",
-                        "✅ 模式切换成功，我现在已进入新的上下文环境。"
-                    )
+                    final_content = t("loop.mode_switch_success")
                     break
 
                 # [PROJECT SWITCH DETECTION]
@@ -1157,7 +1177,7 @@ class AgentLoop:
                     await self.bus.publish_outbound(OutboundMessage(
                         channel=msg.channel,
                         chat_id=msg.chat_id,
-                        content=f"✅ 已切换到项目 [{self.project_id}]",
+                        content=t("loop.project_switch", project_id=self.project_id),
                     ))
                     await self.bus.publish_inbound(msg)
                     return None  # the re-queued message will produce the real response
@@ -1233,7 +1253,8 @@ class AgentLoop:
                 ):
                     logger.info("✅ [Task Auto-Exit] task_commit completed, auto-exiting task mode.")
                     summary = self._exit_task_mode()
-                    _exit_notice = f"[系统] Task 模式已自动退出。\n\n{summary}" if summary else "[系统] Task 模式已自动退出。"
+                    _exit_msg_full = t("loop.task_auto_exit", summary=summary) if summary else t("loop.task_auto_exit_no_summary")
+                    _exit_notice = _exit_msg_full
                     messages.append({"role": "user", "content": _exit_notice})
                     final_content = _exit_notice
                     break
@@ -1251,14 +1272,7 @@ class AgentLoop:
                             _consecutive_tool_name = _iter_tool
                             _consecutive_tool_count = 1
                         if _consecutive_tool_count >= 5:
-                            _intervention = self._t(
-                                f"[SYSTEM INTERVENTION] You have called '{_consecutive_tool_name}' "
-                                f"{_consecutive_tool_count} times consecutively. This is a loop. "
-                                f"STOP calling '{_consecutive_tool_name}'. "
-                                f"You must now synthesize the information you already have and write your final response.",
-                                f"[系统干预] 你已连续调用 '{_consecutive_tool_name}' {_consecutive_tool_count} 次，这是一个循环。"
-                                f"停止调用 '{_consecutive_tool_name}'，请立即整合已有信息并撰写最终回复。"
-                            )
+                            _intervention = t("loop.consecutive_intervention", tool_name=_consecutive_tool_name, count=_consecutive_tool_count)
                             messages.append({"role": "user", "content": _intervention})
                             logger.warning(f"🔔 Consecutive tool intervention: '{_consecutive_tool_name}' × {_consecutive_tool_count}")
                             _consecutive_tool_count = 0  # Reset after intervention
@@ -1278,10 +1292,7 @@ class AgentLoop:
                 break
         
         if final_content is None:
-            final_content = self._t(
-                "I've completed processing but have no response to give.",
-                "处理已完成，但没有需要回复的内容。"
-            )
+            final_content = t("loop.no_response")
         
         # [NEW] Finalize and persist full trajectory
         full_trajectory = {
@@ -1344,29 +1355,15 @@ class AgentLoop:
         cfg = getattr(self._project.config, "overleaf", None)
         has_overleaf = cfg and getattr(cfg, "project_id", None)
         if not has_overleaf:
-            return self._t(
-                "[Overleaf Hint] This project is not linked to Overleaf yet. "
-                "You can link it to sync your LaTeX files with Overleaf for online collaboration.",
-                "[Overleaf 提示] 该项目尚未关联 Overleaf，你可以关联后同步 LaTeX 文件以便在线协作。"
-            )
+            return t("loop.overleaf_not_linked")
         try:
             from config.diagnostics import is_overleaf_logged_in
             logged_in = is_overleaf_logged_in()
         except Exception:
             logged_in = False
         if not logged_in:
-            return self._t(
-                "[Overleaf Hint] This project is linked to Overleaf, "
-                "but Overleaf authentication is not set up. "
-                "Please run 'ols login' on the server to enable syncing.",
-                "[Overleaf 提示] 该项目已关联 Overleaf，但尚未设置认证。请在服务器上运行 'ols login' 以启用同步。"
-            )
-        return self._t(
-            "[Overleaf Sync Hint] A .tex file was modified. "
-            "This project is linked to Overleaf — "
-            "consider running /sync push when edits are complete.",
-            "[Overleaf 同步提示] .tex 文件已被修改，该项目已关联 Overleaf — 编辑完成后请考虑运行 /sync push 进行同步。"
-        )
+            return t("loop.overleaf_no_auth")
+        return t("loop.overleaf_sync_hint")
 
     async def _execute_tool(self, tool_call: Any, on_token: Any | None = None, on_event: Any | None = None, message_context: Dict[str, Any] = None, agent_messages: list = None) -> Dict[str, str]:
         """
@@ -1388,10 +1385,7 @@ class AgentLoop:
                         logger.info(f"Fixed hallucinated 'raw' arguments for {tool_call.name}")
                         tool_call.arguments = fixed_args
                         args = fixed_args
-                        fix_warning = self._t(
-                            f"Your tool call for '{tool_call.name}' was wrapped in a 'raw' key, which is discouraged. Please pass arguments directly in the future.",
-                            f"你对 '{tool_call.name}' 的工具调用被包裹在 'raw' 键中，不推荐这样做，请今后直接传递参数。"
-                        )
+                        fix_warning = t("loop.raw_args_warning", tool_name=tool_call.name)
                 except json.JSONDecodeError:
                     # [ROBUSTNESS] If JSON is broken (e.g. truncated), try to rescue with regex
                     logger.warning(f"Detected broken 'raw' JSON for {tool_call.name}. Attempting regex rescue...")
@@ -1400,11 +1394,8 @@ class AgentLoop:
                     if tool_call.name in ["write_file", "str_replace", "patch_file", "insert_content"]:
                         logger.error(f"❌ Refusing to rescue truncated {tool_call.name} to avoid file corruption.")
                         return {
-                             "output": self._t(
-                                 f"Error: The tool call for '{tool_call.name}' was truncated/incomplete. To protect file integrity, the operation was REJECTED. Please retry with a smaller chunk or ensure you are not hitting the output token limit.",
-                                 f"错误：对 '{tool_call.name}' 的工具调用被截断/不完整。为保护文件完整性，操作已被拒绝。请用更小的分块重试，或确保未超出输出 token 限制。"
-                             ),
-                             "warning": self._t("Critical truncation detected during file write.", "文件写入时检测到严重截断。")
+                             "output": t("loop.truncated_write_error", tool_name=tool_call.name),
+                             "warning": t("loop.truncated_write_warning")
                         }
 
                     resurrected_args = {}
@@ -1436,10 +1427,7 @@ class AgentLoop:
                         logger.info(f"Rescued arguments via regex: {list(resurrected_args.keys())}")
                         tool_call.arguments = resurrected_args
                         args = resurrected_args
-                        fix_warning = self._t(
-                            f"Your tool call for '{tool_call.name}' was malformed/truncated and rescued. Please ensure you follow the tool schema correctly.",
-                            f"你对 '{tool_call.name}' 的工具调用格式错误/被截断，已尝试修复。请确保遵循正确的工具参数格式。"
-                        )
+                        fix_warning = t("loop.malformed_rescue_warning", tool_name=tool_call.name)
                     else:
                         logger.error(f"Failed to rescue broken 'raw' arguments for {tool_call.name}")
                 
@@ -1452,23 +1440,24 @@ class AgentLoop:
         logger.info(f"🛠️ Executing tool: {tool_call.name}\nArguments:\n{args_str}")
 
         # Send progress feedback for slow tools
-        _TOOL_PROGRESS_HINTS = {
-            "latex_compile": "⏳ Compiling PDF，please wait...",
-            "overleaf": None,  # dynamic based on action
-            "arxiv_search": "🔍 Searching arXiv...",
-            "pubmed_search": "🔍 Searching PubMed...",
-            "openalex_search": "🔍 Searching OpenAlex...",
-            "semantic_scholar_search": "🔍 Searching Semantic Scholar...",
-            "web_fetch": "🌐 Fetching webpage content...",
-            "browser_use": "🌐 Browsing webpages...",
+        _TOOL_PROGRESS_KEY = {
+            "latex_compile": "tool.latex_compile",
+            "overleaf": None,
+            "arxiv_search": "tool.arxiv_search",
+            "pubmed_search": "tool.pubmed_search",
+            "openalex_search": "tool.openalex_search",
+            "semantic_scholar_search": "tool.semantic_scholar_search",
+            "web_fetch": "tool.web_fetch",
+            "browser_use": "tool.browser_use",
         }
-        progress_hint = _TOOL_PROGRESS_HINTS.get(tool_call.name)
+        progress_key = _TOOL_PROGRESS_KEY.get(tool_call.name)
+        progress_hint = t(progress_key) if progress_key else None
         if tool_call.name == "overleaf":
             action = args.get("action", "")
             if action == "download":
-                progress_hint = "⏳ Downloading project from Overleaf..."
+                progress_hint = t("tool.overleaf_download")
             elif action == "list":
-                progress_hint = "📋 Fetching Overleaf project list..."
+                progress_hint = t("tool.overleaf_list")
             # sync 的进度提示不在这里发，因为工具内部可能直接报错（无项目等）
         if progress_hint:
             msg = getattr(self, '_current_msg', None)
@@ -1494,11 +1483,8 @@ class AgentLoop:
                     if not is_manual:
                         logger.warning(f"[Security Block] Tool '{tool_call.name}' not authorized for project '{self._project.id}'")
                         return {
-                            "output": self._t(
-                                f"Error: Tool '{tool_call.name}' is not available in the current project context.",
-                                f"错误：工具 '{tool_call.name}' 在当前项目上下文中不可用。"
-                            ),
-                            "warning": self._t("Unauthorized tool access attempted.", "检测到未授权的工具访问。")
+                            "output": t("loop.unauthorized_tool", tool_name=tool_call.name),
+                            "warning": t("loop.unauthorized_tool_warning")
                         }
 
             if tool and tool_call.name == "assign_task":

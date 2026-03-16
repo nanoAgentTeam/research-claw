@@ -438,6 +438,20 @@
                 </template>
             </div>
 
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-sm">
+                <h3 class="text-lg font-semibold mb-4 flex items-center">
+                    <span x-text="t('dashboard.llmLanguage', 'LLM Reply Language')"></span>
+                </h3>
+                <select class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-blue-500 focus:outline-none mb-2"
+                        :value="llmLanguage"
+                        @change="setLlmLanguage($event.target.value)">
+                    <template x-for="opt in llmLanguageOptions" :key="opt.value">
+                        <option :value="opt.value" :selected="opt.value === llmLanguage" x-text="language === 'en' ? opt.labelEn : opt.labelZh"></option>
+                    </template>
+                </select>
+                <div class="text-xs text-gray-500" x-text="t('dashboard.llmLanguageHint', 'Set the language for LLM responses. \"Auto\" follows user input language.')"></div>
+            </div>
+
             <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-sm md:col-span-2 lg:col-span-3">
                 <h3 class="text-lg font-semibold mb-3 flex items-center">
                     系统设置（备份与恢复）
@@ -2039,7 +2053,9 @@
                             localCliNoChannel: '本地 CLI（无通道）',
                             workspace: '工作区',
                             changeWorkspacePath: '修改工作区路径',
-                            accountsConfigured: '个已配置账户'
+                            accountsConfigured: '个已配置账户',
+                            llmLanguage: 'LLM 回复语言',
+                            llmLanguageHint: '设置 LLM 回复的语言。"Auto" 表示跟随用户输入语言自动判断。'
                         },
                         common: {
                             save: '保存',
@@ -2080,7 +2096,9 @@
                             localCliNoChannel: 'Local CLI (No Channel)',
                             workspace: 'Workspace',
                             changeWorkspacePath: 'Change workspace path',
-                            accountsConfigured: 'configured account(s)'
+                            accountsConfigured: 'configured account(s)',
+                            llmLanguage: 'LLM Reply Language',
+                            llmLanguageHint: 'Set the language for LLM responses. "Auto" follows user input language.'
                         },
                         common: {
                             save: 'Save',
@@ -2537,6 +2555,20 @@
                 secretVisibility: {},
                 editingWorkspace: false,
                 workspaceDraft: '',
+                llmLanguage: 'auto',
+                llmLanguageOptions: [
+                    { value: 'auto', labelZh: 'Auto（跟随用户输入）', labelEn: 'Auto (Follow user input)' },
+                    { value: 'zh', labelZh: '中文', labelEn: 'Chinese (中文)' },
+                    { value: 'en', labelZh: 'English', labelEn: 'English' },
+                    { value: 'ja', labelZh: '日本語', labelEn: 'Japanese (日本語)' },
+                    { value: 'ko', labelZh: '한국어', labelEn: 'Korean (한국어)' },
+                    { value: 'fr', labelZh: 'Français', labelEn: 'French (Français)' },
+                    { value: 'de', labelZh: 'Deutsch', labelEn: 'German (Deutsch)' },
+                    { value: 'es', labelZh: 'Español', labelEn: 'Spanish (Español)' },
+                    { value: 'ru', labelZh: 'Русский', labelEn: 'Russian (Русский)' },
+                    { value: 'pt', labelZh: 'Português', labelEn: 'Portuguese (Português)' },
+                    { value: 'ar', labelZh: 'العربية', labelEn: 'Arabic (العربية)' },
+                ],
                 projects: [],
                 selectedProjectId: '',
                 refreshingProjects: false,
@@ -2912,6 +2944,29 @@
                     }).catch(() => {});
                 },
 
+                setLlmLanguage(lang) {
+                    this.llmLanguage = lang;
+                    localStorage.setItem('contextbot.llm.language', lang);
+                    fetch('/api/llm-language', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ llmLanguage: lang })
+                    }).then(() => {
+                        this.showToast(this.language === 'en' ? 'LLM reply language saved. Takes effect on next message.' : 'LLM 回复语言已保存，下条消息即生效');
+                    }).catch(() => {});
+                },
+
+                bootstrapLlmLanguage() {
+                    const saved = localStorage.getItem('contextbot.llm.language');
+                    if (saved) this.llmLanguage = saved;
+                    fetch('/api/llm-language').then(r => r.json()).then(data => {
+                        if (data.llmLanguage) {
+                            this.llmLanguage = data.llmLanguage;
+                            localStorage.setItem('contextbot.llm.language', data.llmLanguage);
+                        }
+                    }).catch(() => {});
+                },
+
                 buildDefaultConfig() {
                     return {
                         provider: { activeId: '', instances: [] },
@@ -3138,6 +3193,7 @@
                     this.bootstrapThemeMode();
                     this.setupThemeObserver();
                     this.bootstrapLanguage();
+                    this.bootstrapLlmLanguage();
                     this.$nextTick(() => this.setupDomI18nObserver());
                     this.gatewayPortLabel = location.port || (location.protocol === 'https:' ? '443' : '80');
                     await this.fetchConfig({ silent: true });

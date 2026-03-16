@@ -18,6 +18,7 @@ from bus.events import OutboundMessage
 from core.automation.push_targets import build_apprise_url, send_apprise_notification
 from core.automation.store_fs import FSAutomationStore
 from core.tools.base import BaseTool
+from config.i18n import t
 
 
 class NotifyPushTool(BaseTool):
@@ -34,12 +35,6 @@ class NotifyPushTool(BaseTool):
             self._dedupe_file = self.project.root / ".project_memory" / "push_dedupe.json"
             self._legacy_dedupe_file = self.project.root / ".project_memory" / "automation" / "push_dedupe.json"
             self._migrate_legacy_dedupe_once()
-
-    def _t(self, en: str, zh: str) -> str:
-        """Return localized text based on user language setting."""
-        lang = getattr(self.config, 'user_info', None)
-        lang = getattr(lang, 'language', 'en') if lang else 'en'
-        return zh if lang.startswith('zh') or lang == 'ch' else en
 
     @property
     def name(self) -> str:
@@ -123,7 +118,7 @@ class NotifyPushTool(BaseTool):
         return channels
 
     def _split_title_and_body(self, content: str) -> tuple[str, str]:
-        default_title = self._t("ContextBot Notification", "ContextBot 通知")
+        default_title = t("notify.default_title")
         text = (content or "").strip()
         if not text:
             return default_title, ""
@@ -248,12 +243,12 @@ class NotifyPushTool(BaseTool):
         **kwargs,
     ) -> str:
         if not self.project:
-            return self._t("[ERROR] notify_push requires project context.", "[错误] notify_push 需要项目上下文。")
+            return t("notify.no_project")
         if not self.bus:
-            return self._t("[ERROR] notify_push requires message bus.", "[错误] notify_push 需要消息总线。")
+            return t("notify.no_bus")
         text = (content or "").strip()
         if not text:
-            return self._t("[ERROR] content is empty.", "[错误] 内容为空。")
+            return t("notify.empty_content")
 
         # Auto-prepend project name so recipients know which project the push is from
         project_name = getattr(getattr(self.project, "config", None), "name", None) or getattr(self.project, "id", "")
@@ -323,16 +318,7 @@ class NotifyPushTool(BaseTool):
 
         has_targets = bool(resolved_channels) or bool(apprise_targets) or bool(_tg_direct)
         if not has_targets:
-            return self._t(
-                "[ALERT] notify_push: no channels configured. "
-                "To enable push notifications, set up Telegram or Feishu in settings.json "
-                "(channels.telegram.enabled / channels.feishu.enabled). "
-                "Please deliver the result directly in the conversation instead.",
-                "[提醒] notify_push：未配置推送渠道。"
-                "请在 settings.json 中设置 Telegram 或飞书 "
-                "(channels.telegram.enabled / channels.feishu.enabled) 以启用推送通知。"
-                "请直接在对话中传达结果。"
-            )
+            return t("notify.no_channels")
 
         sent = 0
 
@@ -399,10 +385,5 @@ class NotifyPushTool(BaseTool):
             self._save_dedupe(dedupe)
 
         if sent == 0:
-            return self._t(
-                f"[ALERT] notify_push: channel(s) {no_subs_channels} have no subscribers. "
-                "No message was delivered. Please deliver the result directly in the conversation instead.",
-                f"[提醒] notify_push：渠道 {no_subs_channels} 没有订阅者。"
-                "消息未能送达，请直接在对话中传达结果。"
-            )
-        return self._t(f"Push sent to {sent} recipient(s).", f"推送已发送给 {sent} 个接收者。")
+            return t("notify.no_subscribers", channels=no_subs_channels)
+        return t("notify.sent", count=sent)
