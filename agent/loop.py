@@ -732,7 +732,7 @@ class AgentLoop:
                 return
             if on_token:
                 on_token(token)
-            
+
             chunk_msg = OutboundMessage(
                 channel=msg.channel,
                 chat_id=msg.chat_id,
@@ -742,7 +742,25 @@ class AgentLoop:
             )
             if new_message:
                 chunk_msg.new_message = True
-            
+
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self.bus.publish_outbound(chunk_msg))
+            except RuntimeError:
+                pass
+
+        # Task-specific on_token: always publishes to bus regardless of stream_progress.
+        # Normal LLM streaming stays gated for IM channels; only task progress bypasses.
+        def task_on_token(token: str, stream_id: str | None = None):
+            if on_token:
+                on_token(token)
+            chunk_msg = OutboundMessage(
+                channel=msg.channel,
+                chat_id=msg.chat_id,
+                content=token,
+                is_chunk=True,
+                stream_id=stream_id,
+            )
             try:
                 loop = asyncio.get_running_loop()
                 loop.create_task(self.bus.publish_outbound(chunk_msg))
@@ -1079,11 +1097,14 @@ class AgentLoop:
                     else:
                         # Success: Add tool execution to tasks
                         _this_iter_tools.append(tc.name)
-                        # Task tools need on_token for phase hints even on IM channels
-                        _needs_on_token = stream_progress or tc.name.startswith("task_")
+                        # Task tools always get task_on_token (bypasses stream_progress)
+                        # so IM channels receive phase/progress updates.
+                        _is_task_tool = tc.name.startswith("task_")
+                        _needs_on_token = stream_progress or _is_task_tool
+                        _token_fn = task_on_token if _is_task_tool else iter_on_token
                         execution_tasks.append(self._execute_tool(
                             tc,
-                            on_token=iter_on_token if _needs_on_token else None,
+                            on_token=_token_fn if _needs_on_token else None,
                             on_event=on_event,
                             message_context=message_context,
                             agent_messages=messages,

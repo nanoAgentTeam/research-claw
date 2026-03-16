@@ -45,3 +45,4 @@ backups/
 .vscode/
 .codex/
 others/
+tests/
