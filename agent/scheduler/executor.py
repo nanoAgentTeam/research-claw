@@ -251,17 +251,9 @@ class SDDExecutor:
         token_buffer = ""
         trajectory: list[dict] = []  # Worker trace log
 
-        # [G-M7] Read worker timeout from config
-        try:
-            from config.loader import load_config
-            _cfg = load_config()
-            worker_timeout = getattr(_cfg.features.agent, 'worker_task_timeout_seconds', 600)
-        except Exception:
-            worker_timeout = 600
-
         try:
             current_iter = 0
-            # Per-task budget > config default > 80, clamped to minimum 80
+            # Per-task budget > config default > 60, clamped to minimum 60
             _MIN_WORKER_ITERS = 60
             try:
                 from config.loader import load_config
@@ -270,6 +262,9 @@ class SDDExecutor:
             except Exception:
                 config_default = _MIN_WORKER_ITERS
             max_worker_iters = max(task.max_iterations or config_default, _MIN_WORKER_ITERS)
+
+            # Timeout scales with iterations: 40 iters → 10min, 60 iters → 15min (15s per iter, min 900s)
+            worker_timeout = max(max_worker_iters * 15, 900)
             _worker_start = asyncio.get_event_loop().time()
             async for event in temp_engine.run(
                 messages=messages,
