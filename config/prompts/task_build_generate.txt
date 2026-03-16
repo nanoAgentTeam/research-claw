@@ -1,0 +1,33 @@
+---
+description: Task DAG 生成 prompt，将 Proposal 转为 TaskGraph JSON
+variables:
+  - proposal: 已确认的 Proposal 文本
+  - context_block: 项目上下文（文件树、记忆等）
+  - project_id: 项目 ID
+used_by: task_tools.py (TaskBuildTool)
+---
+Based on this proposal, generate a TaskGraph as JSON.
+
+Proposal:
+{proposal}
+
+Project Context:
+{context_block}
+
+Requirements:
+- Each task should be a meaningful, self-contained unit.
+- Each task must have: id, title, description, type (research/code/review/analysis/writing), dependencies (list of task IDs), spec (acceptance criteria), assigned_agent, output_dir, max_iterations.
+- output_dir: use the task id as label (e.g. 't1'). Each Worker runs in its own isolated directory.
+- Use task IDs like 't1', 't2', etc.
+- Ensure the DAG has no cycles.
+- File names in description should match the proposal's deliverables.
+
+max_iterations 分配指南：
+- 每个 task 必须设置 max_iterations 字段，最小值为 80，不得低于此值。
+- writing 类型（撰写长文、论文章节）：建议 120-200，内容越长越复杂给越多。
+- research 类型（文献搜索、数据收集）：建议 80-120。
+- analysis 类型（分析、对比）：建议 80-100。
+- review/code 类型：建议 80。
+
+Return ONLY valid JSON in this format:
+{{"project_id": "{project_id}", "tasks": {{"t1": {{...}}, "t2": {{...}}}}}}

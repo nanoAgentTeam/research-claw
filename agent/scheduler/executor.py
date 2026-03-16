@@ -261,7 +261,15 @@ class SDDExecutor:
 
         try:
             current_iter = 0
-            max_worker_iters = 40
+            # Per-task budget > config default > 80, clamped to minimum 80
+            _MIN_WORKER_ITERS = 80
+            try:
+                from config.loader import load_config
+                _cfg = load_config()
+                config_default = getattr(_cfg.features.agent, 'max_worker_iterations', _MIN_WORKER_ITERS)
+            except Exception:
+                config_default = _MIN_WORKER_ITERS
+            max_worker_iters = max(task.max_iterations or config_default, _MIN_WORKER_ITERS)
             _worker_start = asyncio.get_event_loop().time()
             async for event in temp_engine.run(
                 messages=messages,

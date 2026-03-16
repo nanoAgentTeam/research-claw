@@ -20,4 +20,5 @@ used_by: context.py (task mode)
 2. 用 read_file 逐个阅读 Worker 产出，理解内容
 3. 规划最终交付物的文件结构（尽量精简）
 4. 用 write_file 将整合后的内容写入主工作区根目录
-5. 完成后调用 task_commit 提交
+5. 向用户汇报成果时，必须先用 read_file 查看实际生成的文件内容来验证数据（如引用数量、章节数、内容概要等），所有数字必须直接来自当前生成的文件，严禁引用 Proposal 目标、Worker 声称或凭空编造的数字
+6. 完成后调用 task_commit 提交

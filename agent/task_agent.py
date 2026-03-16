@@ -142,7 +142,8 @@ def format_plan_display(graph) -> str:
         deps_str = ", ".join(task.dependencies) if task.dependencies else "无"
         lines.append("")
         lines.append(f"[{tid}] {task.title}")
-        lines.append(f"  类型: {task.type.value}  |  执行者: {task.assigned_agent}")
+        iters_str = f"  |  迭代预算: {task.max_iterations}" if task.max_iterations else ""
+        lines.append(f"  类型: {task.type.value}  |  执行者: {task.assigned_agent}{iters_str}")
         lines.append(f"  描述: {task.description}")
         lines.append(f"  验收: {task.spec}")
         lines.append(f"  产出: {task.output_dir}")

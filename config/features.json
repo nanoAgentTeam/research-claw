@@ -15,7 +15,8 @@
     "tokenLimitPadding": 15000,
     "modelContextLimit": 256000,
     "maxOutputLength": 32000,
-    "workerTaskTimeoutSeconds": 600
+    "workerTaskTimeoutSeconds": 600,
+    "maxWorkerIterations": 80
   },
   "vfs": {
     "cleanupAgeHours": 24,

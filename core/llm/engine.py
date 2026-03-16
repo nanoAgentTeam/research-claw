@@ -207,20 +207,53 @@ class AgentEngine:
                 # --- LLM 调用部分 ---
                 model = self.model
                 
-                # Inject iteration info and warning
-                _ITER_INFO_FALLBACK = "\n[SYSTEM STATS]: Iteration {iteration}/{max_iterations}."
-                _ITER_URGENT_FALLBACK = "\n[SYSTEM STATS]: Iteration {iteration}/{max_iterations}. WARNING: Approaching limit. Wrap up now."
-                if iteration > max_iterations - 5:
-                    iter_info = render_prompt("engine_iteration_urgent.txt", _ITER_URGENT_FALLBACK,
-                                             iteration=iteration + 1, max_iterations=max_iterations)
+                # Inject iteration info and progressive urgency warnings
+                # Milestone warnings (50%/60%/70%/80%/90%) trigger once each;
+                # last-5 warnings trigger every iteration.
+                cur = iteration + 1
+                remaining = max_iterations - cur
+
+                urgency = None
+                hint = None
+
+                if remaining < 5:
+                    # Last 5 iterations — always warn
+                    urgency = "CRITICAL"
+                    hint = "仅剩 %d 步，立即完成当前工作并保存所有文件。" % remaining
                 else:
-                    iter_info = render_prompt("engine_iteration_info.txt", _ITER_INFO_FALLBACK,
-                                             iteration=iteration + 1, max_iterations=max_iterations)
-                
-                # Inject iteration info as a trailing system message for immediate visibility
-                
+                    # Check milestone thresholds — each fires only once
+                    _milestones = [
+                        (0.9, "URGENT", "已用 90% 步数，开始收尾，确保产出完整可用。"),
+                        (0.8, "WARNING", "已用 80% 步数，请尽快完成核心内容。"),
+                        (0.7, "NOTICE", "已用 70% 步数，注意控制进度。"),
+                        (0.6, "NOTICE", "已用 60% 步数，请评估剩余工作量。"),
+                        (0.5, "INFO", "已用 50% 步数。"),
+                    ]
+                    for threshold, level, msg in _milestones:
+                        milestone_iter = int(max_iterations * threshold)
+                        if cur == milestone_iter:
+                            urgency = level
+                            hint = msg
+                            break
+
+                iter_info = None
+                if urgency and urgency in ("CRITICAL", "URGENT"):
+                    _ITER_URGENT_FALLBACK = (
+                        "\n[SYSTEM STATS]: Iteration {iteration}/{max_iterations}. "
+                        "{urgency}: {hint}"
+                    )
+                    iter_info = render_prompt("engine_iteration_urgent.txt", _ITER_URGENT_FALLBACK,
+                                             iteration=cur, max_iterations=max_iterations,
+                                             urgency=urgency, hint=hint)
+                elif urgency:
+                    iter_info = (
+                        "\n[SYSTEM STATS]: Iteration %d/%d. %s: %s"
+                        % (cur, max_iterations, urgency, hint)
+                    )
+
                 msgs = [{"role": "system", "content": session.system_config.build()}] + session.history
-                msgs.append({"role": "system", "content": iter_info})
+                if iter_info:
+                    msgs.append({"role": "system", "content": iter_info})
                 
                 # --- LLM Call via LLMProvider ---
 
@@ -470,9 +503,18 @@ class AgentEngine:
                             action_history.clear()
                             break
             
-            # End of loop
+            # End of loop — check if we exhausted iterations (no break)
+            iterations_exhausted = (session.metadata.get("iteration_count", 0) >= max_iterations)
+            if iterations_exhausted:
+                exhausted_msg = (
+                    f"[SYSTEM] 已达到最大迭代次数 ({max_iterations})，自动停止。"
+                    f"已完成的工作已保存。"
+                )
+                session.history.append({"role": "assistant", "content": exhausted_msg})
+                yield AgentEvent(type="message", data=session.history[-1])
+
             final_history = session.history if return_full_history else [session.history[-1]]
-            yield AgentEvent(type="finish", data={"history": final_history})
+            yield AgentEvent(type="finish", data={"history": final_history, "iterations_exhausted": iterations_exhausted})
 
         except Exception as e:
             import traceback

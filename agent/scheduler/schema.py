@@ -40,6 +40,9 @@ class ResearchTask(BaseModel):
     status: TaskStatus = Field(default=TaskStatus.PENDING)
     artifacts: List[str] = Field(default_factory=list, description="Paths to generated files relative to workspace root")
     
+    # Execution Budget
+    max_iterations: Optional[int] = Field(default=None, description="Max worker iterations for this task. Minimum 80. If not set, uses global default.")
+
     # Review Loop
     feedback_history: List[str] = Field(default_factory=list, description="History of reviewer feedback")
     retry_count: int = 0
