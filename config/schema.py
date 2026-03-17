@@ -255,7 +255,7 @@ _PROVIDER_FALLBACK_ORDER = [
 
 
 class Config(BaseSettings):
-    """Root configuration for context_bot."""
+    """Root configuration for open_research_claw."""
     agents: AgentsConfig = Field(default_factory=AgentsConfig)
     channels: ChannelsConfig = Field(default_factory=ChannelsConfig)
     providers: ProvidersConfig = Field(default_factory=ProvidersConfig)

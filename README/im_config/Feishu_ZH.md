@@ -64,7 +64,7 @@ AppID和APPSecret保存好，后面需要用到
 
 ![1772519476451](image/feishu_ZH/1772519476451.png)
 
-接下来配置事件回调，首先启动open-overleaf-claw的UI
+接下来配置事件回调，首先启动open-research-claw的UI
 
 `python cli/main.py gateway`
 

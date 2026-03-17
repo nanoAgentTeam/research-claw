@@ -27,7 +27,7 @@
 
 ### 概览
 
-ContextBot 是一个用于学术写作的分层 AI Agent 系统。它管理一个 `workspace/` 目录，分为 **Default** (全局管理) 与 **Project** (特定论文) 空间。
+Open Research Claw 是一个用于学术写作的分层 AI Agent 系统。它管理一个 `workspace/` 目录，分为 **Default** (全局管理) 与 **Project** (特定论文) 空间。
 
 ### 核心组件 (`core/`)
 

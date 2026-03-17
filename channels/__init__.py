@@ -1,1 +1,1 @@
-"""Channels package for ContextBot."""
+"""Channels package for Open Research Claw."""

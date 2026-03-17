@@ -21,7 +21,7 @@ def get_config_path() -> Path:
     local_config = get_project_root() / "settings.json"
     if local_config.exists():
         return local_config
-    return Path.home() / ".context_bot" / "config.json"
+    return Path.home() / ".open_research_claw" / "config.json"
 
 
 def get_bot_dir() -> Path:
@@ -35,7 +35,7 @@ def get_data_dir() -> Path:
     local_data = get_bot_dir() / "memory"
     if local_data.exists():
         return local_data
-    return Path.home() / ".context_bot" / "data"
+    return Path.home() / ".open_research_claw" / "data"
 
 
 def get_features_path() -> Path:
@@ -96,12 +96,25 @@ def save_config(config: Config, config_path: Optional[Path] = None) -> None:
         config: Configuration to save.
         config_path: Optional path to save to. Uses default if not provided.
     """
+    import traceback
+    from loguru import logger
+
     path = config_path or get_config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
 
     # Convert to camelCase format, excluding legacy providers/channels
     data = config.model_dump(exclude={"providers", "channels"})
     data = convert_to_camel(data)
+
+    # Log who is saving and warn if critical sections are empty
+    caller = traceback.extract_stack(limit=3)[0]
+    provider_count = len(config.provider.instances) if config.provider else 0
+    account_count = len(config.channel.accounts) if config.channel else 0
+    logger.info(f"save_config: providers={provider_count} accounts={account_count} "
+                f"caller={caller.filename}:{caller.lineno}")
+    if provider_count == 0 and account_count == 0 and path.exists():
+        logger.warning(f"save_config: saving EMPTY config (no providers, no accounts) — "
+                       f"this may overwrite existing settings! caller={caller.filename}:{caller.lineno}")
 
     with open(path, "w") as f:
         json.dump(data, f, indent=2)

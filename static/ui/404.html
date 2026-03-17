@@ -11,9 +11,9 @@
             function getSystemTheme() {
                 return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
-            var mode = localStorage.getItem('contextbot.ui.themeMode') || localStorage.getItem('contextbot.ui.theme') || 'auto';
+            var mode = localStorage.getItem('open_research_claw.ui.themeMode') || localStorage.getItem('open_research_claw.ui.theme') || 'auto';
             if (['auto', 'light', 'dark'].indexOf(mode) < 0) mode = 'auto';
-            var lightTheme = localStorage.getItem('contextbot.ui.lightTheme') || 'slate';
+            var lightTheme = localStorage.getItem('open_research_claw.ui.lightTheme') || 'slate';
             if (['slate', 'warm', 'blue'].indexOf(lightTheme) < 0) lightTheme = 'slate';
             var effective = mode === 'auto' ? getSystemTheme() : mode;
             document.documentElement.setAttribute('data-theme', effective);
@@ -121,7 +121,7 @@
                 <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                     <i class="fas fa-robot text-white"></i>
                 </div>
-                <h1 class="text-xl font-bold tracking-wider text-gray-100">ContextBot</h1>
+                <h1 class="text-xl font-bold tracking-wider text-gray-100">Open Research Claw</h1>
             </div>
             <div class="px-2">
                 <div class="text-xs tracking-widest uppercase text-gray-400 mb-2" id="gateway-nav">Gateway</div>
@@ -187,7 +187,7 @@
         };
 
         function getLanguage() {
-            const saved = localStorage.getItem('contextbot.ui.language');
+            const saved = localStorage.getItem('open_research_claw.ui.language');
             return saved === 'zh' ? 'zh' : 'en';
         }
 
@@ -196,12 +196,12 @@
         }
 
         function getThemeMode() {
-            const saved = localStorage.getItem('contextbot.ui.themeMode') || localStorage.getItem('contextbot.ui.theme');
+            const saved = localStorage.getItem('open_research_claw.ui.themeMode') || localStorage.getItem('open_research_claw.ui.theme');
             return ['auto', 'light', 'dark'].includes(saved) ? saved : 'auto';
         }
 
         function getLightTheme() {
-            const saved = localStorage.getItem('contextbot.ui.lightTheme');
+            const saved = localStorage.getItem('open_research_claw.ui.lightTheme');
             return ['slate', 'warm', 'blue'].includes(saved) ? saved : 'slate';
         }
 
@@ -279,10 +279,10 @@
             }
 
             window.addEventListener('storage', (e) => {
-                if (e.key === 'contextbot.ui.themeMode' || e.key === 'contextbot.ui.theme' || e.key === 'contextbot.ui.lightTheme') {
+                if (e.key === 'open_research_claw.ui.themeMode' || e.key === 'open_research_claw.ui.theme' || e.key === 'open_research_claw.ui.lightTheme') {
                     applyTheme();
                 }
-                if (e.key === 'contextbot.ui.language') {
+                if (e.key === 'open_research_claw.ui.language') {
                     applyLanguage();
                 }
             });

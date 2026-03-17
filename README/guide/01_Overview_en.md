@@ -1,8 +1,8 @@
-# Open Overleaf Claw Project Overview
+# Open Research Claw Project Overview
 
 ## What Is This
 
-Open Overleaf Claw is an AI Agent system designed for academic paper writing. It enables researchers to manage and write academic papers through natural language conversations.
+Open Research Claw is an AI Agent system designed for academic paper writing. It enables researchers to manage and write academic papers through natural language conversations.
 
 ## What It Can Do
 

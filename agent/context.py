@@ -208,7 +208,7 @@ class ContextManager:
 
                 memory_protocol = reg.load_prompt_template("ctx_memory_protocol.txt")
             else:
-                identity = f"You are ContextBot, a project-centric research assistant. [IDENTITY: {self.role} (Role Type: {self.role_type})]"
+                identity = f"You are Open Research Claw, a project-centric research assistant. [IDENTITY: {self.role} (Role Type: {self.role_type})]"
                 if is_default:
                     project_guidance = "[PROJECT: Default (General Research & Exploration)]\n- Focus on discovery, indexing, and general Q&A."
                     thinking_pattern = "- Feel free to record thoughts and brainstorm."

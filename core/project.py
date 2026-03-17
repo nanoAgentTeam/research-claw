@@ -142,7 +142,7 @@ class GitRepo:
             self._setup_gitignore()
             # Initial commit
             self._run("git", "add", "-A")
-            self._run("git", "commit", "-m", "Initial commit by ContextBot")
+            self._run("git", "commit", "-m", "Initial commit by Open Research Claw")
 
     def _run(self, *args, timeout: int = 30) -> GitResult:
         try:

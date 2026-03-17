@@ -12,8 +12,8 @@ import requests
 from loguru import logger
 
 # Cache directory for downloaded files
-_CACHE_DIR = Path.home() / ".context_bot" / "cache" / "papers"
-_COMMON_CACHE_DIR = Path.home() / ".context_bot" / "cache" / "common"
+_CACHE_DIR = Path.home() / ".open_research_claw" / "cache" / "papers"
+_COMMON_CACHE_DIR = Path.home() / ".open_research_claw" / "cache" / "common"
 
 # File extensions that should be downloaded and cached directly (not sent to Jina Reader)
 _DOWNLOADABLE_EXTENSIONS = {
@@ -113,7 +113,7 @@ class WebReaderTool:
     def _process_pdf(self, pdf_content: bytes, url: str) -> str:
         """Process PDF content using pymupdf4llm.
 
-        1. Cache the original PDF to ~/.context_bot/cache/papers/ for send_file.
+        1. Cache the original PDF to ~/.open_research_claw/cache/papers/ for send_file.
         2. Convert to markdown and return in output (no markdown file saved).
         """
         try:

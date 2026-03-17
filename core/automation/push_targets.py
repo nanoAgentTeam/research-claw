@@ -157,7 +157,7 @@ def send_apprise_notification(url: str, title: str, body: str) -> tuple[bool, st
             body_text = str(body or "").strip()
             if body_text:
                 msg = f"{msg}\n\n{body_text}" if msg else body_text
-            form_data: dict[str, str] = {"msg": msg or "ContextBot Notification"}
+            form_data: dict[str, str] = {"msg": msg or "Open Research Claw Notification"}
             qq = str((query.get("qq") or [""])[0]).strip()
             bot = str((query.get("bot") or [""])[0]).strip()
             if qq:
@@ -214,7 +214,7 @@ def send_apprise_notification(url: str, title: str, body: str) -> tuple[bool, st
             if body_text:
                 msg = f"{msg}\n\n{body_text}" if msg else body_text
             payload = json.dumps(
-                {"msg_type": "text", "content": {"text": msg or "ContextBot Notification"}},
+                {"msg_type": "text", "content": {"text": msg or "Open Research Claw Notification"}},
                 ensure_ascii=False,
             ).encode("utf-8")
             req = Request(actual_url, data=payload, method="POST")
@@ -262,7 +262,7 @@ def send_apprise_notification(url: str, title: str, body: str) -> tuple[bool, st
             if body_text:
                 msg = f"{msg}\n\n{body_text}" if msg else body_text
             payload = json.dumps(
-                {"msgtype": "text", "text": {"content": msg or "ContextBot Notification"}},
+                {"msgtype": "text", "text": {"content": msg or "Open Research Claw Notification"}},
                 ensure_ascii=False,
             ).encode("utf-8")
             req = Request(actual_url, data=payload, method="POST")
@@ -286,7 +286,7 @@ def send_apprise_notification(url: str, title: str, body: str) -> tuple[bool, st
     if not app.add(target):
         return False, f"invalid apprise url: {target}"
 
-    ok = app.notify(title=title or "ContextBot Notification", body=body or "")
+    ok = app.notify(title=title or "Open Research Claw Notification", body=body or "")
     return (True, "ok") if ok else (False, "apprise notify failed")
 
 
@@ -343,10 +343,10 @@ def _send_email_sync(recipient: str, title: str, body: str, smtp_profile: Option
         raise RuntimeError("smtp config missing: CONTEXT_BOT_SMTP_HOST / CONTEXT_BOT_SMTP_FROM")
 
     msg = EmailMessage()
-    msg["Subject"] = title or "ContextBot Notification"
+    msg["Subject"] = title or "Open Research Claw Notification"
     msg["From"] = f"{from_name} <{sender}>" if from_name and sender else sender
     msg["To"] = to_addr
-    msg.set_content(body or title or "ContextBot Notification")
+    msg.set_content(body or title or "Open Research Claw Notification")
 
     smtp_cls = smtplib.SMTP_SSL if (use_tls and port == 465) else smtplib.SMTP
     with smtp_cls(host, port, timeout=15) as smtp:

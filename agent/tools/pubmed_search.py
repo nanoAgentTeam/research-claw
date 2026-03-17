@@ -8,7 +8,7 @@ _SEMAPHORE = threading.Semaphore(2)  # max 2 concurrent pubmed_search requests
 
 _ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 _EFETCH_URL  = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
-_HEADERS     = {"User-Agent": "ContextBot/1.0"}
+_HEADERS     = {"User-Agent": "OpenResearchClaw/1.0"}
 
 
 class PubMedSearchTool(BaseTool):

@@ -199,7 +199,7 @@ class TelegramChannel(BaseChannel):
         
         user = update.effective_user
         await update.message.reply_text(
-            f"👋 Hi {user.first_name}! I'm ContextBot.\n\n"
+            f"👋 Hi {user.first_name}! I'm Open Research Claw.\n\n"
             "Send me a message and I'll respond!"
         )
     
@@ -254,7 +254,7 @@ class TelegramChannel(BaseChannel):
                 ext = self._get_extension(media_type, getattr(media_file, 'mime_type', None))
                 
                 # Save to workspace/media/
-                media_dir = Path.home() / ".context_bot" / "media"
+                media_dir = Path.home() / ".open_research_claw" / "media"
                 media_dir.mkdir(parents=True, exist_ok=True)
                 
                 file_path = media_dir / f"{media_file.file_id[:16]}{ext}"

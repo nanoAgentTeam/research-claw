@@ -24,7 +24,7 @@ from core.automation.models import AutomationJob, JobSchedule, OutputPolicy, SUP
 from core.automation.push_targets import build_apprise_url, send_apprise_notification
 from core.memory import ProjectMemoryStore
 
-app = FastAPI(title="ContextBot Gateway")
+app = FastAPI(title="Open Research Claw Gateway")
 
 
 @app.get("/")
@@ -130,7 +130,7 @@ class ConfigSubscriptionUpdatePayload(BaseModel):
 
 
 class SubscriptionTestPayload(BaseModel):
-    title: str = "ContextBot 推送测试"
+    title: str = "Open Research Claw 推送测试"
     body: str = "这是一条测试消息，用于确认订阅推送链路是否可用。"
 
 
@@ -165,7 +165,7 @@ class SmtpProfileUpdatePayload(BaseModel):
 
 class SmtpProfileTestPayload(BaseModel):
     recipient: str
-    title: str = "ContextBot SMTP 测试"
+    title: str = "Open Research Claw SMTP 测试"
     body: str = "这是一条 SMTP 测试邮件，用于确认邮件推送配置可用。"
 
 
@@ -1191,7 +1191,7 @@ async def test_config_subscription(subscription_id: str, payload: SubscriptionTe
         content = f"{payload.title}\n{payload.body}".strip()
         await bus.publish_outbound(OutboundMessage(
             channel=target.channel, chat_id=target.chat_id,
-            content=content or "ContextBot Test / ContextBot 测试通知",
+            content=content or "Open Research Claw Test / Open Research Claw 测试通知",
             metadata={"source": "subscription_test"},
         ))
         return {"ok": True, "message": "test sent via IM runtime", "target": target.model_dump()}
@@ -1223,7 +1223,7 @@ async def test_enabled_config_subscriptions(payload: SubscriptionTestPayload):
             try:
                 await bus.publish_outbound(OutboundMessage(
                     channel=item.channel, chat_id=item.chat_id,
-                    content=content or "ContextBot Test / ContextBot 测试通知",
+                    content=content or "Open Research Claw Test / Open Research Claw 测试通知",
                     metadata={"source": "subscription_test"},
                 ))
                 success += 1

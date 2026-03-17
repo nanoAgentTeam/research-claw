@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContextBot Console</title>
+    <title>Open Research Claw Console</title>
     <script src="/ui/vendor/tailwindcss.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="/ui/vendor/fontawesome/css/all.min.css">
@@ -266,7 +266,7 @@
                     <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                         <i class="fas fa-robot text-white"></i>
                     </div>
-                    <h1 class="text-xl font-bold tracking-wider text-gray-100">ContextBot</h1>
+                    <h1 class="text-xl font-bold tracking-wider text-gray-100">Open Research Claw</h1>
                 </div>
                 <div class="px-2">
                     <div class="text-xs tracking-widest uppercase text-gray-400 mb-2" x-text="t('ui.gatewayNav', 'Gateway')"></div>
@@ -313,7 +313,7 @@
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <i class="fas fa-robot text-white"></i>
             </div>
-            <h1 class="text-xl font-bold tracking-wider">ContextBot</h1>
+            <h1 class="text-xl font-bold tracking-wider">Open Research Claw</h1>
         </div>
 
         <nav class="space-y-2">
@@ -2021,7 +2021,7 @@
                 lightTheme: 'slate',
                 i18n: {
                     zh: {
-                        title: { console: 'ContextBot 控制台' },
+                        title: { console: 'Open Research Claw 控制台' },
                         ui: {
                             gatewayStatus: 'Gateway 状态',
                             gatewayNav: '网关',
@@ -2064,7 +2064,7 @@
                         }
                     },
                     en: {
-                        title: { console: 'ContextBot Console' },
+                        title: { console: 'Open Research Claw Console' },
                         ui: {
                             gatewayStatus: 'Gateway Status',
                             gatewayNav: 'Gateway',
@@ -2859,7 +2859,7 @@
 
                 applyLanguageMeta() {
                     document.documentElement.lang = this.language;
-                    document.title = this.t('title.console', 'ContextBot Console');
+                    document.title = this.t('title.console', 'Open Research Claw Console');
                     this.queueDomTranslation();
                 },
 
@@ -2881,12 +2881,12 @@
                 setLightTheme(theme) {
                     const allowed = ['slate', 'warm', 'blue'];
                     this.lightTheme = allowed.includes(theme) ? theme : 'slate';
-                    localStorage.setItem('contextbot.ui.lightTheme', this.lightTheme);
+                    localStorage.setItem('open_research_claw.ui.lightTheme', this.lightTheme);
                     this.applyThemeMeta();
                 },
 
                 bootstrapLightTheme() {
-                    const saved = localStorage.getItem('contextbot.ui.lightTheme');
+                    const saved = localStorage.getItem('open_research_claw.ui.lightTheme');
                     this.lightTheme = ['slate', 'warm', 'blue'].includes(saved) ? saved : 'slate';
                     this.applyThemeMeta();
                 },
@@ -2894,12 +2894,12 @@
                 setThemeMode(mode) {
                     const allowed = ['auto', 'light', 'dark'];
                     this.themeMode = allowed.includes(mode) ? mode : 'auto';
-                    localStorage.setItem('contextbot.ui.themeMode', this.themeMode);
+                    localStorage.setItem('open_research_claw.ui.themeMode', this.themeMode);
                     this.applyThemeMeta();
                 },
 
                 bootstrapThemeMode() {
-                    const saved = localStorage.getItem('contextbot.ui.themeMode') || localStorage.getItem('contextbot.ui.theme');
+                    const saved = localStorage.getItem('open_research_claw.ui.themeMode') || localStorage.getItem('open_research_claw.ui.theme');
                     this.themeMode = ['auto', 'light', 'dark'].includes(saved) ? saved : 'auto';
                     this.applyThemeMeta();
                 },
@@ -2920,7 +2920,7 @@
 
                 setLanguage(lang) {
                     this.language = lang === 'en' ? 'en' : 'zh';
-                    localStorage.setItem('contextbot.ui.language', this.language);
+                    localStorage.setItem('open_research_claw.ui.language', this.language);
                     this.applyLanguageMeta();
                     // Persist to settings.json
                     fetch('/api/language', {
@@ -2932,13 +2932,13 @@
 
                 bootstrapLanguage() {
                     // Try to load from backend first, fall back to localStorage
-                    const saved = localStorage.getItem('contextbot.ui.language');
+                    const saved = localStorage.getItem('open_research_claw.ui.language');
                     this.language = (saved === 'en') ? 'en' : 'zh';
                     this.applyLanguageMeta();
                     fetch('/api/language').then(r => r.json()).then(data => {
                         if (data.language && data.language !== this.language) {
                             this.language = data.language === 'en' ? 'en' : 'zh';
-                            localStorage.setItem('contextbot.ui.language', this.language);
+                            localStorage.setItem('open_research_claw.ui.language', this.language);
                             this.applyLanguageMeta();
                         }
                     }).catch(() => {});
@@ -2946,7 +2946,7 @@
 
                 setLlmLanguage(lang) {
                     this.llmLanguage = lang;
-                    localStorage.setItem('contextbot.llm.language', lang);
+                    localStorage.setItem('open_research_claw.llm.language', lang);
                     fetch('/api/llm-language', {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -2957,12 +2957,12 @@
                 },
 
                 bootstrapLlmLanguage() {
-                    const saved = localStorage.getItem('contextbot.llm.language');
+                    const saved = localStorage.getItem('open_research_claw.llm.language');
                     if (saved) this.llmLanguage = saved;
                     fetch('/api/llm-language').then(r => r.json()).then(data => {
                         if (data.llmLanguage) {
                             this.llmLanguage = data.llmLanguage;
-                            localStorage.setItem('contextbot.llm.language', data.llmLanguage);
+                            localStorage.setItem('open_research_claw.llm.language', data.llmLanguage);
                         }
                     }).catch(() => {});
                 },
@@ -4036,7 +4036,7 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 recipient: String(recipient || '').trim(),
-                                title: 'ContextBot SMTP 测试',
+                                title: 'Open Research Claw SMTP 测试',
                                 body: '这是一封测试邮件，表示 SMTP 配置可用。'
                             }),
                         });
@@ -4223,7 +4223,7 @@
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                title: 'ContextBot 订阅测试',
+                                title: 'Open Research Claw 订阅测试',
                                 body: '这是一条订阅测试消息，请确认目标端是否收到。',
                             }),
                         });
@@ -4241,7 +4241,7 @@
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                title: 'ContextBot 批量订阅测试',
+                                title: 'Open Research Claw 批量订阅测试',
                                 body: '这是一条批量测试消息，用于验证全部启用订阅。',
                             }),
                         });

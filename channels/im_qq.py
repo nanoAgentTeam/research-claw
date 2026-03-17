@@ -208,7 +208,7 @@ class ImQQChannel(BaseChannel):
         import hashlib
         import httpx
 
-        media_dir = Path.home() / ".context_bot" / "media"
+        media_dir = Path.home() / ".open_research_claw" / "media"
         media_dir.mkdir(parents=True, exist_ok=True)
 
         # Determine extension from content_type or URL

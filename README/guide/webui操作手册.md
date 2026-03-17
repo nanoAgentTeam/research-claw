@@ -1,6 +1,6 @@
 ## 前言
 
-  本手册详细介绍 ContextBot Web 控制台的所有功能和操作步骤。手册按照"目标 → 操作步骤 →完成"的形式组织,帮助您快速上手。
+  本手册详细介绍 Open Research Claw Web 控制台的所有功能和操作步骤。手册按照"目标 → 操作步骤 →完成"的形式组织,帮助您快速上手。
 
 ---
 
@@ -17,11 +17,11 @@
    INFO:     Started server process
    INFO:     Uvicorn running on http://127.0.0.1:18790
 4. 打开浏览器,访问: http://127.0.0.1:18790/ui
-5. 页面加载后,您将看到 ContextBot 控制台界面
+5. 页面加载后,您将看到 Open Research Claw 控制台界面
 
   完成标志:
 
-- 左侧显示蓝色机器人图标和 "ContextBot" 标题
+- 左侧显示蓝色机器人图标和 "Open Research Claw" 标题
 - 左下角显示 "Gateway Status: Connected" (绿色指示灯)
 - 主界面显示"控制中心"页面
 
@@ -671,7 +671,7 @@
 
 ## 结语
 
-  本手册涵盖了 ContextBot WebUI 的所有主要功能和操作流程。如果您在使用过程中遇到问题,请:
+  本手册涵盖了 Open Research Claw WebUI 的所有主要功能和操作流程。如果您在使用过程中遇到问题,请:
 
 1. 查看"实时日志"页面了解系统状态
 2. 检查"控制中心"的 Gateway 连接状态

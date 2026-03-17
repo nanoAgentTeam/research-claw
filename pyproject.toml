@@ -1,7 +1,7 @@
 [project]
-name = "open-overleaf-claw"
+name = "open-research-claw"
 version = "0.1.0"
-description = "ContextBot - Research Assistant with Overleaf integration"
+description = "Open Research Claw - AI Research Assistant with Overleaf integration"
 requires-python = ">=3.10"
 
 [project.scripts]

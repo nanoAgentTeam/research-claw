@@ -6,7 +6,7 @@ from core.tools.base import BaseTool
 _SEMAPHORE = threading.Semaphore(2)  # max 2 concurrent openalex_search requests
 
 _BASE_URL = "https://api.openalex.org/works"
-_HEADERS = {"User-Agent": "ContextBot/1.0 (mailto:research@contextbot.ai)"}
+_HEADERS = {"User-Agent": "OpenResearchClaw/1.0 (mailto:research@openresearchclaw.ai)"}
 
 # OpenAlex concept/field IDs for common domains (for documentation purposes)
 _FIELD_HINTS = """

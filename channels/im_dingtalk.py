@@ -147,7 +147,7 @@ class ImDingTalkChannel(BaseChannel):
         url = f"https://oapi.dingtalk.com/robot/messageFile/download?access_token={token}"
         body = {"downloadCode": download_code, "robotCode": api.robot_code}
 
-        media_dir = Path.home() / ".context_bot" / "media"
+        media_dir = Path.home() / ".open_research_claw" / "media"
         media_dir.mkdir(parents=True, exist_ok=True)
 
         ext = {

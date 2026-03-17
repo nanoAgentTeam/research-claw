@@ -1,4 +1,4 @@
-"""CLI commands for context_bot."""
+"""CLI commands for Open Research Claw."""
 
 import asyncio
 import os
@@ -24,13 +24,13 @@ import typer
 from rich.console import Console
 
 app = typer.Typer(
-    name="context_bot",
-    help="ContextBot - Research Assistant with LifeContext",
+    name="open_research_claw",
+    help="Open Research Claw - Research Assistant with LifeContext",
     no_args_is_help=True,
 )
 
 console = Console()
-GATEWAY_PID_DIR = root_path / ".contextbot" / "gateway_pids"
+GATEWAY_PID_DIR = root_path / ".open_research_claw" / "gateway_pids"
 
 
 def _pid_exists(pid: int) -> bool:
@@ -95,14 +95,14 @@ def _is_gateway_process_cmd(command: str) -> bool:
     Identify gateway processes started from this project.
     Supports both:
     - python cli/main.py gateway ...
-    - context_bot gateway ...
+    - open_research_claw gateway ...
     """
     normalized = command.strip()
     if re.search(r"\blegacy[-_]gateway\b", normalized):
         return False
     return (
         bool(re.search(r"\bcli/main\.py\b.*(?:^|\s)gateway(?:\s|$)", normalized))
-        or bool(re.search(r"\bcontext_bot\b.*(?:^|\s)gateway(?:\s|$)", normalized))
+        or bool(re.search(r"\bopen_research_claw\b.*(?:^|\s)gateway(?:\s|$)", normalized))
     )
 
 
@@ -172,7 +172,7 @@ def _stop_pid(pid: int, wait_seconds: float = 5.0) -> tuple[bool, str]:
 
 @app.callback()
 def main():
-    """ContextBot - Personal AI Research Assistant."""
+    """Open Research Claw - Personal AI Research Assistant."""
     pass
 
 def _do_overleaf_login() -> Path:
@@ -839,7 +839,7 @@ def legacy_gateway(
     from channels.im_dingtalk import ImDingTalkChannel
     from core.automation.runtime import AutomationRuntime
     
-    console.print(f"Starting ContextBot gateway...")
+    console.print(f"Starting Open Research Claw gateway...")
 
     config = load_config()
     bus = MessageBus()

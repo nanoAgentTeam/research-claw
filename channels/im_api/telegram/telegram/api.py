@@ -65,7 +65,7 @@ class TelegramBotAPI:
 
         self.token = token
         self.bot = bot
-        self.media_dir = Path(media_dir) if media_dir else Path.home() / ".context_bot" / "media"
+        self.media_dir = Path(media_dir) if media_dir else Path.home() / ".open_research_claw" / "media"
         self.media_dir.mkdir(parents=True, exist_ok=True)
 
     def set_bot(self, bot: Bot) -> None:

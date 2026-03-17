@@ -1,4 +1,4 @@
-"""Setup configuration for ContextBot."""
+"""Setup configuration for Open Research Claw."""
 
 import json
 from pathlib import Path
@@ -11,10 +11,10 @@ console = Console()
 
 @app.command()
 def main():
-    """Interactive setup for ContextBot."""
-    console.print("[bold blue]ContextBot Setup[/bold blue]\n")
-    
-    config_dir = Path.home() / ".context_bot"
+    """Interactive setup for Open Research Claw."""
+    console.print("[bold blue]Open Research Claw Setup[/bold blue]\n")
+
+    config_dir = Path.home() / ".open_research_claw"
     config_path = config_dir / "config.json"
     
     # Ensure directory exists
@@ -42,7 +42,7 @@ def main():
         "agents": {
             "defaults": {
                 "model": "qwen-max",
-                "workspace": str(Path.home() / "context_bot_workspace"),
+                "workspace": str(Path.home() / "open_research_claw_workspace"),
                 "max_tool_iterations": 15
             }
         },
@@ -90,8 +90,8 @@ def main():
     # Save
     config_path.write_text(json.dumps(new_config, indent=2))
     console.print(f"\n[bold green]✓ Configuration saved to {config_path}[/bold green]")
-    console.print("\nYou can now run ContextBot with:")
-    console.print("[cyan]python3 -m context_bot.cli.main agent -m 'Hello Qwen!'[/cyan]")
+    console.print("\nYou can now run Open Research Claw with:")
+    console.print("[cyan]python3 -m open_research_claw.cli.main agent -m 'Hello Qwen!'[/cyan]")
 
 if __name__ == "__main__":
     app()

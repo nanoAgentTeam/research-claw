@@ -1,6 +1,6 @@
 <div align="center">
 
-# Open Overleaf Claw
+# Open Research Claw
 
 **Your personal AI research assistant. Any paper. Any venue. The academic claw. 🦞**
 
@@ -27,9 +27,9 @@ https://github.com/user-attachments/assets/fccb837c-cfc5-4063-b803-2ae900fb4a20
 
 # English
 
-## What is Open Overleaf Claw?
+## What is Open Research Claw?
 
-Open Overleaf Claw is a personal AI research assistant you run on your own machine. It manages your LaTeX projects, syncs with Overleaf, searches literature, tracks deadlines — and answers you on the channels you already use (CLI, Web UI, Telegram, Feishu, QQ, DingTalk). Instead of switching between your editor, Overleaf, terminal, and search engine, you talk to one assistant that handles it all:
+Open Research Claw is a personal AI research assistant you run on your own machine. It manages your LaTeX projects, syncs with Overleaf, searches literature, tracks deadlines — and answers you on the channels you already use (CLI, Web UI, Telegram, Feishu, QQ, DingTalk). Instead of switching between your editor, Overleaf, terminal, and search engine, you talk to one assistant that handles it all:
 
 ```
 You: Create a paper project "MoE-Survey" and link it to Overleaf.
@@ -105,8 +105,8 @@ Bot: ⏳ Compiling PDF，please wait......
 ### Install
 
 ```bash
-git clone https://github.com/nanoAgentTeam/open-overleaf-claw.git
-cd open-overleaf-claw
+git clone https://github.com/nanoAgentTeam/open-research-claw.git
+cd open-research-claw
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -136,7 +136,7 @@ Open **http://localhost:18790/ui** in your browser:
 
 ### Step 2 — Overleaf Authorization *(optional)*
 
-Overleaf sync is one of the core features of Open Overleaf Claw — it enables bidirectional sync between your local LaTeX project and Overleaf, so every AI edit can be pushed to Overleaf and every collaborator's edit can be pulled back. You can skip this step and add it later, but we highly recommend setting it up.
+Overleaf sync is one of the core features of Open Research Claw — it enables bidirectional sync between your local LaTeX project and Overleaf, so every AI edit can be pushed to Overleaf and every collaborator's edit can be pulled back. You can skip this step and add it later, but we highly recommend setting it up.
 
 ```bash
 pip install overleaf-sync
@@ -390,9 +390,9 @@ MIT License — see [LICENSE](LICENSE).
 
 # 中文
 
-## Open Overleaf Claw 是什么？
+## Open Research Claw 是什么？
 
-Open Overleaf Claw 是一个运行在你自己机器上的 AI 学术研究助手。它管理你的 LaTeX 论文项目，同步 Overleaf，检索文献，追踪截稿日期——并在你常用的渠道随时响应（CLI、Web UI、Telegram、飞书、QQ、钉钉）。不再需要在编辑器、Overleaf、终端和搜索引擎之间来回切换：
+Open Research Claw 是一个运行在你自己机器上的 AI 学术研究助手。它管理你的 LaTeX 论文项目，同步 Overleaf，检索文献，追踪截稿日期——并在你常用的渠道随时响应（CLI、Web UI、Telegram、飞书、QQ、钉钉）。不再需要在编辑器、Overleaf、终端和搜索引擎之间来回切换：
 
 ```
 You: 创建一个叫 "MoE-Survey" 的论文项目，并关联 Overleaf
@@ -468,8 +468,8 @@ Bot: ⏳ 编译中，请稍候......
 ### 安装
 
 ```bash
-git clone https://github.com/nanoAgentTeam/open-overleaf-claw.git
-cd open-overleaf-claw
+git clone https://github.com/nanoAgentTeam/open-research-claw.git
+cd open-research-claw
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -497,7 +497,7 @@ python cli/main.py gateway --port 18790
 
 ### 第二步 — Overleaf 授权（可选）
 
-Overleaf 同步是 Open Overleaf Claw 的核心功能之一 — 它实现了本地 LaTeX 项目与 Overleaf 的双向同步，AI 的每一次编辑都可以推送到 Overleaf，协作者的修改也能随时拉取回来。你可以跳过此步骤稍后再配置，但我们强烈建议尽早设置。
+Overleaf 同步是 Open Research Claw 的核心功能之一 — 它实现了本地 LaTeX 项目与 Overleaf 的双向同步，AI 的每一次编辑都可以推送到 Overleaf，协作者的修改也能随时拉取回来。你可以跳过此步骤稍后再配置，但我们强烈建议尽早设置。
 
 ```bash
 pip install overleaf-sync

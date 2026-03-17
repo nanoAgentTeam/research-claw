@@ -571,7 +571,7 @@ def _configure_im(config):
 def run_wizard():
     """Run the interactive onboarding wizard with menu-driven flow."""
     console.print()
-    console.print("[bold blue]┌  ContextBot 配置向导[/bold blue]")
+    console.print("[bold blue]┌  Open Research Claw 配置向导[/bold blue]")
     console.print("[blue]│[/blue]")
 
     service = get_config_service()

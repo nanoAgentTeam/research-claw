@@ -94,7 +94,7 @@ If you need to execute tasks periodically (e.g., automatic daily research), you 
 
 ```
 # crontab example: automatic research daily at 9:00
-0 9 * * * cd /path/to/context_bot_project && python cli/main.py agent -m "Research the latest papers in the MoE field" -p MyPaper
+0 9 * * * cd /path/to/open_research_claw && python cli/main.py agent -m "Research the latest papers in the MoE field" -p MyPaper
 ```
 
 Output will be written to project files and automatically git committed. If the gateway is running simultaneously, results will also be pushed to IM.

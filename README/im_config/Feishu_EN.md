@@ -64,7 +64,7 @@ If approval is required, go to **Feishu Approval**:
 
 ![1772519476451](image/feishu_ZH/1772519476451.png)
 
-Next, configure the event callback. First, start the open-overleaf-claw UI:
+Next, configure the event callback. First, start the open-research-claw UI:
 
 `python cli/main.py gateway`
 

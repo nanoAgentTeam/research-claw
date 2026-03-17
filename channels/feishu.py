@@ -192,7 +192,7 @@ class FeishuChannel(BaseChannel):
             else:
                 ext = ""
 
-            media_dir = Path.home() / ".context_bot" / "media"
+            media_dir = Path.home() / ".open_research_claw" / "media"
             media_dir.mkdir(parents=True, exist_ok=True)
             save_name = f"{file_key[:16]}{ext}" if not file_name else f"{file_key[:8]}_{file_name}"
             save_path = media_dir / save_name

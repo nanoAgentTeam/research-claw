@@ -711,16 +711,16 @@
     "ar": "📖 الأوامر المتاحة:\n\nعام:\n  /help        — عرض رسالة المساعدة هذه\n  /reset       — إعادة تعيين الجلسة ومسح السجل\n  /stop        — إيقاف العملية الحالية\n  /exit        — الخروج من الوضع الحالي، العودة إلى المحادثة\n\nالمشروع:\n  /switch <name> — التبديل إلى مشروع\n  /back          — العودة إلى المشروع الافتراضي\n  /compile       — تجميع LaTeX (ادخل مشروعًا أولاً)\n  /sync [pull|push] — مزامنة Overleaf (ادخل مشروعًا أولاً)\n  /git           — التحكم بالإصدارات Git (ادخل مشروعًا أولاً)\n\nالبحث:\n  /task <goal>  — بدء جلسة مهام تفاعلية\n  /recommend    — اكتشاف المشروع والبحث عن أحدث التطورات\n  /radar        — إدارة مهام أتمتة رادار البحث\n\n💡 يمكنك أيضًا الدردشة بلغة طبيعية — سأستخدم الأدوات المناسبة تلقائيًا."
   },
   "greeting.text": {
-    "zh": "👋 你好！我是 ContextBot，你的学术写作助手。\n\n我可以帮你：\n- 撰写和编辑 LaTeX 论文\n- 编译 PDF 并与 Overleaf 同步\n- 调研某个领域的最新进展\n- 管理项目版本与协作\n\n输入 /help 查看所有可用命令，或者直接用自然语言告诉我你想做什么。",
-    "en": "👋 Hi! I'm ContextBot, your academic writing assistant.\n\nI can help you:\n- Write and edit LaTeX papers\n- Compile PDF and sync with Overleaf\n- Research latest developments in a field\n- Manage project versions and collaboration\n\nType /help to see all available commands, or just tell me what you'd like to do.",
-    "ja": "👋 こんにちは！私は ContextBot、あなたの学術論文執筆アシスタントです。\n\nお手伝いできること：\n- LaTeX 論文の執筆と編集\n- PDF のコンパイルと Overleaf との同期\n- 分野の最新動向の調査\n- プロジェクトのバージョン管理とコラボレーション\n\n/help と入力して利用可能なコマンド一覧を確認するか、やりたいことを教えてください。",
-    "ko": "👋 안녕하세요! 저는 ContextBot, 당신의 학술 논문 작성 어시스턴트입니다.\n\n도움 드릴 수 있는 것들:\n- LaTeX 논문 작성 및 편집\n- PDF 컴파일 및 Overleaf 동기화\n- 분야의 최신 연구 동향 조사\n- 프로젝트 버전 관리 및 협업\n\n/help를 입력하여 사용 가능한 명령어를 확인하거나, 원하시는 작업을 말씀해 주세요.",
-    "fr": "👋 Bonjour ! Je suis ContextBot, votre assistant de rédaction académique.\n\nJe peux vous aider à :\n- Rédiger et éditer des articles LaTeX\n- Compiler des PDF et synchroniser avec Overleaf\n- Rechercher les derniers développements dans un domaine\n- Gérer les versions de projet et la collaboration\n\nTapez /help pour voir toutes les commandes disponibles, ou dites-moi simplement ce que vous souhaitez faire.",
-    "de": "👋 Hallo! Ich bin ContextBot, Ihr Assistent für wissenschaftliches Schreiben.\n\nIch kann Ihnen helfen bei:\n- Verfassen und Bearbeiten von LaTeX-Arbeiten\n- PDF kompilieren und mit Overleaf synchronisieren\n- Neueste Entwicklungen in einem Fachgebiet recherchieren\n- Projektversionierung und Zusammenarbeit verwalten\n\nGeben Sie /help ein, um alle verfügbaren Befehle zu sehen, oder sagen Sie mir einfach, was Sie tun möchten.",
-    "es": "👋 ¡Hola! Soy ContextBot, tu asistente de escritura académica.\n\nPuedo ayudarte a:\n- Escribir y editar artículos en LaTeX\n- Compilar PDF y sincronizar con Overleaf\n- Investigar los últimos avances en un campo\n- Gestionar versiones de proyecto y colaboración\n\nEscribe /help para ver todos los comandos disponibles, o simplemente dime qué te gustaría hacer.",
-    "ru": "👋 Привет! Я ContextBot, ваш помощник для написания научных работ.\n\nЯ могу помочь вам:\n- Писать и редактировать статьи в LaTeX\n- Компилировать PDF и синхронизировать с Overleaf\n- Исследовать последние разработки в области\n- Управлять версиями проекта и совместной работой\n\nВведите /help, чтобы увидеть все доступные команды, или просто скажите, что вы хотите сделать.",
-    "pt": "👋 Olá! Sou o ContextBot, seu assistente de escrita acadêmica.\n\nPosso ajudar você a:\n- Escrever e editar artigos em LaTeX\n- Compilar PDF e sincronizar com o Overleaf\n- Pesquisar os últimos desenvolvimentos em uma área\n- Gerenciar versões do projeto e colaboração\n\nDigite /help para ver todos os comandos disponíveis, ou simplesmente me diga o que gostaria de fazer.",
-    "ar": "👋 مرحبًا! أنا ContextBot، مساعدك في الكتابة الأكاديمية.\n\nيمكنني مساعدتك في:\n- كتابة وتحرير أوراق LaTeX\n- تجميع PDF والمزامنة مع Overleaf\n- البحث عن أحدث التطورات في مجال معين\n- إدارة إصدارات المشروع والتعاون\n\nاكتب /help لرؤية جميع الأوامر المتاحة، أو أخبرني بما تريد القيام به."
+    "zh": "👋 你好！我是 Open Research Claw，你的学术写作助手。\n\n我可以帮你：\n- 撰写和编辑 LaTeX 论文\n- 编译 PDF 并与 Overleaf 同步\n- 调研某个领域的最新进展\n- 管理项目版本与协作\n\n输入 /help 查看所有可用命令，或者直接用自然语言告诉我你想做什么。",
+    "en": "👋 Hi! I'm Open Research Claw, your academic writing assistant.\n\nI can help you:\n- Write and edit LaTeX papers\n- Compile PDF and sync with Overleaf\n- Research latest developments in a field\n- Manage project versions and collaboration\n\nType /help to see all available commands, or just tell me what you'd like to do.",
+    "ja": "👋 こんにちは！私は Open Research Claw、あなたの学術論文執筆アシスタントです。\n\nお手伝いできること：\n- LaTeX 論文の執筆と編集\n- PDF のコンパイルと Overleaf との同期\n- 分野の最新動向の調査\n- プロジェクトのバージョン管理とコラボレーション\n\n/help と入力して利用可能なコマンド一覧を確認するか、やりたいことを教えてください。",
+    "ko": "👋 안녕하세요! 저는 Open Research Claw, 당신의 학술 논문 작성 어시스턴트입니다.\n\n도움 드릴 수 있는 것들:\n- LaTeX 논문 작성 및 편집\n- PDF 컴파일 및 Overleaf 동기화\n- 분야의 최신 연구 동향 조사\n- 프로젝트 버전 관리 및 협업\n\n/help를 입력하여 사용 가능한 명령어를 확인하거나, 원하시는 작업을 말씀해 주세요.",
+    "fr": "👋 Bonjour ! Je suis Open Research Claw, votre assistant de rédaction académique.\n\nJe peux vous aider à :\n- Rédiger et éditer des articles LaTeX\n- Compiler des PDF et synchroniser avec Overleaf\n- Rechercher les derniers développements dans un domaine\n- Gérer les versions de projet et la collaboration\n\nTapez /help pour voir toutes les commandes disponibles, ou dites-moi simplement ce que vous souhaitez faire.",
+    "de": "👋 Hallo! Ich bin Open Research Claw, Ihr Assistent für wissenschaftliches Schreiben.\n\nIch kann Ihnen helfen bei:\n- Verfassen und Bearbeiten von LaTeX-Arbeiten\n- PDF kompilieren und mit Overleaf synchronisieren\n- Neueste Entwicklungen in einem Fachgebiet recherchieren\n- Projektversionierung und Zusammenarbeit verwalten\n\nGeben Sie /help ein, um alle verfügbaren Befehle zu sehen, oder sagen Sie mir einfach, was Sie tun möchten.",
+    "es": "👋 ¡Hola! Soy Open Research Claw, tu asistente de escritura académica.\n\nPuedo ayudarte a:\n- Escribir y editar artículos en LaTeX\n- Compilar PDF y sincronizar con Overleaf\n- Investigar los últimos avances en un campo\n- Gestionar versiones de proyecto y colaboración\n\nEscribe /help para ver todos los comandos disponibles, o simplemente dime qué te gustaría hacer.",
+    "ru": "👋 Привет! Я Open Research Claw, ваш помощник для написания научных работ.\n\nЯ могу помочь вам:\n- Писать и редактировать статьи в LaTeX\n- Компилировать PDF и синхронизировать с Overleaf\n- Исследовать последние разработки в области\n- Управлять версиями проекта и совместной работой\n\nВведите /help, чтобы увидеть все доступные команды, или просто скажите, что вы хотите сделать.",
+    "pt": "👋 Olá! Sou o Open Research Claw, seu assistente de escrita acadêmica.\n\nPosso ajudar você a:\n- Escrever e editar artigos em LaTeX\n- Compilar PDF e sincronizar com o Overleaf\n- Pesquisar os últimos desenvolvimentos em uma área\n- Gerenciar versões do projeto e colaboração\n\nDigite /help para ver todos os comandos disponíveis, ou simplesmente me diga o que gostaria de fazer.",
+    "ar": "👋 مرحبًا! أنا Open Research Claw، مساعدك في الكتابة الأكاديمية.\n\nيمكنني مساعدتك في:\n- كتابة وتحرير أوراق LaTeX\n- تجميع PDF والمزامنة مع Overleaf\n- البحث عن أحدث التطورات في مجال معين\n- إدارة إصدارات المشروع والتعاون\n\nاكتب /help لرؤية جميع الأوامر المتاحة، أو أخبرني بما تريد القيام به."
   },
   "tool.latex_compile": {
     "zh": "⏳ 正在编译 PDF，请稍候...",
@@ -1767,16 +1767,16 @@
     "ar": "[خطأ] المحتوى فارغ."
   },
   "notify.default_title": {
-    "zh": "ContextBot 通知",
-    "en": "ContextBot Notification",
-    "ja": "ContextBot 通知",
-    "ko": "ContextBot 알림",
-    "fr": "Notification ContextBot",
-    "de": "ContextBot-Benachrichtigung",
-    "es": "Notificación de ContextBot",
-    "ru": "Уведомление ContextBot",
-    "pt": "Notificação ContextBot",
-    "ar": "إشعار ContextBot"
+    "zh": "Open Research Claw 通知",
+    "en": "Open Research Claw Notification",
+    "ja": "Open Research Claw 通知",
+    "ko": "Open Research Claw 알림",
+    "fr": "Notification Open Research Claw",
+    "de": "Open Research Claw-Benachrichtigung",
+    "es": "Notificación de Open Research Claw",
+    "ru": "Уведомление Open Research Claw",
+    "pt": "Notificação Open Research Claw",
+    "ar": "إشعار Open Research Claw"
   },
   "notify.no_channels": {
     "zh": "[提醒] notify_push：未配置推送渠道。请在 settings.json 中设置 Telegram 或飞书 (channels.telegram.enabled / channels.feishu.enabled) 以启用推送通知。请直接在对话中传达结果。",

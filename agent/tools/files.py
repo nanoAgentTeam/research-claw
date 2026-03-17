@@ -60,8 +60,8 @@ class ReadFileTool(BaseTool):
         }
 
     # Whitelist directories for absolute path access
-    _MEDIA_DIR = str(Path.home() / ".context_bot" / "media")
-    _CACHE_DIR = str(Path.home() / ".context_bot" / "cache")
+    _MEDIA_DIR = str(Path.home() / ".open_research_claw" / "media")
+    _CACHE_DIR = str(Path.home() / ".open_research_claw" / "cache")
 
     # Extensions that need rich conversion instead of plain text read
     _RICH_EXTS = {

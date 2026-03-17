@@ -86,7 +86,7 @@ You need to continue with the following steps to configure the QQ bot's AppID an
 ![1772516566218](image/QQBot/1772516566218.png)
 ![1772516577359](image/QQBot/1772516577359.png)
 
-## Step 2: Configure Open-Overleaf-Claw
+## Step 2: Configure Open-Research-Claw
 
 ### Via UI (Recommended)
 

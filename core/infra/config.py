@@ -257,7 +257,7 @@ class Config:
     _RESOURCES_ROOT = _paths.get('resources_root', './resources')
 
     _RUN_LOG_FILE = _paths.get('run_log_file', 'run.log')
-    _DB_FILE = _paths.get('db_file', 'context_bot.db')
+    _DB_FILE = _paths.get('db_file', 'open_research_claw.db')
     
     _CONTENT_SUBDIR = _paths.get('content_subdir', 'content')
 

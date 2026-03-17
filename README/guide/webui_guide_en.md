@@ -1,6 +1,6 @@
 ## Introduction
 
-This manual explains all features and operations of the ContextBot Web Console. It is organized in a "Goal -> Steps -> Done" format so you can get started quickly.
+This manual explains all features and operations of the Open Research Claw Web Console. It is organized in a "Goal -> Steps -> Done" format so you can get started quickly.
 
 ---
 
@@ -17,11 +17,11 @@ Steps:
    INFO:     Started server process
    INFO:     Uvicorn running on http://127.0.0.1:18790
 4. Open a browser and visit: http://127.0.0.1:18790/ui
-5. After the page loads, you will see the ContextBot console.
+5. After the page loads, you will see the Open Research Claw console.
 
 Done when:
 
-- The left sidebar shows a blue robot icon and the "ContextBot" title.
+- The left sidebar shows a blue robot icon and the "Open Research Claw" title.
 - The lower-left corner shows "Gateway Status: Connected" (green indicator).
 - The main area shows the "Control Center" page.
 
@@ -664,11 +664,11 @@ Done when:
 
 ## Closing Notes
 
-This manual covers the core features and workflows of the ContextBot WebUI. If you run into issues:
+This manual covers the core features and workflows of the Open Research Claw WebUI. If you run into issues:
 
 1. Check the "Real-Time Logs" page for runtime status.
 2. Check Gateway connection state in "Control Center".
 3. Refer to the "Troubleshooting" section in this guide.
 4. Read other project docs under `README/guide/`.
 
-Enjoy using ContextBot.
+Enjoy using Open Research Claw.
