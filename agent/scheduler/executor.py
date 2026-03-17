@@ -466,6 +466,16 @@ class SDDExecutor:
             config_path = self.ctx.workspace / "config" / "tools.json"
 
         loader = ToolLoader(config_path)
+
+        # Build skill registry for worker (filtered by profile if specified)
+        _skill_registry = None
+        try:
+            from agent.skills.registry import SkillRegistry
+            _profile_data = ToolLoader._load_profile(profile)
+            _skill_registry = SkillRegistry(allowed=_profile_data.get("skills"))
+        except Exception:
+            pass
+
         context = {
             "session": worker_session,
             "workspace": self.ctx.workspace,
@@ -475,6 +485,7 @@ class SDDExecutor:
             "model": self.ctx.model,
             "config": self.ctx.config,
             "project": worker_session.project if worker_session else self.ctx.project,
+            "skill_registry": _skill_registry,
         }
 
         return loader.load_for_profile(profile, context)

@@ -274,8 +274,8 @@ class TaskProposeTool(BaseTool):
         return (
             f"[Proposal]\n\n{self._session.proposal}\n\n"
             f"[INSTRUCTION] Show the proposal above to the user. "
-            f"User can discuss and request changes. "
-            f"When satisfied, call task_build to generate the TaskGraph."
+            f"At the end, remind the user: they can reply with feedback to revise, "
+            f"or confirm to proceed."
         )
 
     @staticmethod
@@ -500,7 +500,8 @@ class TaskBuildTool(BaseTool):
                     f"{display}\n\n"
                     f"[INSTRUCTION] The plan above is already formatted. "
                     f"Show it as-is to the user. "
-                    f"User must input /start to confirm and begin execution."
+                    f"At the end, remind the user: they can request changes, "
+                    f"or type /start to begin execution."
                 )
 
             except json.JSONDecodeError as e:

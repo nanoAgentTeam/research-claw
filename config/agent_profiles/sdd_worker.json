@@ -9,6 +9,7 @@
     "web_fetch",
     "web_search",
     "arxiv_search",
-    "latex_compile"
+    "latex_compile",
+    "activate_skill"
   ]
 }

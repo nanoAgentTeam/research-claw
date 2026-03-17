@@ -230,10 +230,9 @@ class TaskHandler(BaseCommandHandler):
         session = getattr(self.services, '_session', None)
         state_path = session.metadata / "task_state.json" if session else None
 
-        if fresh_mode or not state_path:
-            task_session = TaskSession()
-        else:
-            task_session = TaskSession.load(state_path) or TaskSession()
+        # Always start fresh — old task_state is unreliable after restart
+        # (LLM context lost, workers dead, user likely wants a new task)
+        task_session = TaskSession()
 
         # E2E / batch auto-execution mode: skip all interactive confirmation gates
         if e2e_mode:
