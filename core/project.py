@@ -873,6 +873,10 @@ class Project:
             self.config = replace(self.config, overleaf=OverleafConfig(project_id=overleaf_project_id))
         self.save_config()
 
+    def reload_config(self) -> None:
+        """从磁盘重新加载 project.yaml，刷新内存中的配置。"""
+        self.config = self._load_config()
+
     # -- 路径 --
 
     def resolve(self, path: str) -> Path:

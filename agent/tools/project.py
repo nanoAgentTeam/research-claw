@@ -158,6 +158,10 @@ class ProjectTool(BaseTool):
                     if id_match:
                         overleaf_id = id_match.group(1)
                         proj.link_overleaf(overleaf_id)
+                        # 刷新 AgentLoop 持有的 project 对象
+                        loop_project = getattr(self.ctx, 'project', None)
+                        if loop_project and getattr(loop_project, 'id', None) == project_name:
+                            loop_project.reload_config()
                         sync_result = proj.sync_from_overleaf()
                         if sync_result.success:
                             pulled = len(sync_result.pulled) if sync_result.pulled else 0
@@ -317,6 +321,11 @@ class ProjectTool(BaseTool):
             proj.link_overleaf(overleaf_id)
         except Exception as e:
             return f"[ERROR] Failed to save config: {e}"
+
+        # 刷新 AgentLoop 持有的 project 对象，避免内存中 config 过期
+        loop_project = getattr(self.ctx, 'project', None)
+        if loop_project and getattr(loop_project, 'id', None) == project_name:
+            loop_project.reload_config()
 
         # Decide sync direction: if local core has .tex files, push to Overleaf;
         # otherwise pull from Overleaf (e.g. linking an existing Overleaf project).
