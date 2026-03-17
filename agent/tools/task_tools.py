@@ -712,32 +712,39 @@ class TaskExecuteTool(BaseTool):
         graph = self._session.task_graph
         total_tasks = len(graph.tasks)
 
-        # Helper: emit a progress line to terminal and IM
+        # Helper: emit a progress line to terminal
         def emit(msg: str):
             if on_token:
                 on_token(msg + "\n")
-            # IM notification
-            if self._ctx.bus and message_context:
-                try:
-                    from bus.events import OutboundMessage
-                    loop = asyncio.get_running_loop()
-                    loop.create_task(self._ctx.bus.publish_outbound(OutboundMessage(
-                        channel=message_context.get("channel", ""),
-                        chat_id=message_context.get("chat_id", ""),
-                        content=msg,
-                        is_notification=True,
-                    )))
-                except RuntimeError:
-                    pass
+
+        def notify_im(text: str):
+            """Send a standalone notification to IM channel."""
+            if not self._ctx.bus or not message_context:
+                return
+            try:
+                from bus.events import OutboundMessage
+                _loop = asyncio.get_running_loop()
+                _loop.create_task(self._ctx.bus.publish_outbound(OutboundMessage(
+                    channel=message_context.get("channel", ""),
+                    chat_id=message_context.get("chat_id", ""),
+                    content=text,
+                    is_notification=True,
+                )))
+            except RuntimeError:
+                pass
 
         # ── Execution header ──
         emit(f"\n{'='*50}")
         emit(t("task.execute_start", total_tasks=total_tasks))
         emit(f"{'='*50}")
+        task_lines = []
         for _tid, _task in graph.tasks.items():
             _deps_str = f" <- [{', '.join(_task.dependencies)}]" if _task.dependencies else ""
             emit(f"  ⏳ [{_tid}] {_task.title}{_deps_str}")
+            task_lines.append(f"⏳ [{_tid}] {_task.title}{_deps_str}")
         emit("")
+        # IM: one message with execution start + task list
+        notify_im(t("task.execute_start", total_tasks=total_tasks) + "\n" + "\n".join(task_lines))
 
         exec_start = time.time()
 
@@ -788,7 +795,9 @@ class TaskExecuteTool(BaseTool):
                 elapsed = time.time() - exec_start
                 completed = sum(1 for _tk in graph.tasks.values() if _tk.status == TaskStatus.COMPLETED)
                 running = sum(1 for _tk in graph.tasks.values() if _tk.status == TaskStatus.RUNNING)
-                emit(t("task.execute_progress", completed=completed, total_tasks=total_tasks, running=running, elapsed=elapsed))
+                _hb_msg = t("task.execute_progress", completed=completed, total_tasks=total_tasks, running=running, elapsed=elapsed)
+                emit(_hb_msg)
+                notify_im(_hb_msg)
 
         heartbeat_task = asyncio.ensure_future(_heartbeat())
 
@@ -807,11 +816,16 @@ class TaskExecuteTool(BaseTool):
                     elapsed = time.time() - exec_start
                     ready_names = ", ".join(tk.id for tk in ready)
                     emit(f"\n{'─'*40}")
-                    emit(t("task.batch_start", batch_num=batch_num, count=len(ready), names=ready_names))
+                    _batch_header = t("task.batch_start", batch_num=batch_num, count=len(ready), names=ready_names)
+                    emit(_batch_header)
+                    _batch_tasks = []
                     for _rt in ready:
                         emit(f"    🔄 [{_rt.id}] {_rt.title}")
+                        _batch_tasks.append(f"🔄 [{_rt.id}] {_rt.title}")
                     emit(t("task.batch_elapsed", elapsed=elapsed))
                     emit("")
+                    # IM: one message with batch start info
+                    notify_im(_batch_header + "\n" + "\n".join(_batch_tasks))
 
                 batch_start = time.time()
                 result = await self._batch_runner.run_next_batch(on_log=condensed_log)
@@ -820,22 +834,30 @@ class TaskExecuteTool(BaseTool):
                 if result.tasks_run:
                     total_run.extend(result.tasks_run)
                     completed = sum(1 for _tk in graph.tasks.values() if _tk.status == TaskStatus.COMPLETED)
-                    emit(t("task.batch_complete", batch_num=batch_num, batch_elapsed=batch_elapsed, completed=completed, total_tasks=total_tasks))
+                    _complete_msg = t("task.batch_complete", batch_num=batch_num, batch_elapsed=batch_elapsed, completed=completed, total_tasks=total_tasks)
+                    emit(_complete_msg)
+                    notify_im(_complete_msg)
                 if result.failed:
                     total_failed.extend(result.failed)
-                    emit(t("task.batch_failed", batch_num=batch_num, failed=', '.join(result.failed)))
+                    _fail_msg = t("task.batch_failed", batch_num=batch_num, failed=', '.join(result.failed))
+                    emit(_fail_msg)
+                    notify_im(_fail_msg)
                 if result.logs:
                     all_logs.extend(result.logs)
                 if result.all_complete:
                     total_elapsed = time.time() - exec_start
                     emit(f"\n{'='*50}")
-                    emit(t("task.all_complete", total_elapsed=total_elapsed))
+                    _done_msg = t("task.all_complete", total_elapsed=total_elapsed)
+                    emit(_done_msg)
                     emit(f"{'='*50}\n")
+                    notify_im(_done_msg)
                     break
                 # No more ready tasks but not all complete — stuck (deps failed)
                 if not result.tasks_run:
                     total_elapsed = time.time() - exec_start
-                    emit(t("task.no_executable", total_elapsed=total_elapsed))
+                    _stuck_msg = t("task.no_executable", total_elapsed=total_elapsed)
+                    emit(_stuck_msg)
+                    notify_im(_stuck_msg)
                     break
         finally:
             _hb_running[0] = False

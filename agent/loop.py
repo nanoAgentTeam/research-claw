@@ -146,6 +146,21 @@ class AgentLoop:
             if _val and _dangerous.search(str(_val)):
                 raise ValueError(f"Invalid {_label}: '{_val}' contains dangerous path characters")
 
+        # Bootstrap concrete project/session when caller did not pass them
+        # (common in gateway startup). Commands like /task require these.
+        self._project = project or getattr(session, "project", None)
+        if self._project is None:
+            from core.project import Project
+            self._project = Project(self.project_id, self.workspace)
+
+        self._session = session
+        if self._session is None:
+            self._session = self._project.session(self.session_id, role_type=self.role_type)
+
+        # Keep ids in sync with the resolved objects.
+        self.project_id = self._project.id
+        self.session_id = self._session.id
+
         # [NEW] Determine Metadata Root (.bot folder)
         # In new architecture, .bot metadata lives inside the session sandbox.
         # This keeps logs isolated per project/session.
@@ -164,8 +179,6 @@ class AgentLoop:
         self.MAX_ACTION_HISTORY = 10
         self.consecutive_deadlocks = 0
 
-        self._project = project
-        self._session = session
         self.SUMMARY_THRESHOLD = 5
 
         # Working Directory Strategy:

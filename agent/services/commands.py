@@ -161,6 +161,40 @@ class PullProjectHandler(BaseCommandHandler):
         return CommandResult(should_continue=True, modified_message=macro_prompt)
 
 
+class SwitchProjectHandler(BaseCommandHandler):
+    """/switch <project_name> [session_name] — switch active project/session."""
+
+    async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
+        raw = args.strip()
+        if not raw:
+            return CommandResult(response="Usage: /switch <project_name> [session_name]")
+
+        parts = raw.split()
+        project_name = parts[0]
+        session_name = parts[1] if len(parts) > 1 else None
+
+        workspace = getattr(self.services, "workspace", None)
+        if workspace is None:
+            return CommandResult(response=t("err_no_project"))
+
+        target_root = workspace / project_name
+        if not target_root.exists() or not target_root.is_dir():
+            return CommandResult(response=f"[ERROR] Project '{project_name}' does not exist.")
+
+        if hasattr(self.services, "switch_project"):
+            await self.services.switch_project(project_name, session_name)
+        else:
+            await self.services.switch_mode("NORMAL", project_id=project_name, session_id=session_name)
+
+        actual_project = getattr(self.services, "project_id", project_name)
+        return CommandResult(
+            response=t(
+                "switch_project_success",
+                project=actual_project,
+            )
+        )
+
+
 class TaskHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         # Parse flags
@@ -909,6 +943,7 @@ HANDLER_CLASSES: dict[str, type[BaseCommandHandler]] = {
     "/stop": StopHandler,
     "/summarize": SummarizeHandler,
     "/recommend": RecommendHandler,
+    "/switch": SwitchProjectHandler,
     "/pull-project": PullProjectHandler,
     "/task": TaskHandler,
     "/start": TaskStartHandler,

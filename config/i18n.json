@@ -278,6 +278,18 @@
     "pt": "[ERRO] Sem contexto de projeto. Primeiro mude para um projeto.",
     "ar": "[خطأ] لا يوجد سياق مشروع. قم بالتبديل إلى مشروع أولاً."
   },
+  "switch_project_success": {
+    "zh": "已切换到项目 [{project}]。\n现在可以使用 /task、/sync、/compile 等项目命令。",
+    "en": "Switched to project [{project}].\nYou can now use project commands like /task, /sync, /compile.",
+    "ja": "プロジェクト [{project}] に切り替えました。\n/task、/sync、/compile などのプロジェクトコマンドを使用できます。",
+    "ko": "프로젝트 [{project}](으)로 전환했습니다.\n이제 /task, /sync, /compile 같은 프로젝트 명령을 사용할 수 있습니다.",
+    "fr": "Basculé vers le projet [{project}].\nVous pouvez maintenant utiliser des commandes de projet comme /task, /sync, /compile.",
+    "de": "Zum Projekt [{project}] gewechselt.\nSie können jetzt Projektbefehle wie /task, /sync, /compile verwenden.",
+    "es": "Se cambió al proyecto [{project}].\nAhora puedes usar comandos del proyecto como /task, /sync y /compile.",
+    "ru": "Переключено на проект [{project}].\nТеперь можно использовать команды проекта: /task, /sync, /compile.",
+    "pt": "Alternado para o projeto [{project}].\nAgora você pode usar comandos de projeto como /task, /sync e /compile.",
+    "ar": "تم التبديل إلى المشروع [{project}].\nيمكنك الآن استخدام أوامر المشروع مثل /task و /sync و /compile."
+  },
   "err_no_project_available": {
     "zh": "[错误] 无可用项目上下文。",
     "en": "[ERROR] No project context available.",
@@ -291,16 +303,16 @@
     "ar": "[خطأ] لا يوجد سياق مشروع متاح."
   },
   "err_task_needs_project": {
-    "zh": "[错误] Task 模式需要具体项目。请先用 /project 创建或切换到一个项目。",
-    "en": "[ERROR] Task mode requires a concrete project. Use /project to create or switch to one first.",
-    "ja": "[エラー] タスクモードにはプロジェクトが必要です。/project でプロジェクトを作成または切り替えてください。",
-    "ko": "[오류] 작업 모드에는 프로젝트가 필요합니다. /project를 사용하여 프로젝트를 생성하거나 전환하세요.",
-    "fr": "[ERREUR] Le mode tâche nécessite un projet concret. Utilisez /project pour en créer ou en sélectionner un.",
-    "de": "[FEHLER] Der Aufgabenmodus erfordert ein konkretes Projekt. Verwenden Sie /project, um eines zu erstellen oder auszuwählen.",
-    "es": "[ERROR] El modo de tarea requiere un proyecto concreto. Use /project para crear o cambiar a uno.",
-    "ru": "[ОШИБКА] Режим задач требует конкретного проекта. Используйте /project для создания или переключения на проект.",
-    "pt": "[ERRO] O modo de tarefa requer um projeto concreto. Use /project para criar ou mudar para um.",
-    "ar": "[خطأ] يتطلب وضع المهام مشروعًا محددًا. استخدم /project لإنشاء مشروع أو التبديل إلى مشروع."
+    "zh": "[错误] Task 模式需要具体项目。请先用 /switch 切换到一个项目。",
+    "en": "[ERROR] Task mode requires a concrete project. Use /switch to switch to a project first.",
+    "ja": "[エラー] タスクモードにはプロジェクトが必要です。/switch でプロジェクトに切り替えてください。",
+    "ko": "[오류] 작업 모드에는 프로젝트가 필요합니다. /switch로 프로젝트로 전환하세요.",
+    "fr": "[ERREUR] Le mode tâche nécessite un projet concret. Utilisez /switch pour passer à un projet.",
+    "de": "[FEHLER] Der Aufgabenmodus erfordert ein konkretes Projekt. Verwenden Sie /switch, um zu einem Projekt zu wechseln.",
+    "es": "[ERROR] El modo de tarea requiere un proyecto concreto. Use /switch para cambiar a un proyecto.",
+    "ru": "[ОШИБКА] Режим задач требует конкретного проекта. Используйте /switch, чтобы переключиться на проект.",
+    "pt": "[ERRO] O modo de tarefa requer um projeto concreto. Use /switch para mudar para um projeto.",
+    "ar": "[خطأ] يتطلب وضع المهام مشروعًا محددًا. استخدم /switch للتبديل إلى مشروع."
   },
   "err_tool_context": {
     "zh": "[错误] 工具上下文不可用。",

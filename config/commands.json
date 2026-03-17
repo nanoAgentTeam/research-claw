@@ -115,7 +115,7 @@
     },
     {
       "name": "/switch",
-      "handler": "",
+      "handler": "agent.services.commands.SwitchProjectHandler",
       "description": "Switch to a specific project (handled by project tool)",
       "requires_args": true,
       "args_usage": "/switch <project_name>"
