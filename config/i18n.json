@@ -386,6 +386,18 @@
     "pt": "{count} arquivos baixados do Overleaf",
     "ar": "تم سحب {count} ملفات من Overleaf"
   },
+  "sync_pull_deleted": {
+    "zh": "本地与 Overleaf 不一致，已删除本地多余的 {count} 个文件：{files}",
+    "en": "Local out of sync with Overleaf, removed {count} local file(s): {files}",
+    "ja": "ローカルと Overleaf が不一致のため、ローカルの {count} ファイルを削除しました: {files}",
+    "ko": "로컬이 Overleaf와 불일치하여 로컬 파일 {count}개를 삭제했습니다: {files}",
+    "fr": "Local désynchronisé avec Overleaf, {count} fichier(s) local supprimé(s) : {files}",
+    "de": "Lokal nicht synchron mit Overleaf, {count} lokale Datei(en) gelöscht: {files}",
+    "es": "Local desincronizado con Overleaf, se eliminaron {count} archivo(s) local(es): {files}",
+    "ru": "Локальное хранилище не синхронизировано с Overleaf, удалено {count} локальных файлов: {files}",
+    "pt": "Local fora de sincronia com Overleaf, {count} arquivo(s) local removido(s): {files}",
+    "ar": "المحلي غير متزامن مع Overleaf، تم حذف {count} ملف(ات) محلية: {files}"
+  },
   "pushed_files": {
     "zh": "已推送 {count} 个文件到 Overleaf",
     "en": "Pushed {count} files to Overleaf",
@@ -397,6 +409,18 @@
     "ru": "Отправлено {count} файлов в Overleaf",
     "pt": "{count} arquivos enviados para o Overleaf",
     "ar": "تم دفع {count} ملفات إلى Overleaf"
+  },
+  "sync_push_deleted": {
+    "zh": "同时从 Overleaf 删除了 {count} 个文件：{files}",
+    "en": "Also deleted {count} file(s) from Overleaf: {files}",
+    "ja": "Overleaf から {count} ファイルを削除しました: {files}",
+    "ko": "Overleaf에서 {count}개 파일을 삭제했습니다: {files}",
+    "fr": "{count} fichier(s) supprimé(s) d'Overleaf : {files}",
+    "de": "{count} Datei(en) von Overleaf gelöscht: {files}",
+    "es": "Se eliminaron {count} archivo(s) de Overleaf: {files}",
+    "ru": "Удалено {count} файлов из Overleaf: {files}",
+    "pt": "{count} arquivo(s) removido(s) do Overleaf: {files}",
+    "ar": "تم حذف {count} ملف(ات) من Overleaf: {files}"
   },
   "cleanup_done": {
     "zh": "子 Agent 工作目录已清理。",

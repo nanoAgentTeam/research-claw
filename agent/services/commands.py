@@ -424,12 +424,21 @@ class SyncHandler(BaseCommandHandler):
                 return CommandResult(response=res)
             if not result.success:
                 errors_text = ', '.join(result.errors)
-                if "No Overleaf config" in errors_text or "overleaf" in errors_text.lower() and "not" in errors_text.lower():
+                if "No Overleaf config" in errors_text:
                     res = t("sync_no_config")
                 else:
                     res = t("sync_failed", detail=errors_text)
             else:
                 res = t("pulled_files", count=len(result.pulled))
+                if result.pulled:
+                    for f in result.pulled:
+                        res += f"\n  + {f}"
+                if result.deleted:
+                    res += "\n" + t("sync_pull_deleted",
+                                    count=len(result.deleted),
+                                    files=", ".join(result.deleted))
+                    for f in result.deleted:
+                        res += f"\n  - {f}"
                 if result.conflicts:
                     res += f"\n  Conflicts: {', '.join(result.conflicts)}"
                 refreshed_legacy = False
@@ -507,6 +516,15 @@ class SyncHandler(BaseCommandHandler):
                 res = t("sync_failed", detail=', '.join(result.errors))
             else:
                 res = t("pushed_files", count=len(result.pushed))
+                if result.pushed:
+                    for f in result.pushed:
+                        res += f"\n  + {f}"
+                if result.deleted:
+                    res += "\n" + t("sync_push_deleted",
+                                    count=len(result.deleted),
+                                    files=", ".join(result.deleted))
+                    for f in result.deleted:
+                        res += f"\n  - {f}"
         else:
             res = t("sync_usage")
 

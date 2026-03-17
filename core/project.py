@@ -121,6 +121,7 @@ class SyncResult:
     pushed: list[str] = field(default_factory=list)
     conflicts: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    deleted: list[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -315,7 +316,7 @@ class OverleafSync:
             fetch_ids: 如果为 True，从 Overleaf API 获取文件树并记录 file ID。
         """
         metadata = self._load_metadata()
-        files = metadata.get("files", {})
+        old_files = metadata.get("files", {})
 
         # 可选：从 API 获取文件树以记录 file ID
         id_map: dict[str, dict] = {}
@@ -328,20 +329,22 @@ class OverleafSync:
             except Exception as e:
                 logger.warning(f"Failed to fetch file IDs from Overleaf: {e}")
 
+        # 从头构建，只保留本地实际存在的文件
+        new_files = {}
         for f in self.core_path.rglob("*"):
             if not f.is_file():
                 continue
             rel = str(f.relative_to(self.core_path))
             if not self._should_sync(rel):
                 continue
-            entry = files.get(rel, {})
+            entry = old_files.get(rel, {})
             entry["hash"] = self._file_hash(f)
             # 合并 API 中的 file ID（如果有）
             if rel in id_map:
                 entry["id"] = id_map[rel]["id"]
                 entry["type"] = id_map[rel].get("type", "file")
-            files[rel] = entry
-        metadata["files"] = files
+            new_files[rel] = entry
+        metadata["files"] = new_files
         self._save_metadata(metadata)
 
     @staticmethod
@@ -372,8 +375,24 @@ class OverleafSync:
         if not folder_path or folder_path == ".":
             return root_folder
 
-        current_folder = root_folder
-        for part in folder_path.split("/"):
+        # 先在传入的文件树快照中查找，如果找到直接返回
+        existing = self._find_folder_in_tree(root_folder, folder_path)
+        if existing:
+            return existing
+
+        # 快照中没有，先刷新一次文件树再找（可能上次同步已创建但快照过时）
+        try:
+            refreshed = api.project_get_files(project_id)
+            existing = self._find_folder_in_tree(refreshed, folder_path)
+            if existing:
+                return existing
+        except Exception as e:
+            logger.warning(f"Failed to refresh file tree: {e}")
+
+        # 确实不存在，逐级创建
+        current_folder = api.project_get_files(project_id)
+        parts = folder_path.split("/")
+        for i, part in enumerate(parts):
             found = None
             for child in getattr(current_folder, "children", []):
                 if getattr(child, "name", "") == part and hasattr(child, "children"):
@@ -386,13 +405,24 @@ class OverleafSync:
                     current_folder = api.project_create_folder(
                         project_id, current_folder.id, part
                     )
-                except Exception:
+                    logger.info(f"Created Overleaf folder: {'/'.join(parts[:i+1])}")
+                except Exception as e:
                     # 文件夹可能已存在（400），重新获取文件树查找
+                    logger.warning(
+                        f"Failed to create folder '{part}' "
+                        f"(path: {folder_path}): {e}, retrying with refresh..."
+                    )
                     refreshed = api.project_get_files(project_id)
-                    target = self._find_folder_in_tree(refreshed, folder_path)
+                    # 查找到当前为止的部分路径
+                    partial_path = "/".join(parts[:i+1])
+                    target = self._find_folder_in_tree(refreshed, partial_path)
                     if target:
-                        return target
-                    raise
+                        current_folder = target
+                    else:
+                        raise RuntimeError(
+                            f"Cannot create or find folder '{partial_path}' "
+                            f"on Overleaf: {e}"
+                        ) from e
         return current_folder
 
     @staticmethod
@@ -434,10 +464,13 @@ class OverleafSync:
 
                 metadata = self._load_metadata()
 
+                # 收集远端所有文件的相对路径
+                remote_files = set()
                 for f in extract_dir.rglob("*"):
                     if not f.is_file():
                         continue
                     rel = str(f.relative_to(extract_dir))
+                    remote_files.add(rel)
 
                     local_file = self.core_path / rel
                     if local_file.exists() and rel in metadata.get("files", {}):
@@ -451,6 +484,23 @@ class OverleafSync:
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(f, target)
                     result.pulled.append(rel)
+
+                # 删除远端已不存在的文件（仅限 metadata 中记录过的，即之前从 Overleaf 同步来的）
+                for rel in list(metadata.get("files", {}).keys()):
+                    if rel not in remote_files:
+                        local_file = self.core_path / rel
+                        if local_file.exists():
+                            local_file.unlink()
+                            result.deleted.append(rel)
+                            logger.info(f"Deleted local file not on Overleaf: {rel}")
+                        # 清除空父目录
+                        parent = local_file.parent
+                        while parent != self.core_path:
+                            try:
+                                parent.rmdir()  # 仅在空目录时成功
+                                parent = parent.parent
+                            except OSError:
+                                break
 
                 self._rebuild_metadata(fetch_ids=True)
         except Exception as e:
@@ -527,6 +577,9 @@ class OverleafSync:
                         )
                         target_folder_id = getattr(target_folder, "id", "")
                         folder_cache[folder_path] = target_folder_id
+                        # 刷新 root_folder 以便后续 _ensure_folder 调用能看到新创建的文件夹
+                        if folder_path:
+                            root_folder = api.project_get_files(self.config.project_id)
                     api.project_upload_file(
                         self.config.project_id,
                         target_folder_id,
@@ -541,11 +594,26 @@ class OverleafSync:
             # 检测删除
             for rel, info in metadata.get("files", {}).items():
                 if not (self.core_path / rel).exists():
+                    file_id = info.get("id", "")
+                    if not file_id:
+                        logger.warning(f"Skip delete {rel}: no file ID in metadata")
+                        continue
                     try:
-                        api.project_delete_entity(self.config.project_id, info.get("id", ""))
-                        result.pushed.append(f"(deleted) {rel}")
+                        entity_type = info.get("type", "doc")
+                        api.project_delete_entity(
+                            self.config.project_id, file_id, entity_type=entity_type
+                        )
+                        result.deleted.append(rel)
                     except Exception as e:
-                        result.errors.append(f"delete {rel}: {e}")
+                        if "404" in str(e):
+                            # 远端已不存在，视为删除成功
+                            result.deleted.append(rel)
+                        else:
+                            result.errors.append(f"delete {rel}: {e}")
+
+            # 有文件失败时标记为部分失败
+            if result.errors:
+                result.success = False
 
             self._rebuild_metadata(fetch_ids=True)
         except Exception as e:

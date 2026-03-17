@@ -133,13 +133,16 @@ class OverleafTool(BaseTool):
                         "Use project_manager(action='switch', project_name='...') to enter a specific project first."
                     )
                 result = self._project.sync_to_overleaf()
-                if not result.success:
+                pushed = len(result.pushed) if result.pushed else 0
+                if not result.success and pushed == 0:
                     errors = ', '.join(result.errors) if result.errors else 'unknown'
                     return f"[ERROR] Sync failed: {errors}"
-                pushed = len(result.pushed) if result.pushed else 0
                 msg = f"Pushed {pushed} files to Overleaf."
                 if result.errors:
-                    msg += f"\nErrors: {'; '.join(result.errors)}"
+                    failed = len(result.errors)
+                    msg += f"\n[WARNING] {failed} file(s) failed:"
+                    for err in result.errors:
+                        msg += f"\n  - {err}"
                 return msg
 
             elif action == "create_project":
