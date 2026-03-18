@@ -3790,13 +3790,32 @@
 
                 async createSubscriptionFromContact(contact) {
                     try {
+                        // Build params by looking up credentials from matching channel account
+                        const params = {};
+                        const ch = String(contact.channel || '').trim();
+                        // Map im_telegram -> telegram, im_feishu -> feishu, etc.
+                        const platformKey = ch.startsWith('im_') ? ch.slice(3) : ch;
+                        const accounts = Array.isArray(this.config?.channel?.accounts) ? this.config.channel.accounts : [];
+                        const matched = accounts.find(a => a.platform === platformKey && a.enabled);
+                        if (matched && matched.credentials) {
+                            // Copy all credentials into params (e.g. token -> bot_token for telegram)
+                            for (const [k, v] of Object.entries(matched.credentials)) {
+                                if (v) {
+                                    if (platformKey === 'telegram' && k === 'token') {
+                                        params['bot_token'] = v;
+                                    } else {
+                                        params[k] = v;
+                                    }
+                                }
+                            }
+                        }
                         const res = await fetch('/api/config/subscriptions', {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({
                                 channel: contact.channel,
                                 chat_id: contact.chat_id,
-                                params: {},
+                                params: params,
                                 remark: 'IM Channel',
                                 enabled: true
                             })
