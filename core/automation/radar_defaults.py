@@ -58,10 +58,9 @@ def build_default_radar_jobs(timezone: str = "UTC") -> list[AutomationJob]:
                 "   - openalex_search：覆盖面广，适合交叉学科和非 CS 方向。\n"
                 "   根据 research_core.keywords 构造查询，结合 date_from 做增量搜索。\n"
                 "4) 去重：对比 rolling_summary 中已推送的论文 ID，同一论文不重复推送。\n"
-                "5) 推送策略（了解情况型，门槛宽松）：本任务定位是帮用户掌握研究动态，"
-                "只要找到与项目方向相关、有参考价值的新论文（方向一致、方法可借鉴、或可能形成竞争），"
-                "就应调用 notify_push 汇报，不要求高度重合。"
-                "若当日确实没有任何相关新论文，则不推送。\n"
+                "5) 推送策略（必推型）：只要检索到与项目相关的新论文（去重后），必须调用 notify_push 推送摘要，"
+                "相关的判断标准宽松：方向一致、思路有启发、方向可延续、方法可借鉴、或可能形成竞争均算相关；"
+                "若当日没有检索到相关论文，则不推送。\n"
                 "6) 推送格式：每篇论文一行，包含：标题、一句话要点、与本项目的关系（竞争/互补/可借鉴）。"
                 + _MEMORY_GUIDANCE
             ),
@@ -234,9 +233,8 @@ def build_default_radar_jobs(timezone: str = "UTC") -> list[AutomationJob]:
                 "   d) 基于以上分析，给出对本项目的具体改进建议（目标：提升中稿概率）。\n"
                 "   e) 将该会议标记为已分析（记入 memory，kind='conference_analyzed'，"
                 "scope='job:radar.conference.track'），供下次去重。\n"
-                "5) 推送策略（了解情况型，门槛宽松）：本任务定位是帮用户了解会议动态，"
-                "只要发现与本项目方向相关的录用论文或趋势分析值得参考，就应调用 notify_push 汇报；"
-                "无任何新发现时才跳过推送。"
+                "5) 推送策略（必推型）：只要发现有会议公布了新的录用结果，必须调用 notify_push 推送分析；"
+                "若没有发现任何会议新结果，则不推送。"
                 + _MEMORY_GUIDANCE
             ),
             enabled=True,
