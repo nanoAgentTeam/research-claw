@@ -13,9 +13,9 @@ A self-hosted AI assistant for academic research — manages your papers, search
 
 ---
 
-**Always On, Always Ready**
+**Real User Case · Survey → Idea → Paper**
 
-Real user case · Survey → Idea → Paper
+Always On, Always Ready
 
 https://github.com/user-attachments/assets/9280d4dc-c666-4688-84b7-d9534ab0e979
 
