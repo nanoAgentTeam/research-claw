@@ -15,9 +15,11 @@ A self-hosted AI assistant for academic research — manages your papers, search
 
 **Always On, Always Ready**
 
+Real user case · Survey → Idea → Paper
+
 https://github.com/user-attachments/assets/9280d4dc-c666-4688-84b7-d9534ab0e979
 
-Real user case · Mobile demo · Executed by GLM-5
+Mobile demo · Executed by GLM-5
 Papers produced: [LLM-Based Autonomous Agents Survey](https://nanoagentteam.github.io/assets/Agent_survey.pdf) · [ToolCLIP](https://nanoagentteam.github.io/assets/toolCLIP.pdf)
 
 ---
