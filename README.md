@@ -17,7 +17,9 @@ A self-hosted AI assistant for academic research — manages your papers, search
 
 A user conducted a comprehensive **LLM Agent survey**, then extracted an original idea and wrote **ToolCLIP** — two complete academic papers, managed entirely by Research Claw on mobile.
 
-🎬 [**Watch Demo**](https://nanoagentteam.github.io/) · 📄 [LLM Agent Survey](https://nanoagentteam.github.io/assets/Agent_survey.pdf) · 📄 [ToolCLIP](https://nanoagentteam.github.io/assets/toolCLIP.pdf)
+<video src="https://nanoagentteam.github.io/assets/research-claw-demo.mp4" autoplay muted loop width="300"></video>
+
+📄 [LLM Agent Survey](https://nanoagentteam.github.io/assets/Agent_survey.pdf) · 📄 [ToolCLIP](https://nanoagentteam.github.io/assets/toolCLIP.pdf)
 
 ---
 
@@ -101,8 +103,6 @@ Bot: ⏳ Compiling PDF，please wait......
 https://github.com/user-attachments/assets/fccb837c-cfc5-4063-b803-2ae900fb4a20
 
 <!-- TODO: 在此放置 Web UI 截图 -->
-
-![Web UI](README/images/webui_en.png)
 
 <!-- ![Web UI](docs/assets/webui.png) -->
 
