@@ -4,7 +4,7 @@
 
 **重要提示：请始终使用简体中文回答用户的问题和进行交流。**
 
-代码要兼容 python 3.9
+代码要兼容 python 3.11
 
 ## 开发指令
 
@@ -18,7 +18,7 @@
 
 ### 环境配置
 
-    python 3.9+
+    python 3.11+
 
 - **安装依赖**: `pip install -r requirements.txt`
 - **认证**: Overleaf 同步需要 `.olauth` 文件 (通过 `ols login` 生成)。

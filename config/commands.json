@@ -104,7 +104,7 @@
     {
       "name": "/done",
       "handler": "agent.services.commands.TaskDoneHandler",
-      "description": "End current TASK session, commit results, return to NORMAL mode",
+      "description": "End current TASK session and return to NORMAL mode",
       "requires_args": false
     },
     {

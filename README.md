@@ -47,7 +47,7 @@ You: /sync push
 Bot: ✅ Pushed 3 files to Overleaf.
 
 You: compile it and send it to me
-Bot: ⏳ Compiling PDF，please wait......
+Bot: ⏳ Compiling PDF, please wait...
 ```
 
 <!-- TODO: 在此放置 CLI 会话截图 -->
@@ -99,13 +99,13 @@ Bot: ⏳ Compiling PDF，please wait......
 - **CLI** — full-featured interactive terminal
 - **IM Bots** — Feishu (Lark), Telegram, QQ, DingTalk — no public IP required
 
+---
+
 ### Feature Tour
 
 https://github.com/user-attachments/assets/fccb837c-cfc5-4063-b803-2ae900fb4a20
 
-<!-- TODO: 在此放置 Web UI 截图 -->
-
-<!-- ![Web UI](docs/assets/webui.png) -->
+---
 
 ## Getting Started
 
@@ -199,7 +199,7 @@ workspace/
 | `/git`         | Enter interactive Git mode (history, diff, rollback)         |
 | `/reset`       | Clear current session history                                |
 | `/back`        | Return to Default lobby                                      |
-| `/done`        | Exit current mode (Task / Git)                               |
+| `/done`        | End current TASK session and return to normal mode            |
 
 ### Task Mode
 
@@ -261,7 +261,7 @@ Sub-agents work in isolated overlay directories. Their outputs go through a merg
 
 Each project can have scheduled tasks that run automatically via cron expressions. Configure them through the Web UI's **Automation** tab or via `project.yaml`.
 
-**Built-in radar jobs** (auto-created when a project is linked to Overleaf):
+**Built-in radar jobs** (auto-created when a project has no active radar jobs):
 
 | Job                        | What it does                                                             | Default Schedule |
 | -------------------------- | ------------------------------------------------------------------------ | ---------------- |
@@ -464,15 +464,13 @@ Bot: ⏳ 编译中，请稍候......
 - **CLI** — 全功能交互式终端
 - **IM 机器人** — 飞书、Telegram、QQ、钉钉 — 无需公网 IP
 
+---
+
 ### 功能概览
 
 https://github.com/user-attachments/assets/fccb837c-cfc5-4063-b803-2ae900fb4a20
 
-<!-- TODO: 在此放置 Web UI 截图 -->
-
-![Web UI](README/images/webui_ch.png)
-
-<!-- ![Web UI](docs/assets/webui.png) -->
+---
 
 ## 快速开始
 
@@ -564,7 +562,7 @@ workspace/
 | `/git`         | 进入交互式 Git 模式（历史、差异、回退） |
 | `/reset`       | 清空当前 Session 对话历史               |
 | `/back`        | 返回 Default 大厅                       |
-| `/done`        | 退出当前模式（Task / Git）              |
+| `/done`        | 结束 Task 会话，回到普通模式            |
 
 ### Task 模式
 
@@ -624,7 +622,7 @@ You: "写一篇关于 MoE 的论文"
 
 每个项目可配置定时任务，通过 cron 表达式自动执行。在 Web UI 的**自动化任务**页面或 `project.yaml` 中配置。
 
-**内置雷达任务**（关联 Overleaf 后自动创建）：
+**内置雷达任务**（项目无活跃雷达任务时自动创建）：
 
 | 任务                   | 功能                                 | 默认频率 |
 | ---------------------- | ------------------------------------ | -------- |
