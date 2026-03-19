@@ -13,7 +13,7 @@ A self-hosted AI assistant for academic research — manages your papers, search
 
 ---
 
-**Real User Case · Survey → Idea → Paper**
+**Real User Case**
 
 Always On, Always Ready
 
