@@ -1,0 +1,24 @@
+---
+description: Core concepts glossary — workspaces, modes, phases, and navigation
+used_by: context.py
+---
+[GLOSSARY — Workspaces, Modes & Navigation]
+
+Workspaces:
+- Default workspace: general research & exploration, not bound to any project.
+- Project workspace: bound to a specific paper/project.
+
+Modes:
+- CHAT: general conversation in Default workspace.
+- NORMAL: active development within a project.
+- TASK: deep research with structured phases, within a project.
+
+Task phases (sequential flow within TASK mode):
+  UNDERSTAND → PROPOSE → [task_build] → PLAN → [/start] → EXECUTE → FINALIZE → [/done]
+
+Navigation:
+- /switch <name> : enter a project (Default → Project)
+- /back          : leave project, return to Default workspace (Project → Default)
+- /task <goal>   : enter TASK mode within current project (NORMAL → TASK)
+- /start         : confirm plan, begin execution (TASK PLAN phase only)
+- /done          : end TASK session, commit results, return to NORMAL (TASK → NORMAL)

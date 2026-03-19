@@ -89,16 +89,6 @@ class ResetHandler(BaseCommandHandler):
         return CommandResult(response=res)
 
 
-class ExitHandler(BaseCommandHandler):
-    async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
-        if self.services.current_mode == "CHAT":
-            res = t("already_chat_mode")
-        else:
-            await self.services.switch_mode("CHAT")
-            res = t("switched_chat_mode")
-        return CommandResult(response=res)
-
-
 class StopHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         res = t("stop_signal")
@@ -348,12 +338,7 @@ class TaskDoneHandler(BaseCommandHandler):
         task_session = context_manager._task_session if context_manager else None
 
         if not task_session:
-            # Not in task mode — fall back to ExitHandler behavior
-            if self.services.current_mode == "CHAT":
-                return CommandResult(response=t("already_chat_mode"))
-            else:
-                await self.services.switch_mode("CHAT")
-                return CommandResult(response=t("switched_chat_mode"))
+            return CommandResult(response=t("not_in_task_mode"))
 
         summary = self.services._exit_task_mode()
         return CommandResult(response=t("exit_task_mode", summary=summary))
@@ -956,7 +941,6 @@ class HelpHandler(BaseCommandHandler):
 HANDLER_CLASSES: dict[str, type[BaseCommandHandler]] = {
     "/help": HelpHandler,
     "/reset": ResetHandler,
-    "/exit": ExitHandler,
     "/stop": StopHandler,
     "/summarize": SummarizeHandler,
     "/recommend": RecommendHandler,

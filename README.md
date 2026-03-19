@@ -8,16 +8,18 @@ A self-hosted AI assistant for academic research — manages your papers, search
 
 你自己的 AI 学术研究助手 — 管理论文、检索文献、追踪截稿日期，在你常用的渠道随时响应。
 
-[![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-<!-- TODO: 在此放置产品演示 GIF 或视频 -->
+---
 
-https://github.com/user-attachments/assets/fccb837c-cfc5-4063-b803-2ae900fb4a20
+**📋 Real Case: Survey → Idea → Paper**
 
+A user conducted a comprehensive **LLM Agent survey**, then extracted an original idea and wrote **ToolCLIP** — two complete academic papers, managed entirely by Research Claw on mobile.
 
+🎬 [**Watch Demo**](https://nanoagentteam.github.io/) · 📄 [LLM Agent Survey](https://nanoagentteam.github.io/assets/Agent_survey.pdf) · 📄 [ToolCLIP](https://nanoagentteam.github.io/assets/toolCLIP.pdf)
 
-<!-- ![Demo](docs/assets/demo.gif) -->
+---
 
 **[English](#english)** · **[中文](#中文)**
 
@@ -93,6 +95,10 @@ Bot: ⏳ Compiling PDF，please wait......
 - **Web UI** — browser-based dashboard for configuration and monitoring
 - **CLI** — full-featured interactive terminal
 - **IM Bots** — Feishu (Lark), Telegram, QQ, DingTalk — no public IP required
+
+### Feature Tour
+
+https://github.com/user-attachments/assets/fccb837c-cfc5-4063-b803-2ae900fb4a20
 
 <!-- TODO: 在此放置 Web UI 截图 -->
 
@@ -456,6 +462,10 @@ Bot: ⏳ 编译中，请稍候......
 - **Web UI** — 浏览器端仪表盘，配置和监控
 - **CLI** — 全功能交互式终端
 - **IM 机器人** — 飞书、Telegram、QQ、钉钉 — 无需公网 IP
+
+### 功能概览
+
+https://github.com/user-attachments/assets/fccb837c-cfc5-4063-b803-2ae900fb4a20
 
 <!-- TODO: 在此放置 Web UI 截图 -->
 

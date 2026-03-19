@@ -114,7 +114,7 @@ class GitAgent:
 
     label = "Git"
     color = "magenta"
-    exit_commands = ("/done", "/exit", "/quit")
+    exit_commands = ("/done", "/back", "/quit")
 
     def __init__(self, project: "Project", provider: Any, model: str | None = None):
         self.project = project

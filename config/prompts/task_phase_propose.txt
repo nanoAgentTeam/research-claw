@@ -8,4 +8,5 @@ used_by: context.py (task mode)
 [Task Mode - PROPOSE]
 {goal_line}{round_line}Proposal 已生成，向用户展示。用户可以讨论修改。
 如果用户要求修改 Proposal，再次调用 task_propose 重新生成。
-用户满意后调用 task_build 生成 TaskGraph。
+用户满意后调用 task_build 生成 TaskGraph，进入 PLAN 阶段。
+当前阶段流程：PROPOSE → task_build → PLAN → /start → EXECUTE

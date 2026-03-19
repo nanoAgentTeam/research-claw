@@ -257,6 +257,10 @@ class ContextManager:
                     pb.set("available_skills", _skills_block)
             except Exception:
                 pass
+            # Inject glossary (core concepts) before commands
+            glossary = reg.load_prompt_template("ctx_glossary.txt") if reg else ""
+            if glossary:
+                pb.set("glossary", glossary)
             # Inject available commands
             commands_block = self._build_commands_block(reg)
             if commands_block:
@@ -543,7 +547,7 @@ Output ONLY the new summary (bullet points)."""
         _kw = dict(goal_line=goal_line, round_line=round_line)
 
         _UNDERSTAND_FB = "[Task Mode - UNDERSTAND]\n{goal_line}{round_line}用 ls、read_file、bash 探索项目结构，理解上下文后调用 task_propose(goal=\"...\") 生成 Proposal。"
-        _PROPOSE_FB = "[Task Mode - PROPOSE]\n{goal_line}{round_line}Proposal 已生成，向用户展示。用户可以讨论修改。\n如果用户要求修改 Proposal，再次调用 task_propose 重新生成。\n用户满意后调用 task_build 生成 TaskGraph。"
+        _PROPOSE_FB = "[Task Mode - PROPOSE]\n{goal_line}{round_line}Proposal 已生成，向用户展示。用户可以讨论修改。\n如果用户要求修改 Proposal，再次调用 task_propose 重新生成。\n用户满意后调用 task_build 生成 TaskGraph，进入 PLAN 阶段。\n当前阶段流程：PROPOSE → task_build → PLAN → /start → EXECUTE"
         _PLAN_FB = (
             "[Task Mode - PLAN]\n{goal_line}{round_line}"
             "向用户展示计划，等待确认。用 task_modify 调整。\n"

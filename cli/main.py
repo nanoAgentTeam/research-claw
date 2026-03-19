@@ -496,7 +496,7 @@ def agent(
 
                         sub_label = getattr(sub, "label", "Sub")
                         sub_color = getattr(sub, "color", "cyan")
-                        sub_exit_cmds = getattr(sub, "exit_commands", ("/done", "/exit", "/quit"))
+                        sub_exit_cmds = getattr(sub, "exit_commands", ("/done", "/back", "/quit"))
 
                         while True:
                             try:

@@ -35,7 +35,7 @@
     {
       "name": "/back",
       "handler": "agent.services.commands.BackToDefaultHandler",
-      "description": "Return to Default project",
+      "description": "Leave current project and return to Default workspace",
       "requires_args": false,
       "require_project": true
     },
@@ -98,19 +98,13 @@
     {
       "name": "/start",
       "handler": "agent.services.commands.TaskStartHandler",
-      "description": "Confirm task plan and begin execution (only in PLAN phase)",
+      "description": "Begin task execution (TASK mode, PLAN → EXECUTE transition only)",
       "requires_args": false
     },
     {
       "name": "/done",
       "handler": "agent.services.commands.TaskDoneHandler",
-      "description": "Exit task mode or switch back to CHAT",
-      "requires_args": false
-    },
-    {
-      "name": "/exit",
-      "handler": "agent.services.commands.ExitHandler",
-      "description": "Exit current mode and return to CHAT",
+      "description": "End current TASK session, commit results, return to NORMAL mode",
       "requires_args": false
     },
     {
