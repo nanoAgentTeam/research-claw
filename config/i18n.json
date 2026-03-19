@@ -207,8 +207,8 @@
     "ar": "لست في وضع المهام. استخدم /task للدخول."
   },
   "switched_chat_mode": {
-    "zh": "⬅️ 已切回聊天模式，项目上下文已清除。",
-    "en": "⬅️ Switched back to CHAT mode. Project context cleared.",
+    "zh": "⬅️ 已切回聊天模式。如需返回默认项目，请输入 /back。",
+    "en": "⬅️ Switched back to CHAT mode. Use /back to return to Default project.",
     "ja": "⬅️ チャットモードに切り替えました。プロジェクトコンテキストをクリアしました。",
     "ko": "⬅️ 채팅 모드로 전환했습니다. 프로젝트 컨텍스트가 삭제되었습니다.",
     "fr": "⬅️ Retour en mode CHAT. Contexte du projet effacé.",
@@ -495,8 +495,8 @@
     "ar": "تمت استعادة جلسة المهام السابقة. استخدم `/task --new` للبدء من جديد."
   },
   "task_intro": {
-    "zh": "[Task 模式] 进入交互式任务会话。\n当前阶段: {phase}{goal_info}{plan_info}{restored_hint}\n\nTask 模式共 5 个阶段:\n  1. PROPOSE  — 生成方案 → 你确认或提修改意见\n  2. PLAN     — 生成执行计划 → 你确认后输入 /start\n  3. EXECUTE  — 子 Agent 并行执行（自动，等待即可）\n  4. FINALIZE — 整合产出到项目文件（自动）\n  5. DONE     — 提交完成，自动退出\n\n可用命令: /start (确认计划) | /done (退出 task 模式)",
-    "en": "[Task Mode] Entering interactive task session.\nCurrent phase: {phase}{goal_info}{plan_info}{restored_hint}\n\nTask mode has 5 phases:\n  1. PROPOSE  — Generate proposal → You confirm or suggest changes\n  2. PLAN     — Generate execution plan → Confirm with /start\n  3. EXECUTE  — Sub-agents execute in parallel (automatic)\n  4. FINALIZE — Integrate outputs into project files (automatic)\n  5. DONE     — Commit and auto-exit\n\nCommands: /start (confirm plan) | /done (exit task mode)",
+    "zh": "[Task 模式] 进入交互式任务会话。\n当前阶段: {phase}{goal_info}{plan_info}{restored_hint}\n\nTask 模式共 5 个阶段:\n  1. PROPOSE  — 生成方案 → 你确认或提修改意见（此阶段无需输入命令）\n  2. PLAN     — 生成执行计划 → 你确认后输入 /start 开始执行\n  3. EXECUTE  — 子 Agent 并行执行（自动，等待即可）\n  4. FINALIZE — 整合产出到项目文件（自动）\n  5. DONE     — 提交完成，自动退出\n\n可用命令: /start (仅 PLAN 阶段，确认计划后开始执行) | /done (退出 task 模式)",
+    "en": "[Task Mode] Entering interactive task session.\nCurrent phase: {phase}{goal_info}{plan_info}{restored_hint}\n\nTask mode has 5 phases:\n  1. PROPOSE  — Generate proposal → You confirm or suggest changes (no command needed)\n  2. PLAN     — Generate execution plan → Confirm with /start to begin execution\n  3. EXECUTE  — Sub-agents execute in parallel (automatic)\n  4. FINALIZE — Integrate outputs into project files (automatic)\n  5. DONE     — Commit and auto-exit\n\nCommands: /start (PLAN phase only, confirm plan to begin execution) | /done (exit task mode)",
     "ja": "[タスクモード] インタラクティブタスクセッションに入ります。\n現在のフェーズ: {phase}{goal_info}{plan_info}{restored_hint}\n\nタスクモードには5つのフェーズがあります:\n  1. PROPOSE  — 提案を生成 → 確認またはフィードバック\n  2. PLAN     — 実行計画を生成 → /start で確認\n  3. EXECUTE  — サブ Agent が並列実行（自動）\n  4. FINALIZE — 成果物をプロジェクトファイルに統合（自動）\n  5. DONE     — コミットして自動終了\n\nコマンド: /start (計画確認) | /done (タスクモード終了)",
     "ko": "[작업 모드] 대화형 작업 세션에 진입합니다.\n현재 단계: {phase}{goal_info}{plan_info}{restored_hint}\n\n작업 모드에는 5단계가 있습니다:\n  1. PROPOSE  — 제안 생성 → 확인 또는 피드백\n  2. PLAN     — 실행 계획 생성 → /start로 확인\n  3. EXECUTE  — 하위 Agent 병렬 실행 (자동)\n  4. FINALIZE — 산출물을 프로젝트 파일에 통합 (자동)\n  5. DONE     — 커밋 후 자동 종료\n\n명령어: /start (계획 확인) | /done (작업 모드 종료)",
     "fr": "[Mode Tâche] Entrée dans la session de tâche interactive.\nPhase actuelle : {phase}{goal_info}{plan_info}{restored_hint}\n\nLe mode tâche comporte 5 phases :\n  1. PROPOSE  — Générer une proposition → Confirmer ou commenter\n  2. PLAN     — Générer le plan d'exécution → Confirmer avec /start\n  3. EXECUTE  — Les sous-agents exécutent en parallèle (automatique)\n  4. FINALIZE — Intégrer les résultats dans les fichiers du projet (automatique)\n  5. DONE     — Valider et quitter automatiquement\n\nCommandes : /start (confirmer le plan) | /done (quitter le mode tâche)",

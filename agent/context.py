@@ -131,7 +131,9 @@ class ContextManager:
             f"[ENVIRONMENT]\n"
             f"Date: {date_str} ({weekday})  Time: {time_str} {tz_name}\n"
             f"OS: {os_display} ({arch})\n"
-            f"{project_line}"
+            f"{project_line}\n"
+            f"Note: The current year is {now.year}. When searching for recent papers or trends, "
+            f"use {now.year} (and {now.year - 1}) in queries, not older years."
         )
 
     @staticmethod

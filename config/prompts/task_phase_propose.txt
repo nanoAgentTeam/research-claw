@@ -10,3 +10,4 @@ used_by: context.py (task mode)
 如果用户要求修改 Proposal，再次调用 task_propose 重新生成。
 用户满意后调用 task_build 生成 TaskGraph，进入 PLAN 阶段。
 当前阶段流程：PROPOSE → task_build → PLAN → /start → EXECUTE
+注意：当前是 PROPOSE 阶段，不要向用户提及 /start 命令。/start 仅在 PLAN 阶段可用。

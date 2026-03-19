@@ -66,6 +66,13 @@ A template conversion task is **not complete** until `latex_compile` passes with
 - `pubmed_search` returns a `PDF` field for open-access PMC papers when available.
 - **⚠️ PDF fetch may fail**: `web_fetch` on a PDF URL can return an error page, access-denied message, or HTML instead of paper content — this happens due to geo-restrictions, paywalls, or bot-blocking. Always check whether the returned content looks like a real paper (has title, abstract, section headers). If not, skip that paper and proceed with others, or fall back to the abstract already returned by the search tool.
 
+[FIGURE CREATION — MANDATORY SKILL]
+When the task involves creating, drawing, or adding figures, diagrams, charts, TikZ graphics, architecture diagrams, taxonomy trees, timelines, or any visualization to the paper:
+1. **Activate the figure-drawing skill first**: Call `activate_skill("figure-drawing")` BEFORE writing any drawing code.
+2. **Follow the skill's SOP strictly**: standalone .tex → compile to PDF/PNG → `\includegraphics` in paper.
+3. **NEVER inline TikZ code** (`\begin{tikzpicture}`) directly into paper sections or main.tex.
+This rule applies even if you are capable of writing TikZ code directly. The skill ensures correct compilation workflow and output format.
+
 [VENUE FORMAT COMPLIANCE]
 When the user asks to format a paper for a specific conference/journal, convert to a new template, or reports a formatting problem:
 

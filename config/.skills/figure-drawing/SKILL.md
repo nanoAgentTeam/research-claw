@@ -1,8 +1,10 @@
 ---
 name: figure-drawing
 description: |
-  Academic figure creation skill. Activate when a task involves creating
-  figures, diagrams, charts, or visualizations for a paper.
+  MANDATORY skill for creating any figure, diagram, chart, table visualization,
+  or TikZ graphic in a paper. Must be activated BEFORE writing any drawing code.
+  Produces standalone .tex → compiled PDF/PNG → \includegraphics in paper.
+  Never inline TikZ code directly into paper sections.
 allowed-tools:
   - read_file
   - write_file
@@ -13,9 +15,12 @@ allowed-tools:
 
 # Academic Figure Drawing
 
-Create publication-quality figures for academic papers. The final output MUST be
-a **PNG image** included via `\includegraphics` — never `\input` a raw .tex file
-into main.tex.
+## CRITICAL RULES (read first)
+
+1. **NEVER inline TikZ code into paper sections.** No `\begin{tikzpicture}` inside `sections/*.tex` or `main.tex`.
+2. **NEVER `\input{figures/xxx.tex}` a raw .tex file.** The paper must use `\includegraphics`.
+3. **Every figure = standalone .tex → compile → PDF/PNG → `\includegraphics`.**
+4. **Always compile and verify** the standalone figure before inserting into the paper.
 
 ## SOP
 

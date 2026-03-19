@@ -341,7 +341,7 @@ class AgentLoop:
 
         logger.info(f"Switched to Default project (session: {self.session_id})")
 
-        # Reload context and tools
+        # Reload context, history logger, and tools
         self.context = ContextManager(
             self.metadata_root,
             self.workspace,
@@ -356,6 +356,7 @@ class AgentLoop:
             project=self._project,
             session=self._session,
         )
+        self.history_logger = HistoryLogger(self.metadata_root)
         self.tools = ToolRegistry()
         self._register_default_tools()
 
