@@ -925,6 +925,21 @@ async def list_chat_contacts():
     return {"items": list(seen.values())}
 
 
+@app.delete("/api/chat-contacts/{channel}/{chat_id}")
+async def delete_chat_contact(channel: str, chat_id: str):
+    if _chat_registry is None:
+        raise HTTPException(status_code=404, detail="chat registry not initialized")
+    # Try both normalized and raw channel names
+    deleted = _chat_registry.delete_contact(channel, chat_id)
+    if not deleted:
+        # Try stripping im_ prefix or adding it
+        alt = channel[3:] if channel.startswith("im_") else f"im_{channel}"
+        deleted = _chat_registry.delete_contact(alt, chat_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="contact not found")
+    return {"ok": True}
+
+
 @app.get("/api/config/subscriptions")
 async def list_config_subscriptions():
     service = get_config_service()

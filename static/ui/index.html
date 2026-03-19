@@ -1367,15 +1367,23 @@
                             <tbody>
                                 <template x-for="contact in chatContacts" :key="contact.channel + ':' + contact.chat_id">
                                     <tr class="border-b border-gray-700/50">
-                                        <td class="py-2 px-2 text-xs" x-text="contact.channel"></td>
+                                        <td class="py-2 px-2 text-xs">
+                                            <span x-text="contact.channel"></span>
+                                            <span x-show="!contactHasChannelAccount(contact)"
+                                                  class="ml-1 text-[10px] text-yellow-500" x-text="language === 'en' ? '(no account)' : '(未配置账号)'"></span>
+                                        </td>
                                         <td class="py-2 px-2 font-mono text-xs" x-text="contact.chat_id"></td>
                                         <td class="py-2 px-2 text-xs text-gray-400" x-text="contact.sender_id || '-'"></td>
                                         <td class="py-2 px-2 text-xs text-gray-400" x-text="contact.first_seen ? new Date(contact.first_seen).toLocaleString() : '-'"></td>
                                         <td class="py-2 px-2 text-xs text-gray-400" x-text="contact.last_seen ? new Date(contact.last_seen).toLocaleString() : '-'"></td>
-                                        <td class="py-2 px-2 text-right">
+                                        <td class="py-2 px-2 text-right space-x-1">
                                             <button @click="createSubscriptionFromContact(contact)"
                                                     class="text-xs bg-green-600 hover:bg-green-700 px-2.5 py-1 rounded-lg">
                                                 创建订阅
+                                            </button>
+                                            <button @click="deleteChatContact(contact)"
+                                                    class="text-xs text-red-400 hover:text-red-300 px-2 py-1 transition-colors">
+                                                删除
                                             </button>
                                         </td>
                                     </tr>
@@ -3086,6 +3094,12 @@
                     return Array.isArray(this.config?.channel?.accounts) ? this.config.channel.accounts : [];
                 },
 
+                contactHasChannelAccount(contact) {
+                    const ch = String(contact.channel || '').trim().toLowerCase();
+                    const platform = ch.startsWith('im_') ? ch.slice(3) : ch;
+                    return this.getChannelAccounts().some(a => String(a.platform || '').toLowerCase() === platform && a.enabled);
+                },
+
                 getWorkspacePath() {
                     return this.config?.agents?.defaults?.workspace || '-';
                 },
@@ -3790,13 +3804,32 @@
 
                 async createSubscriptionFromContact(contact) {
                     try {
+                        // Build params by looking up credentials from matching channel account
+                        const params = {};
+                        const ch = String(contact.channel || '').trim();
+                        // Map im_telegram -> telegram, im_feishu -> feishu, etc.
+                        const platformKey = ch.startsWith('im_') ? ch.slice(3) : ch;
+                        const accounts = Array.isArray(this.config?.channel?.accounts) ? this.config.channel.accounts : [];
+                        const matched = accounts.find(a => a.platform === platformKey && a.enabled);
+                        if (matched && matched.credentials) {
+                            // Copy all credentials into params (e.g. token -> bot_token for telegram)
+                            for (const [k, v] of Object.entries(matched.credentials)) {
+                                if (v) {
+                                    if (platformKey === 'telegram' && k === 'token') {
+                                        params['bot_token'] = v;
+                                    } else {
+                                        params[k] = v;
+                                    }
+                                }
+                            }
+                        }
                         const res = await fetch('/api/config/subscriptions', {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({
                                 channel: contact.channel,
                                 chat_id: contact.chat_id,
-                                params: {},
+                                params: params,
                                 remark: 'IM Channel',
                                 enabled: true
                             })
@@ -3807,6 +3840,26 @@
                         }
                         this.showToast('订阅创建成功', 'success');
                         await this.loadConfigSubscriptions();
+                    } catch (e) {
+                        this.showToast(e.message, 'error');
+                    }
+                },
+
+                async deleteChatContact(contact) {
+                    const ch = encodeURIComponent(contact.channel);
+                    const cid = encodeURIComponent(contact.chat_id);
+                    const msg = this.language === 'en'
+                        ? `Delete IM contact ${contact.channel}:${contact.chat_id}?`
+                        : `删除 IM 联系人 ${contact.channel}:${contact.chat_id}？`;
+                    if (!confirm(msg)) return;
+                    try {
+                        const res = await fetch(`/api/chat-contacts/${ch}/${cid}`, { method: 'DELETE' });
+                        if (!res.ok) {
+                            const data = await res.json();
+                            throw new Error(data.detail || 'delete failed');
+                        }
+                        this.showToast(this.language === 'en' ? 'Contact deleted' : '联系人已删除');
+                        await this.loadChatContacts();
                     } catch (e) {
                         this.showToast(e.message, 'error');
                     }
@@ -4818,8 +4871,37 @@
                 async removeChannel(index) {
                     const accounts = this.getChannelAccounts();
                     const acc = accounts[index];
-                    accounts.splice(index, 1);
+                    if (!acc) return;
 
+                    // Find related push subscriptions by platform
+                    const platform = String(acc.platform || '').trim().toLowerCase();
+                    const relatedSubs = (this.configSubscriptions || []).filter(sub => {
+                        const ch = String(sub.channel || '').trim().toLowerCase();
+                        return ch === platform || ch === `im_${platform}`;
+                    });
+
+                    if (relatedSubs.length > 0) {
+                        const names = relatedSubs.map(s => s.remark || s.channel || s.id).join('、');
+                        const msg = this.language === 'en'
+                            ? `Deleting this ${platform} account will also remove ${relatedSubs.length} related push subscription(s): ${names}. Continue?`
+                            : `删除该 ${platform} 账号将同时移除 ${relatedSubs.length} 条关联的推送订阅：${names}。是否继续？`;
+                        if (!confirm(msg)) return;
+
+                        // Delete related subscriptions via API
+                        for (const sub of relatedSubs) {
+                            try {
+                                await fetch(`/api/config/subscriptions/${encodeURIComponent(sub.id)}`, { method: 'DELETE' });
+                            } catch (_) {}
+                        }
+                        await this.loadConfigSubscriptions();
+                    } else {
+                        const msg = this.language === 'en'
+                            ? `Delete this ${platform} account?`
+                            : `确定删除该 ${platform} 账号？`;
+                        if (!confirm(msg)) return;
+                    }
+
+                    accounts.splice(index, 1);
                     await this.saveConfig();
                 },
 

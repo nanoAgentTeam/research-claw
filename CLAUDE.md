@@ -27,7 +27,7 @@
 
 ### 概览
 
-Research Claw 是一个用于学术写作的分层 AI Agent 系统。它管理一个 `workspace/` 目录，分为 **Default** (全局管理) 与 **Project** (特定论文) 空间。
+Research Claw 是一个自托管的 AI 科研助手，管理论文项目、检索文献、追踪学术进展与截稿日期，并通过多渠道随时响应。它基于分层 AI Agent 架构，管理一个 `workspace/` 目录，分为 **Default** (全局管理) 与 **Project** (特定论文) 空间。
 
 ### 核心组件 (`core/`)
 

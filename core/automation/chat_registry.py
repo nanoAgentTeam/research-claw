@@ -77,10 +77,13 @@ class ChatContactRegistry:
 
         key = self._make_key(channel, chat_id)
         now = datetime.now().isoformat()
-        is_new = key not in self._known_keys
 
+        # If file was deleted externally, reset the in-memory cache
+        if self._known_keys and not self._file.exists():
+            self._known_keys.clear()
+
+        is_new = key not in self._known_keys
         if not is_new:
-            # Already known — skip disk I/O
             return False
 
         data = self._read()
@@ -105,6 +108,22 @@ class ChatContactRegistry:
     def get_contacts(self) -> Dict[str, Any]:
         """Return all known contacts."""
         return self._read()
+
+    def delete_contact(self, channel: str, chat_id: str) -> bool:
+        """Remove a contact. Returns True if the contact existed and was deleted."""
+        channel = str(channel).strip()
+        chat_id = str(chat_id).strip()
+        if not channel or not chat_id:
+            return False
+        key = self._make_key(channel, chat_id)
+        data = self._read()
+        if key not in data:
+            return False
+        del data[key]
+        self._write(data)
+        self._known_keys.discard(key)
+        logger.info(f"Chat contact deleted: {key}")
+        return True
 
     def get_contacts_by_channel(self, channel: str) -> List[Dict[str, Any]]:
         """Return contacts filtered by channel name."""
