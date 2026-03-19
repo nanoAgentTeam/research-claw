@@ -198,6 +198,9 @@ async def startup_event():
         automation_runtime = None
         logger.warning(f"AutomationRuntime startup failed, continue without scheduler: {e}")
 
+    # Expose automation_runtime to AgentLoop so project creation can reschedule jobs
+    agent_loop.automation_runtime = automation_runtime
+
     # Register bus hooks for unified history logging
     # Use lambda to always resolve the current history_logger (it changes on project switch)
     bus.add_inbound_hook(lambda msg: agent_loop.history_logger.log_inbound(msg))
