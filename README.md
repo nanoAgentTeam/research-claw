@@ -11,8 +11,6 @@ A self-hosted AI assistant for academic research — manages your papers, search
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
----
-
 **Real User Case**
 
 Always On, Always Ready
@@ -25,8 +23,6 @@ Papers produced: [LLM-Based Autonomous Agents Survey](https://nanoagentteam.gith
 ---
 
 **[English](#english)** · **[中文](#中文)**
-
-</div>
 
 ---
 
@@ -50,11 +46,7 @@ You: compile it and send it to me
 Bot: ⏳ Compiling PDF, please wait...
 ```
 
-<!-- TODO: 在此放置 CLI 会话截图 -->
-
 ![CLI Demo](README/images/cli_en.png)
-
-<!-- ![CLI Demo](docs/assets/cli-demo.png) -->
 
 ## Key Features
 
@@ -77,6 +69,7 @@ Bot: ⏳ Compiling PDF, please wait...
 - `/task` mode decomposes complex goals into a DAG and executes in parallel
 
 **Literature Search**
+
 - arXiv, PubMed, OpenAlex integration
 - Full-text PDF reading for in-depth analysis
 
@@ -109,6 +102,11 @@ https://github.com/user-attachments/assets/fccb837c-cfc5-4063-b803-2ae900fb4a20
 
 ## Getting Started
 
+### Supported platforms
+
+- Linux
+- macOS
+
 ### Install
 
 ```bash
@@ -135,11 +133,7 @@ Open **http://localhost:18790/ui** in your browser:
 
 > All settings are stored in `settings.json`. Advanced users can edit this file directly — see [Configuration Reference](#configuration-reference).
 
-<!-- TODO: 在此放置 Web UI 配置页面截图 -->
-
 ![Config UI](README/images/configui_en.png)
-
-<!-- ![Config UI](docs/assets/config-ui.png) -->
 
 ### Step 2 — Overleaf Authorization *(optional)*
 
@@ -199,7 +193,7 @@ workspace/
 | `/git`         | Enter interactive Git mode (history, diff, rollback)         |
 | `/reset`       | Clear current session history                                |
 | `/back`        | Return to Default lobby                                      |
-| `/done`        | End current TASK session and return to normal mode            |
+| `/done`        | End current TASK session and return to normal mode           |
 
 ### Task Mode
 
@@ -229,19 +223,15 @@ For multi-step goals, `/task` decomposes work into a multi-agent pipeline with 5
    → Type /done to exit task mode.
 ```
 
-| Phase | What the bot does | What you do |
-|-------|------------------|-------------|
-| **UNDERSTAND** | Reads project files to understand context | Nothing — automatic |
-| **PROPOSE** | Generates a proposal via `task_propose` | Review and reply with feedback, or confirm |
-| **PLAN** | Builds a task DAG via `task_build` | Review, optionally adjust, then type **`/start`** |
-| **EXECUTE** | Runs sub-agents in parallel batches via `task_execute` | Wait — progress is streamed to you |
-| **FINALIZE** | Merges outputs and commits via `task_commit` | Type **`/done`** to exit task mode |
-
-<!-- TODO: 在此放置 Task 模式执行截图 -->
+| Phase                | What the bot does                                        | What you do                                        |
+| -------------------- | -------------------------------------------------------- | -------------------------------------------------- |
+| **UNDERSTAND** | Reads project files to understand context                | Nothing — automatic                               |
+| **PROPOSE**    | Generates a proposal via `task_propose`                | Review and reply with feedback, or confirm         |
+| **PLAN**       | Builds a task DAG via `task_build`                     | Review, optionally adjust, then type**`/start`** |
+| **EXECUTE**    | Runs sub-agents in parallel batches via `task_execute` | Wait — progress is streamed to you                |
+| **FINALIZE**   | Merges outputs and commits via `task_commit`           | Type**`/done`** to exit task mode                |
 
 ![Task Mode](README/images/task_en.png)
-
-<!-- ![Task Mode](docs/assets/task-mode.png) -->
 
 ### Multi-Agent Collaboration
 
@@ -282,11 +272,7 @@ Each project can have scheduled tasks that run automatically via cron expression
 
 **Push notifications** — configure in Web UI under **Push Subscriptions**. Supports Telegram, Feishu, DingTalk, Email (SMTP), and any Apprise-compatible URL.
 
-<!-- TODO: Add Web UI automation tab screenshot -->
-
 ![Automation](README/images/auto_en.png)
-
-<!-- ![Automation](docs/assets/automation.png) -->
 
 ### Architecture
 
@@ -415,11 +401,7 @@ You: 编译一下论文并发给我
 Bot: ⏳ 编译中，请稍候......
 ```
 
-<!-- TODO: 在此放置 CLI 会话截图 -->
-
 ![CLI Demo](README/images/cli_ch.png)
-
-<!-- ![CLI Demo](docs/assets/cli-demo.png) -->
 
 ## 核心功能
 
@@ -442,6 +424,7 @@ Bot: ⏳ 编译中，请稍候......
 - `/task` 模式将复杂目标分解为 DAG 并行执行
 
 **文献检索**
+
 - 集成 arXiv、PubMed、OpenAlex
 - 支持 PDF 全文阅读和深度分析
 
@@ -470,9 +453,12 @@ Bot: ⏳ 编译中，请稍候......
 
 https://github.com/user-attachments/assets/fccb837c-cfc5-4063-b803-2ae900fb4a20
 
----
-
 ## 快速开始
+
+### 支持系统
+
+- Linux
+- macOS
 
 ### 安装
 
@@ -592,13 +578,13 @@ workspace/
    → 输入 /done 退出 Task 模式。
 ```
 
-| 阶段 | Bot 做什么 | 你做什么 |
-|------|-----------|---------|
-| **UNDERSTAND** | 阅读项目文件，理解上下文 | 无需操作 — 自动进行 |
-| **PROPOSE** | 通过 `task_propose` 生成方案 | 审阅并回复修改意见，或确认 |
-| **PLAN** | 通过 `task_build` 构建任务 DAG | 审阅，可调整，然后输入 **`/start`** |
-| **EXECUTE** | 通过 `task_execute` 分批并行执行子 Agent | 等待 — 进度会实时推送给你 |
-| **FINALIZE** | 整合产出并通过 `task_commit` 提交 | 输入 **`/done`** 退出 Task 模式 |
+| 阶段                 | Bot 做什么                                 | 你做什么                             |
+| -------------------- | ------------------------------------------ | ------------------------------------ |
+| **UNDERSTAND** | 阅读项目文件，理解上下文                   | 无需操作 — 自动进行                 |
+| **PROPOSE**    | 通过 `task_propose` 生成方案             | 审阅并回复修改意见，或确认           |
+| **PLAN**       | 通过 `task_build` 构建任务 DAG           | 审阅，可调整，然后输入**`/start`** |
+| **EXECUTE**    | 通过 `task_execute` 分批并行执行子 Agent | 等待 — 进度会实时推送给你           |
+| **FINALIZE**   | 整合产出并通过 `task_commit` 提交        | 输入**`/done`** 退出 Task 模式     |
 
 ![Task Mode](README/images/task_ch.png)
 
