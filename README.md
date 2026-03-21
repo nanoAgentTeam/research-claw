@@ -28,6 +28,8 @@ https://github.com/user-attachments/assets/4bb9cdb6-6e4f-4325-9307-a8518d225761
 Mobile demo (English) · Executed by GLM-5
 Papers produced: [LLM-Based Autonomous Multi-Agent Systems Survey](https://nanoagentteam.github.io/assets/autonomous-multi-agent-survey.pdf) · [Hierarchical Memory Sharing in MAS](https://nanoagentteam.github.io/assets/hierarchical-memory-mas.pdf)
 
+</div>
+
 ---
 
 **[English](#english)** · **[中文](#中文)**
