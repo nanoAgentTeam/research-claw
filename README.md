@@ -12,14 +12,21 @@ A self-hosted AI assistant for academic research — manages your papers, search
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**Real User Case**
+**Real User Cases**
 
 Always On, Always Ready
 
 https://github.com/user-attachments/assets/9280d4dc-c666-4688-84b7-d9534ab0e979
 
-Mobile demo · Executed by GLM-5
+Mobile demo (Chinese) · Executed by GLM-5
 Papers produced: [LLM-Based Autonomous Agents Survey](https://nanoagentteam.github.io/assets/Agent_survey.pdf) · [ToolCLIP](https://nanoagentteam.github.io/assets/toolCLIP.pdf)
+
+<br>
+
+https://github.com/user-attachments/assets/4bb9cdb6-6e4f-4325-9307-a8518d225761
+
+Mobile demo (English) · Executed by GLM-5
+Papers produced: [LLM-Based Autonomous Multi-Agent Systems Survey](https://nanoagentteam.github.io/assets/autonomous-multi-agent-survey.pdf) · [Hierarchical Memory Sharing in MAS](https://nanoagentteam.github.io/assets/hierarchical-memory-mas.pdf)
 
 ---
 
