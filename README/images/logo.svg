@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 160" fill="none">
+  <defs>
+    <linearGradient id="claw-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E84545"/>
+      <stop offset="100%" stop-color="#C62828"/>
+    </linearGradient>
+    <linearGradient id="paper-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#42A5F5"/>
+      <stop offset="100%" stop-color="#1565C0"/>
+    </linearGradient>
+    <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8A65"/>
+      <stop offset="100%" stop-color="#E84545"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Paper/Document base -->
+  <g transform="translate(30, 20)">
+    <!-- Paper shadow -->
+    <rect x="18" y="18" width="72" height="92" rx="6" fill="#000" opacity="0.08"/>
+    <!-- Paper -->
+    <rect x="12" y="12" width="72" height="92" rx="6" fill="url(#paper-grad)"/>
+    <!-- Paper fold corner -->
+    <path d="M 64 12 L 84 12 L 84 32 Z" fill="#1565C0" opacity="0.3"/>
+    <path d="M 64 12 L 64 32 L 84 32 Z" fill="#90CAF9"/>
+    <!-- Text lines on paper -->
+    <rect x="24" y="38" width="40" height="3" rx="1.5" fill="#fff" opacity="0.7"/>
+    <rect x="24" y="48" width="48" height="3" rx="1.5" fill="#fff" opacity="0.5"/>
+    <rect x="24" y="58" width="36" height="3" rx="1.5" fill="#fff" opacity="0.5"/>
+    <rect x="24" y="68" width="44" height="3" rx="1.5" fill="#fff" opacity="0.4"/>
+    <rect x="24" y="78" width="30" height="3" rx="1.5" fill="#fff" opacity="0.3"/>
+    <!-- Magnifying glass -->
+    <circle cx="68" cy="82" r="14" stroke="url(#accent-grad)" stroke-width="3.5" fill="none"/>
+    <line x1="78" y1="92" x2="88" y2="102" stroke="url(#accent-grad)" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Claw / Pincer icon -->
+  <g transform="translate(58, 8)">
+    <!-- Left pincer -->
+    <path d="M 42 28 C 28 12, 8 16, 12 36 C 14 46, 26 50, 38 44"
+          stroke="url(#claw-grad)" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <!-- Right pincer -->
+    <path d="M 50 28 C 64 12, 84 16, 80 36 C 78 46, 66 50, 54 44"
+          stroke="url(#claw-grad)" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <!-- Center joint -->
+    <circle cx="46" cy="42" r="4" fill="url(#claw-grad)"/>
+  </g>
+
+  <!-- Text: Research Claw -->
+  <g transform="translate(148, 50)">
+    <text font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="46" font-weight="700" fill="#1a1a2e">
+      <tspan>Research</tspan>
+    </text>
+    <text font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="46" font-weight="700" fill="url(#claw-grad)" y="48">
+      <tspan>Claw</tspan>
+    </text>
+    <text font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13.5" fill="#666" y="70" letter-spacing="0.5">
+      <tspan>AI-Powered Academic Research Assistant</tspan>
+    </text>
+  </g>
+</svg>

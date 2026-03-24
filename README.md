@@ -1,6 +1,12 @@
 <div align="center">
 
-# Research Claw
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="README/images/logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="README/images/logo.svg">
+  <img alt="Research Claw" src="README/images/logo.svg" width="420">
+</picture>
+
+<br><br>
 
 **Your self-hosted AI research assistant — manage papers, search literature, track deadlines, and collaborate across channels.**
 
@@ -13,16 +19,9 @@
 
 <br>
 
-https://github.com/user-attachments/assets/9280d4dc-c666-4688-84b7-d9534ab0e979
-
-<sub>Mobile demo (Chinese) &middot; Powered by GLM-5<br>
-Papers produced: <a href="https://nanoagentteam.github.io/assets/Agent_survey.pdf">LLM-Based Autonomous Agents Survey</a> &middot; <a href="https://nanoagentteam.github.io/assets/toolCLIP.pdf">ToolCLIP</a></sub>
-
-<br><br>
-
 https://github.com/user-attachments/assets/4bb9cdb6-6e4f-4325-9307-a8518d225761
 
-<sub>Mobile demo (English) &middot; Powered by GLM-5<br>
+<sub>Real user demo &middot; Mobile &middot; Powered by GLM-5<br>
 Papers produced: <a href="https://nanoagentteam.github.io/assets/autonomous-multi-agent-survey.pdf">LLM-Based Autonomous Multi-Agent Systems Survey</a> &middot; <a href="https://nanoagentteam.github.io/assets/hierarchical-memory-mas.pdf">Hierarchical Memory Sharing in MAS</a></sub>
 
 </div>

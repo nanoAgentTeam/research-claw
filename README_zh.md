@@ -1,6 +1,12 @@
 <div align="center">
 
-# Research Claw
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="README/images/logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="README/images/logo.svg">
+  <img alt="Research Claw" src="README/images/logo.svg" width="420">
+</picture>
+
+<br><br>
 
 **你自己的 AI 学术研究助手 — 管理论文、检索文献、追踪截稿日期，在你常用的渠道随时响应。**
 
@@ -15,15 +21,8 @@
 
 https://github.com/user-attachments/assets/9280d4dc-c666-4688-84b7-d9534ab0e979
 
-<sub>真实用户演示（中文） &middot; 移动端 &middot; 由 GLM-5 驱动<br>
+<sub>真实用户演示 &middot; 移动端 &middot; 由 GLM-5 驱动<br>
 产出论文：<a href="https://nanoagentteam.github.io/assets/Agent_survey.pdf">LLM-Based Autonomous Agents Survey</a> &middot; <a href="https://nanoagentteam.github.io/assets/toolCLIP.pdf">ToolCLIP</a></sub>
-
-<br><br>
-
-https://github.com/user-attachments/assets/4bb9cdb6-6e4f-4325-9307-a8518d225761
-
-<sub>真实用户演示（English） &middot; 移动端 &middot; 由 GLM-5 驱动<br>
-产出论文：<a href="https://nanoagentteam.github.io/assets/autonomous-multi-agent-survey.pdf">LLM-Based Autonomous Multi-Agent Systems Survey</a> &middot; <a href="https://nanoagentteam.github.io/assets/hierarchical-memory-mas.pdf">Hierarchical Memory Sharing in MAS</a></sub>
 
 </div>
 
