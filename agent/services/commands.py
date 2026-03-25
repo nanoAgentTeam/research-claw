@@ -6,6 +6,7 @@ instead of the entire AgentLoop, keeping coupling minimal.
 """
 
 from __future__ import annotations
+import re
 import uuid
 from typing import Any, Optional, Protocol, runtime_checkable
 from loguru import logger
@@ -152,20 +153,25 @@ class PullProjectHandler(BaseCommandHandler):
 
 
 class SwitchProjectHandler(BaseCommandHandler):
-    """/switch <project_name> [session_name] — switch active project/session."""
+    """/switch <project_name> [session_id] — switch active project/session."""
+
+    _SESSION_RE = re.compile(r"^\d{4}_\d{2}$")
 
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         raw = args.strip()
         if not raw:
-            return CommandResult(response="Usage: /switch <project_name> [session_name]")
-
-        parts = raw.split()
-        project_name = parts[0]
-        session_name = parts[1] if len(parts) > 1 else None
+            return CommandResult(response="Usage: /switch <project_name> [session_id]")
 
         workspace = getattr(self.services, "workspace", None)
         if workspace is None:
             return CommandResult(response=t("err_no_project"))
+
+        # If last token matches session format (MMDD_NN), split it out
+        tokens = raw.rsplit(maxsplit=1)
+        if len(tokens) == 2 and self._SESSION_RE.match(tokens[1]):
+            project_name, session_name = tokens
+        else:
+            project_name, session_name = raw, None
 
         target_root = workspace / project_name
         if not target_root.exists() or not target_root.is_dir():
