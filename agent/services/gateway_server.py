@@ -260,6 +260,17 @@ async def health_check():
     return {"status": "ok"}
 
 
+@app.post("/api/restart")
+async def restart_server(request: Request):
+    """Restart the gateway server process (supervisor mode: exit code 42)."""
+    if request.client and request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(status_code=403, detail="Restart only allowed from localhost")
+    import threading, os
+    logger.warning("Restart requested via API, exiting with code 42 in 0.5s...")
+    threading.Timer(0.5, lambda: os._exit(42)).start()
+    return {"status": "restarting"}
+
+
 @app.get("/api/language")
 async def get_language():
     """Return the current UI language from settings.json."""

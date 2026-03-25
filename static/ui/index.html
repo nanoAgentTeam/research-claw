@@ -334,6 +334,12 @@
                     <div class="w-2 h-2 rounded-full" :class="connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'"></div>
                 </div>
                 <div class="text-sm font-medium" x-text="connectedStatusLabel()"></div>
+                <button @click="restartGateway()"
+                        class="mt-3 w-full text-xs bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                        :disabled="restarting">
+                    <i class="fas" :class="restarting ? 'fa-spinner fa-spin' : 'fa-rotate-right'"></i>
+                    <span x-text="restarting ? (language === 'en' ? 'Restarting...' : '重启中...') : (language === 'en' ? 'Restart Service' : '重启服务')"></span>
+                </button>
             </div>
         </div>
     </div>
@@ -2562,6 +2568,7 @@
                 backupViewerContent: '',
                 secretVisibility: {},
                 editingWorkspace: false,
+                restarting: false,
                 workspaceDraft: '',
                 llmLanguage: 'auto',
                 llmLanguageOptions: [
@@ -3257,6 +3264,49 @@
                         await this.loadDefaultConfigInfo();
                     }
                     this.openBackupViewer(`默认配置：${this.defaultConfigFile || 'settings.default.json'}`, this.defaultConfigContent || {});
+                },
+
+                async restartGateway() {
+                    const msg = this.language === 'en'
+                        ? 'Restart the gateway server? Active conversations will be interrupted.'
+                        : '确认重启服务？进行中的对话将会中断。';
+                    if (!confirm(msg)) return;
+                    this.restarting = true;
+                    // Pause gateway health check to prevent the offline overlay
+                    if (this._gatewayHealthTimer) {
+                        clearInterval(this._gatewayHealthTimer);
+                        this._gatewayHealthTimer = null;
+                    }
+                    try {
+                        await fetch('/api/restart', { method: 'POST' });
+                    } catch (e) {
+                        // expected: connection will drop
+                    }
+                    this.showToast(this.language === 'en' ? 'Restarting server, please wait...' : '正在重启服务，请稍候...');
+                    // Poll until server is back up
+                    const poll = setInterval(async () => {
+                        try {
+                            const res = await fetch('/api/health');
+                            if (res.ok) {
+                                clearInterval(poll);
+                                this.restarting = false;
+                                this.showToast(this.language === 'en' ? 'Server restarted successfully' : '服务重启成功');
+                                setTimeout(() => location.reload(), 500);
+                            }
+                        } catch (e) {
+                            // still restarting
+                        }
+                    }, 1500);
+                    // Timeout after 30s
+                    setTimeout(() => {
+                        clearInterval(poll);
+                        if (this.restarting) {
+                            this.restarting = false;
+                            // Resume health check and let it handle the offline state
+                            this._gatewayHealthTimer = setInterval(() => this.checkGatewayHealth(), this.gatewayHealthIntervalMs);
+                            this.showToast(this.language === 'en' ? 'Restart timed out, please check manually' : '重启超时，请手动检查', 'error');
+                        }
+                    }, 30000);
                 },
 
                 async loadConfigBackups() {

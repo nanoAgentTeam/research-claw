@@ -740,14 +740,43 @@ def gateway(
     )
     logger.info(f"Log file: {log_dir / 'gateway.log'}")
 
-    from agent.services.gateway_server import start_gateway_server
     host = "127.0.0.1"
     console.print(f"[bold green]Starting Gateway on http://{host}:{port}[/bold green]")
     console.print(f"[blue]Web UI available at http://{host}:{port}/ui[/blue]")
+
+    # Supervisor loop: restart when child exits with code 42 (triggered by /api/restart)
+    import subprocess, sys as _sys, time as _time
+
+    project_root = str(Path(__file__).resolve().parent.parent)
+    log_dir_str = str(log_dir / "gateway.log")
+
+    # Build the child startup script with logging configuration included
+    child_script = f"""
+import sys
+from loguru import logger
+logger.remove()
+logger.add(sys.stderr, level="INFO",
+    format="<dim>{{time:HH:mm:ss}}</dim> | <level>{{level: <8}}</level> | <dim>{{name}}:{{function}}:{{line}}</dim> - {{message}}",
+    colorize=True)
+logger.add({log_dir_str!r}, level="DEBUG",
+    format="{{time:YYYY-MM-DD HH:mm:ss.SSS}} | {{level: <8}} | {{name}}:{{function}}:{{line}} - {{message}}",
+    rotation="10 MB", retention="7 days", encoding="utf-8")
+from agent.services.gateway_server import start_gateway_server
+start_gateway_server(host={host!r}, port={port})
+"""
+
     pid = os.getpid()
     _register_gateway_pid(pid)
     try:
-        start_gateway_server(host=host, port=port)
+        while True:
+            proc = subprocess.run(
+                [_sys.executable, "-c", child_script],
+                cwd=project_root,
+            )
+            if proc.returncode != 42:
+                break
+            console.print("[yellow]Restarting gateway server...[/yellow]")
+            _time.sleep(1)  # wait for port release
     except KeyboardInterrupt:
         console.print("Stopping...")
     finally:
