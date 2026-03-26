@@ -70,7 +70,7 @@ A template conversion task is **not complete** until `latex_compile` passes with
 When the task involves creating, drawing, or adding figures, diagrams, charts, TikZ graphics, architecture diagrams, taxonomy trees, timelines, or any visualization to the paper:
 1. **Activate the figure-drawing skill first**: Call `activate_skill("figure-drawing")` BEFORE writing any drawing code.
 2. **Follow the skill's SOP strictly**: standalone .tex → compile to PDF/PNG → `\includegraphics` in paper.
-3. **NEVER inline TikZ code** (`\begin{tikzpicture}`) directly into paper sections or main.tex.
+3. **NEVER inline TikZ code** (`\begin{{tikzpicture}}`) directly into paper sections or main.tex.
 This rule applies even if you are capable of writing TikZ code directly. The skill ensures correct compilation workflow and output format.
 
 [VENUE FORMAT COMPLIANCE]
