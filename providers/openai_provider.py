@@ -215,7 +215,7 @@ class OpenAIProvider(LLMProvider):
                             if attempt == 0 and not tool_calls_data:
                                 logger.debug("Received first tool call chunk")
                             for tc_chunk in delta.tool_calls:
-                                index = tc_chunk.index
+                                index = tc_chunk.index if tc_chunk.index is not None else 0
 
                                 # Extend list if needed
                                 while len(tool_calls_data) <= index:
@@ -316,6 +316,8 @@ class OpenAIProvider(LLMProvider):
                     )
             except Exception as e:
                 last_exception = e
+                import traceback as _tb
+                logger.error(f"LLM exception traceback:\n{_tb.format_exc()}")
                 # Fallback check for transient phrases in generic exceptions
                 e_str = str(e).lower()
                 if any(phrase in e_str for phrase in ["timeout", "429", "500", "502", "503", "connection reset"]):
