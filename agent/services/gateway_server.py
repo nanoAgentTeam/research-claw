@@ -273,40 +273,132 @@ async def restart_server(request: Request):
 
 @app.post("/api/update")
 async def update_from_github(request: Request):
-    """Pull latest code from GitHub, install deps, and restart."""
+    """Pull latest code from GitHub, install deps, and restart.
+
+    Strategy:
+    1. If git is available and project is a git repo → ``git pull --ff-only``
+    2. Otherwise → download the zip archive from GitHub and overlay files
+       (preserving user data like settings.json, workspace/, .olauth, logs/)
+    """
     if request.client and request.client.host not in ("127.0.0.1", "::1"):
         raise HTTPException(status_code=403, detail="Update only allowed from localhost")
 
-    import subprocess
+    import subprocess, sys
     project_root = Path(__file__).resolve().parent.parent.parent
     steps: list[dict] = []
 
-    # 1. git pull
-    try:
-        result = subprocess.run(
-            ["git", "pull", "--ff-only"],
-            cwd=str(project_root),
-            capture_output=True, text=True, timeout=60,
-        )
-        steps.append({
-            "step": "git_pull",
-            "ok": result.returncode == 0,
-            "stdout": result.stdout.strip(),
-            "stderr": result.stderr.strip(),
-        })
-        if result.returncode != 0:
-            logger.error(f"git pull failed: {result.stderr}")
-            return {"status": "error", "steps": steps,
-                    "message": f"git pull failed: {result.stderr.strip()}"}
-    except subprocess.TimeoutExpired:
-        steps.append({"step": "git_pull", "ok": False, "stderr": "timeout"})
-        return {"status": "error", "steps": steps, "message": "git pull timed out"}
+    # ---------- helper: detect GitHub repo owner/name from git remote ----------
+    def _github_repo_from_remote() -> Optional[str]:
+        """Return 'owner/repo' parsed from origin remote, or None."""
+        try:
+            r = subprocess.run(
+                ["git", "remote", "get-url", "origin"],
+                cwd=str(project_root), capture_output=True, text=True, timeout=10,
+            )
+            url = r.stdout.strip()
+            # git@github.com:owner/repo.git  or  https://github.com/owner/repo.git
+            m = re.search(r"github\.com[:/](.+?)(?:\.git)?$", url)
+            return m.group(1) if m else None
+        except Exception:
+            return None
 
-    # 2. pip install (only if requirements.txt was updated)
+    # ---------- detect whether git is usable ----------
+    git_available = False
+    is_git_repo = (project_root / ".git").exists()
+    if is_git_repo:
+        try:
+            subprocess.run(
+                ["git", "--version"],
+                capture_output=True, text=True, timeout=5,
+            )
+            git_available = True
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+
+    # ---------- Strategy 1: git pull ----------
+    if git_available and is_git_repo:
+        try:
+            result = subprocess.run(
+                ["git", "pull", "--ff-only"],
+                cwd=str(project_root),
+                capture_output=True, text=True, timeout=60,
+            )
+            steps.append({
+                "step": "git_pull",
+                "ok": result.returncode == 0,
+                "stdout": result.stdout.strip(),
+                "stderr": result.stderr.strip(),
+            })
+            if result.returncode != 0:
+                logger.error(f"git pull failed: {result.stderr}")
+                return {"status": "error", "steps": steps,
+                        "message": f"git pull failed: {result.stderr.strip()}"}
+        except subprocess.TimeoutExpired:
+            steps.append({"step": "git_pull", "ok": False, "stderr": "timeout"})
+            return {"status": "error", "steps": steps, "message": "git pull timed out"}
+
+    # ---------- Strategy 2: zip download fallback ----------
+    else:
+        repo_slug = _github_repo_from_remote()
+        if not repo_slug:
+            repo_slug = "nanoAgentTeam/open-overleaf-claw"  # fallback default
+        zip_url = f"https://github.com/{repo_slug}/archive/refs/heads/main.zip"
+        logger.info(f"git not available, downloading zip from {zip_url}")
+
+        import tempfile, zipfile, urllib.request
+        tmp_zip = None
+        try:
+            tmp_zip = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+            tmp_zip.close()
+            urllib.request.urlretrieve(zip_url, tmp_zip.name)
+
+            # Extract to a temp dir, then overlay onto project_root
+            tmp_dir = tempfile.mkdtemp()
+            with zipfile.ZipFile(tmp_zip.name, "r") as zf:
+                zf.extractall(tmp_dir)
+
+            # The zip extracts to a folder like "open-overleaf-claw-main/"
+            extracted_dirs = [d for d in Path(tmp_dir).iterdir() if d.is_dir()]
+            if not extracted_dirs:
+                steps.append({"step": "zip_download", "ok": False, "stderr": "empty archive"})
+                return {"status": "error", "steps": steps, "message": "Downloaded archive is empty"}
+
+            src_root = extracted_dirs[0]
+            # Files/dirs to preserve (user data)
+            preserve = {
+                "settings.json", "workspace", ".olauth", "logs",
+                ".git", "__pycache__", ".env", "node_modules",
+            }
+            import shutil as _shutil
+            for item in src_root.iterdir():
+                if item.name in preserve:
+                    continue
+                dest = project_root / item.name
+                if dest.exists():
+                    if dest.is_dir():
+                        _shutil.rmtree(dest)
+                    else:
+                        dest.unlink()
+                if item.is_dir():
+                    _shutil.copytree(item, dest)
+                else:
+                    _shutil.copy2(item, dest)
+
+            # Cleanup
+            _shutil.rmtree(tmp_dir, ignore_errors=True)
+            steps.append({"step": "zip_download", "ok": True, "stdout": f"Downloaded and extracted from {zip_url}"})
+        except Exception as exc:
+            steps.append({"step": "zip_download", "ok": False, "stderr": str(exc)})
+            logger.error(f"Zip download update failed: {exc}")
+            return {"status": "error", "steps": steps, "message": f"Download failed: {exc}"}
+        finally:
+            if tmp_zip:
+                Path(tmp_zip.name).unlink(missing_ok=True)
+
+    # ---------- pip install ----------
     req_file = project_root / "requirements.txt"
     if req_file.exists():
         try:
-            import sys
             result = subprocess.run(
                 [sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "-q"],
                 cwd=str(project_root),
@@ -323,7 +415,7 @@ async def update_from_github(request: Request):
 
     logger.info(f"Update completed, steps: {steps}")
 
-    # 3. Trigger restart (exit code 42 for supervisor to restart)
+    # ---------- Trigger restart (exit code 42 for supervisor) ----------
     import threading, os
     logger.warning("Update done, restarting via exit code 42...")
     threading.Timer(1.0, lambda: os._exit(42)).start()
