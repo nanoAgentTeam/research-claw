@@ -336,9 +336,15 @@
                 <div class="text-sm font-medium" x-text="connectedStatusLabel()"></div>
                 <button @click="restartGateway()"
                         class="mt-3 w-full text-xs bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-                        :disabled="restarting">
+                        :disabled="restarting || updating">
                     <i class="fas" :class="restarting ? 'fa-spinner fa-spin' : 'fa-rotate-right'"></i>
                     <span x-text="restarting ? (language === 'en' ? 'Restarting...' : '重启中...') : (language === 'en' ? 'Restart Service' : '重启服务')"></span>
+                </button>
+                <button @click="updateFromGithub()"
+                        class="mt-2 w-full text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                        :disabled="updating || restarting">
+                    <i class="fas" :class="updating ? 'fa-spinner fa-spin' : 'fa-cloud-arrow-down'"></i>
+                    <span x-text="updating ? (language === 'en' ? 'Updating...' : '更新中...') : (language === 'en' ? 'Update from GitHub' : '从 GitHub 更新')"></span>
                 </button>
             </div>
         </div>
@@ -2569,6 +2575,7 @@
                 secretVisibility: {},
                 editingWorkspace: false,
                 restarting: false,
+                updating: false,
                 workspaceDraft: '',
                 llmLanguage: 'auto',
                 llmLanguageOptions: [
@@ -3307,6 +3314,55 @@
                             this.showToast(this.language === 'en' ? 'Restart timed out, please check manually' : '重启超时，请手动检查', 'error');
                         }
                     }, 30000);
+                },
+
+                async updateFromGithub() {
+                    const msg = this.language === 'en'
+                        ? 'Pull the latest code from GitHub and restart? Active conversations will be interrupted.'
+                        : '确认从 GitHub 拉取最新代码并重启？进行中的对话将会中断。';
+                    if (!confirm(msg)) return;
+                    this.updating = true;
+                    this.showToast(this.language === 'en' ? 'Pulling updates from GitHub...' : '正在从 GitHub 拉取更新...');
+                    try {
+                        const res = await fetch('/api/update', { method: 'POST' });
+                        const data = await res.json();
+                        if (data.status === 'error') {
+                            this.updating = false;
+                            this.showToast(data.message || (this.language === 'en' ? 'Update failed' : '更新失败'), 'error');
+                            return;
+                        }
+                    } catch (e) {
+                        // expected: connection may drop during restart
+                    }
+                    this.showToast(this.language === 'en' ? 'Update complete, restarting server...' : '更新完成，正在重启服务...');
+                    // Pause gateway health check to prevent offline overlay
+                    if (this._gatewayHealthTimer) {
+                        clearInterval(this._gatewayHealthTimer);
+                        this._gatewayHealthTimer = null;
+                    }
+                    // Poll until server is back up
+                    const poll = setInterval(async () => {
+                        try {
+                            const res = await fetch('/api/health');
+                            if (res.ok) {
+                                clearInterval(poll);
+                                this.updating = false;
+                                this.showToast(this.language === 'en' ? 'Update and restart successful' : '更新并重启成功');
+                                setTimeout(() => location.reload(), 500);
+                            }
+                        } catch (e) {
+                            // still restarting
+                        }
+                    }, 2000);
+                    // Timeout after 60s (longer than restart since pip install may take time)
+                    setTimeout(() => {
+                        clearInterval(poll);
+                        if (this.updating) {
+                            this.updating = false;
+                            this._gatewayHealthTimer = setInterval(() => this.checkGatewayHealth(), this.gatewayHealthIntervalMs);
+                            this.showToast(this.language === 'en' ? 'Update timed out, please check manually' : '更新超时，请手动检查', 'error');
+                        }
+                    }, 60000);
                 },
 
                 async loadConfigBackups() {

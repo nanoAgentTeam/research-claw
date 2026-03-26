@@ -271,6 +271,66 @@ async def restart_server(request: Request):
     return {"status": "restarting"}
 
 
+@app.post("/api/update")
+async def update_from_github(request: Request):
+    """Pull latest code from GitHub, install deps, and restart."""
+    if request.client and request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(status_code=403, detail="Update only allowed from localhost")
+
+    import subprocess
+    project_root = Path(__file__).resolve().parent.parent.parent
+    steps: list[dict] = []
+
+    # 1. git pull
+    try:
+        result = subprocess.run(
+            ["git", "pull", "--ff-only"],
+            cwd=str(project_root),
+            capture_output=True, text=True, timeout=60,
+        )
+        steps.append({
+            "step": "git_pull",
+            "ok": result.returncode == 0,
+            "stdout": result.stdout.strip(),
+            "stderr": result.stderr.strip(),
+        })
+        if result.returncode != 0:
+            logger.error(f"git pull failed: {result.stderr}")
+            return {"status": "error", "steps": steps,
+                    "message": f"git pull failed: {result.stderr.strip()}"}
+    except subprocess.TimeoutExpired:
+        steps.append({"step": "git_pull", "ok": False, "stderr": "timeout"})
+        return {"status": "error", "steps": steps, "message": "git pull timed out"}
+
+    # 2. pip install (only if requirements.txt was updated)
+    req_file = project_root / "requirements.txt"
+    if req_file.exists():
+        try:
+            import sys
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "-q"],
+                cwd=str(project_root),
+                capture_output=True, text=True, timeout=120,
+            )
+            steps.append({
+                "step": "pip_install",
+                "ok": result.returncode == 0,
+                "stdout": result.stdout.strip()[-500:] if result.stdout else "",
+                "stderr": result.stderr.strip()[-500:] if result.stderr else "",
+            })
+        except subprocess.TimeoutExpired:
+            steps.append({"step": "pip_install", "ok": False, "stderr": "timeout"})
+
+    logger.info(f"Update completed, steps: {steps}")
+
+    # 3. Trigger restart (exit code 42 for supervisor to restart)
+    import threading, os
+    logger.warning("Update done, restarting via exit code 42...")
+    threading.Timer(1.0, lambda: os._exit(42)).start()
+
+    return {"status": "ok", "steps": steps, "message": "Update successful, restarting..."}
+
+
 @app.get("/api/language")
 async def get_language():
     """Return the current UI language from settings.json."""
