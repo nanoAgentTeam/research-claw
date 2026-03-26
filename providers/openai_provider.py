@@ -24,7 +24,8 @@ class OpenAIProvider(LLMProvider):
         self.default_model = default_model
         self._client: Optional[AsyncOpenAI] = None
         self._api_key = api_key
-        self._api_base = api_base
+        # 使用归一化后的 api_base，补上 /v1（OpenAI 协议需要）
+        self._api_base = f"{self.api_base}/v1" if self.api_base else None
 
     def get_client(self) -> AsyncOpenAI:
         """Lazily initialize the AsyncOpenAI client."""

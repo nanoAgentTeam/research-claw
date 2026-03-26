@@ -40,7 +40,17 @@ class LLMProvider(ABC):
     
     def __init__(self, api_key: Optional[str] = None, api_base: Optional[str] = None):
         self.api_key = api_key
-        self.api_base = api_base
+        self.api_base = self._normalize_api_base(api_base)
+
+    @staticmethod
+    def _normalize_api_base(api_base: Optional[str]) -> Optional[str]:
+        """归一化 api_base：去掉尾部斜杠和 /v1，各 provider 按协议自行拼接。"""
+        if not api_base:
+            return api_base
+        api_base = api_base.rstrip("/")
+        if api_base.endswith("/v1"):
+            api_base = api_base[:-3]
+        return api_base
     
     @abstractmethod
     async def chat(

@@ -146,6 +146,12 @@ class LLMFactory:
         model_name = Config.get_provider_config(key).get("model", "unknown")
         print(f"[LLM] Creating client for provider: {key}, model: {model_name}, base_url: {base_url}, key: {masked_key}")
 
+        # 归一化 base_url：去掉尾部 /v1 后再补回（OpenAI SDK 需要 /v1）
+        if base_url:
+            base_url = base_url.rstrip("/")
+            if not base_url.endswith("/v1"):
+                base_url = f"{base_url}/v1"
+
         # Langfuse keys (from Config first, fallback env). Only enable when both exist and not disabled.
         lf_public = Config.LANGFUSE_PUBLIC_KEY or os.environ.get("LANGFUSE_PUBLIC_KEY", "")
         lf_secret = Config.LANGFUSE_SECRET_KEY or os.environ.get("LANGFUSE_SECRET_KEY", "")

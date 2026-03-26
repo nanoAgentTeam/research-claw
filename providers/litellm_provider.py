@@ -29,8 +29,9 @@ class LiteLLMProvider(LLMProvider):
         if api_key:
             os.environ["ANTHROPIC_API_KEY"] = api_key
 
-        if api_base:
-            litellm.api_base = api_base
+        # 基类已归一化去掉 /v1，litellm 走 Anthropic 协议会自动拼 /v1/messages
+        if self.api_base:
+            litellm.api_base = self.api_base
 
         litellm.suppress_debug_info = True
 
