@@ -159,8 +159,17 @@ Research Claw relies on POSIX features (signal handling, process management, etc
 
 Run in PowerShell (Administrator):
 
+get download list: `wsl --list --online`
+
+```
+NAME            FRIENDLY NAME
+Ubuntu          Ubuntu
+Ubuntu-18.04    Ubuntu 18.04 LTS
+Ubuntu-20.04    Ubuntu 20.04 LTS
+```
+
 ```powershell
-wsl --install -d Ubuntu-24.04
+wsl --install -d Ubuntu-20.04
 ```
 
 Reboot after installation. On first launch you'll be asked to create a username and password.
