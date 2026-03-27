@@ -6,7 +6,7 @@ from typing import Optional, List, Any, Dict
 import re
 from datetime import datetime
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from loguru import logger
@@ -30,6 +30,16 @@ app = FastAPI(title="Research Claw Gateway")
 @app.get("/")
 async def root_redirect():
     return RedirectResponse(url="/ui")
+
+
+_favicon_path = Path(__file__).parent.parent.parent / "static" / "ui" / "favicon.ico"
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    if _favicon_path.exists():
+        return FileResponse(_favicon_path, media_type="image/x-icon")
+    raise HTTPException(status_code=404)
 
 
 @app.middleware("http")
