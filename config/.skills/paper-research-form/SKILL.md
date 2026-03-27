@@ -14,81 +14,98 @@ allowed-tools:
 ---
 [SKILL: PAPER RESEARCH FORM — CSV LITERATURE SURVEY]
 
-## Output Schema
+Generate a literature survey as a CSV file and deliver the file to the user in chat.
 
-Generate a CSV file with these 8 columns (in order — content first, metadata second):
-
-| # | Column | Type | Description |
-|---|--------|------|-------------|
-| 1 | title | str | Full paper title |
-| 2 | abstract_snippet | str | First 200 chars of abstract, ending with "..." |
-| 3 | summary | str | 1-2 sentence summary of key contribution, written by you |
-| 4 | relevance | enum | High / Medium / Low — relevance to the user's research topic |
-| 5 | authors | str | First author et al. (e.g. "Zhang et al.") |
-| 6 | year | int | Publication year |
-| 7 | venue | str | Conference or journal name (e.g. NeurIPS 2024, TACL) |
-| 8 | link | url | Canonical URL: prefer Semantic Scholar > arXiv > ACL Anthology > DOI |
+Keep this file lean. Load the reference documents only when reaching the matching step.
 
 ## Workflow
 
 ### 1. Clarify Scope
 
-Ask user (if not already specified):
-- Research topic / keywords
-- Target venues or "any"
-- Year range (default: last 3 years)
-- How many papers (default: 10-15)
+Confirm these inputs if the user has not already specified them:
 
-### 2. Search Strategy
+- research topic or keywords
+- target venues or `any`
+- year range
+- paper count
 
-Use `conference-research` skill search patterns when targeting specific venues.
+Use these defaults when needed:
 
-General search order:
-1. `web_search: site:semanticscholar.org "{topic}" {year range}` — broad coverage
-2. `web_search: site:arxiv.org "{topic}" {year}` — preprints
-3. `web_search: site:aclanthology.org "{topic}" {year}` — NLP venues
-4. `web_search: site:openreview.net {topic keywords} {venue} {year}` — ML venues
+- year range: last 3 years
+- paper count: 10-15
 
-For each promising result, use `web_fetch` to get full metadata (title, authors, abstract, venue, year).
+### 2. Search And Verify
 
-### 3. Populate Table
+Load `references/search-strategy.md` before broad search.
 
-For each paper found:
-- Extract metadata accurately — never fabricate authors, years, or venues
-- Write abstract_snippet: first 200 characters of the real abstract + "..."
-- Write summary: 1-2 sentences capturing the core contribution in your own words
-- Assess relevance: High (directly addresses the topic), Medium (related method/task), Low (tangentially relevant)
+Search multiple sources, then verify metadata for each candidate paper.
 
-### 4. Write CSV
+Use `web_fetch` on promising results to verify:
 
-- Sort by relevance (High first), then by year (newest first)
-- **Append by default**: Look for existing `survey_*.csv` files in the project directory. Match by topic slug in filename (e.g. searching "RAG" → match `survey_rag_*.csv`). If a matching file is found, append new results to it (skip duplicates by matching title). If multiple matches exist, pick the most recently modified one. Only create a new file when no match is found or user explicitly requests a new survey direction.
-- **File naming**: New files use `survey_{topic_slug}_{YYYYMMDD}.csv` (e.g. `survey_rag_20260326.csv`). Use user-specified path if provided.
-- **Encoding**: Always prepend UTF-8 BOM (`\xef\xbb\xbf`) so Excel displays Chinese correctly.
-- Use `write_file` tool with CSV content
-- Use proper CSV escaping: double-quote fields containing commas or newlines
+- title
+- authors
+- abstract
+- venue
+- year
+- canonical link
 
-### 5. Send to IM (MANDATORY — do NOT skip)
+Never fabricate metadata. Skip weak candidates that cannot be verified.
 
-- **You MUST actually call the `send_file` tool.** Do NOT just say "已发送" or "file sent" in text — that is a lie if you did not invoke the tool. The user can only receive the file through an actual `send_file` tool call.
-- Call `send_file` immediately after `write_file` completes. Example:
-  ```
-  send_file(file_path="survey_rag_20260326.csv", caption="文献调研: RAG, 共 15 篇, 6 篇高相关")
-  ```
-- If `send_file` fails, retry once. If still failing, tell the user honestly that sending failed and provide the local file path.
-- **Do NOT proceed to Step 6 (Report) until `send_file` has been actually called and returned a result.**
+### 3. Build Rows
 
-### 6. Report
+Load `references/csv-schema.md` before writing any row.
 
-After writing CSV, present a markdown summary to the user:
-- Total papers found
-- Breakdown by relevance: N High / N Medium / N Low
-- Top 3 most relevant papers with 1-line descriptions
-- Note any gaps or suggested follow-up searches
+Transform each verified paper into one CSV row using the required 8-column schema. Write the summary in original wording. Rate relevance against the user's actual research goal.
+
+### 4. Merge Or Create Output
+
+Load `references/merge-and-delivery.md` before selecting the output file.
+
+Append by default:
+
+- look for matching `survey_*.csv` files
+- pick the newest matching file
+- skip duplicate titles
+- create a new file only when no match exists or the user requests a new survey direction
+
+### 5. Write CSV
+
+Write the final CSV with:
+
+- UTF-8 BOM
+- correct CSV escaping
+- rows sorted by relevance first, then year descending
+
+### 6. Deliver File
+
+This step is mandatory.
+
+- Call `send_file` immediately after `write_file`
+- Retry once if `send_file` fails
+- Do not claim the file was sent unless `send_file` actually returned success
+- Do not continue to the report step until `send_file` has actually been called
+
+### 7. Report
+
+After file delivery, report:
+
+- total papers found
+- relevance breakdown
+- top 3 most relevant papers
+- gaps or follow-up searches
+
+## Reference Files
+
+Load only the file needed for the current step:
+
+- `references/search-strategy.md` - query design, source priority, metadata verification, relevance rules
+- `references/csv-schema.md` - 8-column schema, field rules, BOM, escaping
+- `references/merge-and-delivery.md` - append rules, dedupe, file naming, send flow
 
 ## Quality Rules
 
-- **Never hallucinate papers.** Every entry must come from a verified search result with a working link.
-- **Never guess metadata.** If author/year/venue is unclear from search results, use `web_fetch` to verify or mark as "Unknown".
-- **Deduplicate.** If the same paper appears in multiple sources (arXiv + conference), keep only the published venue version.
-- **Minimum quality bar.** Only include papers with clear abstracts and identifiable venues. Skip workshop papers unless specifically requested.
+- Never hallucinate papers
+- Never guess metadata
+- Keep the published venue version when both preprint and publication exist
+- Skip workshop papers unless the user explicitly requests them
+- Treat the task as incomplete until `send_file` has been executed
