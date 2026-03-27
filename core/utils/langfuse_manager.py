@@ -67,16 +67,14 @@ def observe(*args, **kwargs):
     is_direct = len(args) == 1 and callable(args[0])
     
     def decorator(func):
+        import inspect as _inspect
         # 这里的代码在函数定义时执行，不触发初始化
         real_wrapped_func = None
 
-        @functools.wraps(func)
-        def wrapper(*f_args, **f_kwargs):
+        def _init_wrapped():
             nonlocal real_wrapped_func
-            # 只有在第一次运行时执行初始化和包装逻辑
             if real_wrapped_func is None:
                 _ensure_langfuse()
-                # 此时 _observe_impl 已经根据运行时 Config 确定是真 observe 还是 no-op
                 try:
                     if is_direct:
                         real_wrapped_func = _observe_impl(func)
@@ -86,35 +84,51 @@ def observe(*args, **kwargs):
                     print(f"[Langfuse] Failed to wrap with observe: {e}")
                     real_wrapped_func = func
 
-            # 执行被装饰后的函数，并捕获可能的 Langfuse 运行时异常
-            try:
-                result = real_wrapped_func(*f_args, **f_kwargs)
-                
-                # 如果返回的是生成器，需要包装生成器以捕获迭代过程中的超时
-                import inspect
-                if inspect.isgenerator(result):
-                    def safe_generator(gen):
-                        try:
-                            for item in gen:
-                                yield item
-                        except Exception as ge:
-                            ge_str = str(ge).lower()
-                            if "timeout" in ge_str or "langfuse" in ge_str:
-                                print(f"[Langfuse Generator Error] {ge}. Continuing without trace.")
-                            else:
-                                raise ge
-                    return safe_generator(result)
-                
-                return result
-            except Exception as e:
-                # 如果是网络超时或 Langfuse 相关错误，尝试降级运行原始函数
-                error_str = str(e).lower()
-                if "langfuse" in error_str or "timeout" in error_str or "connection" in error_str:
-                    print(f"[Langfuse Runtime Error] {e}. Falling back to original function to avoid task failure.")
-                    # 注意：如果此时函数已经执行了一部分，重新执行可能会有副作用
-                    # 但对于评估系统来说，确保任务跑完比 Trace 丢失更重要
-                    return func(*f_args, **f_kwargs)
-                raise e
+        if _inspect.iscoroutinefunction(func):
+            # Async 函数：用 async wrapper 包装，保留 iscoroutinefunction 语义
+            @functools.wraps(func)
+            async def wrapper(*f_args, **f_kwargs):
+                _init_wrapped()
+                try:
+                    result = real_wrapped_func(*f_args, **f_kwargs)
+                    # 如果返回协程，await 它
+                    if _inspect.isawaitable(result):
+                        return await result
+                    return result
+                except Exception as e:
+                    error_str = str(e).lower()
+                    if "langfuse" in error_str or "timeout" in error_str or "connection" in error_str:
+                        print(f"[Langfuse Runtime Error] {e}. Falling back to original function to avoid task failure.")
+                        return await func(*f_args, **f_kwargs)
+                    raise e
+        else:
+            # 同步函数：保持原有逻辑
+            @functools.wraps(func)
+            def wrapper(*f_args, **f_kwargs):
+                _init_wrapped()
+                try:
+                    result = real_wrapped_func(*f_args, **f_kwargs)
+
+                    if _inspect.isgenerator(result):
+                        def safe_generator(gen):
+                            try:
+                                for item in gen:
+                                    yield item
+                            except Exception as ge:
+                                ge_str = str(ge).lower()
+                                if "timeout" in ge_str or "langfuse" in ge_str:
+                                    print(f"[Langfuse Generator Error] {ge}. Continuing without trace.")
+                                else:
+                                    raise ge
+                        return safe_generator(result)
+
+                    return result
+                except Exception as e:
+                    error_str = str(e).lower()
+                    if "langfuse" in error_str or "timeout" in error_str or "connection" in error_str:
+                        print(f"[Langfuse Runtime Error] {e}. Falling back to original function to avoid task failure.")
+                        return func(*f_args, **f_kwargs)
+                    raise e
         return wrapper
 
     if is_direct:
