@@ -114,6 +114,19 @@
       "requires_args": false
     },
     {
+      "name": "/list",
+      "handler": "agent.services.commands.ListProjectsHandler",
+      "description": "List local projects in the workspace",
+      "requires_args": false
+    },
+    {
+      "name": "/olist",
+      "handler": "agent.services.commands.OverleafListHandler",
+      "description": "List remote Overleaf projects",
+      "aliases": ["/ol"],
+      "requires_args": false
+    },
+    {
       "name": "/switch",
       "handler": "agent.services.commands.SwitchProjectHandler",
       "description": "Switch to a project in the workspace",

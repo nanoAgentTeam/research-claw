@@ -72,6 +72,55 @@ class BaseCommandHandler:
 
 
 # ---------------------------------------------------------------------------
+# Shared helpers
+# ---------------------------------------------------------------------------
+
+def _list_overleaf_projects(services: "AgentServices") -> CommandResult:
+    """Shared implementation for listing remote Overleaf projects."""
+    try:
+        import pyoverleaf  # noqa: F401
+    except ImportError:
+        return CommandResult(response="[ERROR] pyoverleaf 未安装，无法连接 Overleaf。")
+
+    from agent.tools.overleaf import OverleafTool
+    from pathlib import Path
+
+    workspace = getattr(services, 'workspace', None)
+    if workspace is None:
+        return CommandResult(response=t("err_no_project"))
+    ol_tool = OverleafTool(workspace=Path(workspace))
+    api = ol_tool._get_api()
+    if not api:
+        return CommandResult(
+            response="[ERROR] 未找到 Overleaf 认证信息。请先运行 `ols login` 生成 .olauth 文件。"
+        )
+    try:
+        projects = api.get_projects()
+    except Exception as e:
+        return CommandResult(response=f"[ERROR] 获取 Overleaf 项目列表失败: {e}")
+    if not projects:
+        return CommandResult(response="Overleaf 上没有找到任何项目。")
+    sorted_projects = sorted(
+        projects, key=lambda x: getattr(x, 'last_updated', ''), reverse=True
+    )
+    lines = ["☁️  Overleaf 项目："]
+    for idx, p in enumerate(sorted_projects[:30], 1):
+        pid = getattr(p, 'id', '?')
+        name = getattr(p, 'name', '?')
+        flags = []
+        if getattr(p, 'archived', False):
+            flags.append("ARCHIVED")
+        if getattr(p, 'trashed', False):
+            flags.append("TRASHED")
+        flag_str = f" [{' '.join(flags)}]" if flags else ""
+        lines.append(f"  {idx}. [{pid[:10]}...] {name}{flag_str}")
+    if len(projects) > 30:
+        lines.append(f"  ... 以及另外 {len(projects) - 30} 个项目")
+    lines.append("\n回复序号或项目名即可下载到本地。")
+    return CommandResult(response="\n".join(lines))
+
+
+# ---------------------------------------------------------------------------
 # Handlers
 # ---------------------------------------------------------------------------
 
@@ -150,6 +199,48 @@ class PullProjectHandler(BaseCommandHandler):
             ctx.publish_chunk(res)
 
         return CommandResult(should_continue=True, modified_message=macro_prompt)
+
+
+class ListProjectsHandler(BaseCommandHandler):
+    """/list — list all local projects in the workspace."""
+    async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
+        workspace = getattr(self.services, 'workspace', None)
+        if workspace is None:
+            return CommandResult(response=t("err_no_project"))
+        from pathlib import Path
+        workspace = Path(workspace)
+        if not workspace.exists():
+            return CommandResult(response="没有找到任何本地项目。")
+        current = getattr(self.services, 'project_id', 'Default')
+        projects = []
+        idx = 0
+        for d in sorted(workspace.iterdir()):
+            if not d.is_dir() or d.name in ("Default",) or d.name.startswith("."):
+                continue
+            config_path = d / "project.yaml"
+            overleaf_tag = ""
+            if config_path.exists():
+                try:
+                    import yaml
+                    cfg = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+                    if cfg.get("overleaf", {}).get("project_id"):
+                        overleaf_tag = " [Overleaf]"
+                except Exception:
+                    pass
+            active_tag = " ← 当前" if d.name == current else ""
+            idx += 1
+            projects.append(f"  {idx}. {d.name}{overleaf_tag}{active_tag}")
+
+        if not projects:
+            return CommandResult(response="没有找到任何本地项目。\n使用自然语言告诉我创建新项目，或用 /olist 查看远端项目。")
+        header = "📂 本地项目："
+        return CommandResult(response=header + "\n" + "\n".join(projects))
+
+
+class OverleafListHandler(BaseCommandHandler):
+    """/olist — list remote Overleaf projects (shortcut for /overleaf list)."""
+    async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
+        return _list_overleaf_projects(self.services)
 
 
 class SwitchProjectHandler(BaseCommandHandler):
@@ -986,6 +1077,8 @@ HANDLER_CLASSES: dict[str, type[BaseCommandHandler]] = {
     "/stop": StopHandler,
     "/summarize": SummarizeHandler,
     "/recommend": RecommendHandler,
+    "/list": ListProjectsHandler,
+    "/olist": OverleafListHandler,
     "/switch": SwitchProjectHandler,
     "/pull-project": PullProjectHandler,
     "/task": TaskHandler,
