@@ -77,11 +77,6 @@ class BaseCommandHandler:
 
 def _list_overleaf_projects(services: "AgentServices") -> CommandResult:
     """Shared implementation for listing remote Overleaf projects."""
-    try:
-        import pyoverleaf  # noqa: F401
-    except ImportError:
-        return CommandResult(response="[ERROR] pyoverleaf 未安装，无法连接 Overleaf。")
-
     from agent.tools.overleaf import OverleafTool
     from pathlib import Path
 
@@ -92,7 +87,7 @@ def _list_overleaf_projects(services: "AgentServices") -> CommandResult:
     api = ol_tool._get_api()
     if not api:
         return CommandResult(
-            response="[ERROR] 未找到 Overleaf 认证信息。请先运行 `ols login` 生成 .olauth 文件。"
+            response="[ERROR] 未找到 Overleaf 认证信息。请先运行 `python cli/main.py login` 生成 .olauth 文件。"
         )
     try:
         projects = api.get_projects()
