@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import logging
 from typing import Any, Awaitable, Callable
 
 
@@ -55,7 +56,22 @@ class DingTalkGateway:
             raise RuntimeError("Unsupported dingtalk-stream SDK API")
 
         credential = credential_cls(self.client_id, self.client_secret)
-        client = client_cls(credential)
+        sdk_logger = _CompatSDKLogger(logging.getLogger("dingtalk.gateway.sdk"))
+
+        try:
+            client_sig = inspect.signature(client_cls)
+            supports_logger = "logger" in client_sig.parameters or any(
+                p.kind == inspect.Parameter.VAR_KEYWORD for p in client_sig.parameters.values()
+            )
+        except (TypeError, ValueError):
+            supports_logger = False
+
+        client = client_cls(credential, logger=sdk_logger) if supports_logger else client_cls(credential)
+        if getattr(client, "logger", None) is not sdk_logger:
+            try:
+                client.logger = sdk_logger
+            except Exception:
+                pass
         self._client = client
 
         ack_message_cls = getattr(ds, "AckMessage", None)
@@ -201,3 +217,20 @@ class DingTalkGateway:
         if stop_fn:
             await asyncio.to_thread(stop_fn)
         self._started = False
+
+
+class _CompatSDKLogger:
+    """Normalize malformed SDK logging calls such as logger.exception("msg", exc)."""
+
+    def __init__(self, logger: logging.Logger):
+        self._logger = logger
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._logger, name)
+
+    def exception(self, msg: Any, *args: Any, **kwargs: Any) -> None:
+        if args and isinstance(msg, str) and "%" not in msg and len(args) == 1 and isinstance(args[0], BaseException):
+            exc = args[0]
+            self._logger.error("%s: %s", msg, exc, exc_info=exc)
+            return
+        self._logger.exception(msg, *args, **kwargs)

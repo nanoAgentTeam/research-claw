@@ -1,4 +1,7 @@
 import asyncio
+import contextlib
+import io
+import logging
 import types
 import unittest
 from unittest.mock import patch
@@ -13,6 +16,45 @@ class _RawMessage:
 
 
 class TestDingTalkGateway(unittest.IsolatedAsyncioTestCase):
+    async def test_start_uses_compat_logger_for_malformed_sdk_exception_calls(self):
+        class Credential:
+            def __init__(self, client_id, client_secret):
+                self.client_id = client_id
+                self.client_secret = client_secret
+
+        class DingTalkStreamClient:
+            def __init__(self, credential, logger=None):
+                self.credential = credential
+                self.logger = logger or logging.getLogger("tests.dingtalk.sdk")
+                self.logger.handlers = []
+                self.logger.addHandler(logging.StreamHandler())
+                self.logger.setLevel(logging.ERROR)
+                self.logger.propagate = False
+
+            def register_callback_handler(self, _topic, _handler):
+                return None
+
+            def start_forever(self):
+                self.logger.exception("unknown exception", OSError(65, "No route to host"))
+
+            def stop(self):
+                return None
+
+        ds = types.SimpleNamespace(
+            Credential=Credential,
+            DingTalkStreamClient=DingTalkStreamClient,
+        )
+
+        async def event_handler(_payload, _message_id, _ack):
+            return None
+
+        stderr = io.StringIO()
+        with patch.dict("sys.modules", {"dingtalk_stream": ds}), contextlib.redirect_stderr(stderr):
+            gateway = DingTalkGateway("id", "secret")
+            await gateway.start(event_handler)
+
+        self.assertNotIn("TypeError: not all arguments converted during string formatting", stderr.getvalue())
+
     async def test_register_callback_handler_compat(self):
         class Credential:
             def __init__(self, client_id, client_secret):
