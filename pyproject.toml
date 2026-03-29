@@ -4,9 +4,6 @@ version = "0.1.0"
 description = "Open Research Claw - AI Research Assistant with Overleaf integration"
 requires-python = ">=3.10"
 
-[project.scripts]
-ols = "cli.main:app"
-
 [tool.setuptools.packages.find]
 include = ["cli*", "core*", "agent*", "config*", "bus*", "channels*", "providers*"]
 

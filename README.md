@@ -235,9 +235,17 @@ Open **http://localhost:18790/ui** in your browser:
 Overleaf sync enables bidirectional sync between your local LaTeX project and Overleaf — every AI edit can be pushed, and every collaborator's edit can be pulled.
 
 ```bash
-pip install overleaf-sync
-ols login          # opens browser login, generates .olauth cookie file
+python cli/main.py login
 ```
+
+This will prompt you to choose an Overleaf instance:
+
+| Option | Instance | Required package |
+|--------|----------|-----------------|
+| 1 | [Overleaf](https://www.overleaf.com) (default) | `pip install overleaf-sync` |
+| 2 | [CSTCloud](https://latex.cstcloud.cn) (China Science & Technology Cloud) | `pip install overleaf-sync-cstcloud` |
+
+The login command will call the corresponding package's login tool, generate `.olauth`, and save the instance config to `settings.json`.
 
 Once `.olauth` is created, the system auto-detects it. Use `/sync pull` and `/sync push` inside any project.
 

@@ -346,6 +346,13 @@
                     <i class="fas" :class="updating ? 'fa-spinner fa-spin' : 'fa-cloud-arrow-down'"></i>
                     <span x-text="updating ? (language === 'en' ? 'Updating...' : '更新中...') : (language === 'en' ? 'Update from GitHub' : '从 GitHub 更新')"></span>
                 </button>
+                <button @click="resetSystem()"
+                        class="mt-2 w-full text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                        :disabled="restarting || updating"
+                        :title="language === 'en' ? 'Delete all projects, Overleaf credentials and logs. LLM and IM config preserved.' : '清除所有项目、Overleaf 凭据和日志，保留 LLM 模型和 IM 通讯配置。'">
+                    <i class="fas fa-trash-alt"></i>
+                    <span x-text="language === 'en' ? 'Reset System' : '重置系统'"></span>
+                </button>
             </div>
         </div>
     </div>
@@ -3576,6 +3583,24 @@
                     }, 30000);
                 },
 
+                async resetSystem() {
+                    const msg = this.language === 'en'
+                        ? 'Reset System\n\nWill DELETE:\n  - All projects (workspace/)\n  - Overleaf credentials (.olauth)\n  - Overleaf settings\n  - Logs\n\nWill KEEP:\n  - LLM provider config\n  - IM channel accounts\n\nProceed?'
+                        : '重置系统\n\n将删除：\n  - 所有项目（workspace/）\n  - Overleaf 凭据（.olauth）\n  - Overleaf 配置\n  - 日志\n\n将保留：\n  - LLM 模型配置\n  - IM 通讯账号\n\n确认重置？';
+                    if (!confirm(msg)) return;
+                    try {
+                        const res = await fetch('/api/reset', { method: 'POST' });
+                        if (res.ok) {
+                            this.showToast(this.language === 'en' ? 'System reset, restarting...' : '系统已重置，正在重启...');
+                            setTimeout(() => location.reload(), 3000);
+                        } else {
+                            this.showToast(this.language === 'en' ? 'Reset failed' : '重置失败', 'error');
+                        }
+                    } catch (e) {
+                        this.showToast(this.language === 'en' ? 'Reset triggered, restarting...' : '重置已触发，正在重启...');
+                        setTimeout(() => location.reload(), 3000);
+                    }
+                },
                 async updateFromGithub() {
                     const msg = this.language === 'en'
                         ? 'Pull the latest code from GitHub and restart? Active conversations will be interrupted.'

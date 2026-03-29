@@ -235,9 +235,17 @@ python cli/main.py gateway --port 18790
 Overleaf 同步实现了本地 LaTeX 项目与 Overleaf 的双向同步 — AI 的每一次编辑都可以推送到 Overleaf，协作者的修改也能随时拉取回来。
 
 ```bash
-pip install overleaf-sync
-ols login          # 打开浏览器登录，生成 .olauth 认证文件
+python cli/main.py login
 ```
+
+会提示你选择 Overleaf 实例：
+
+| 选项 | 实例 | 所需安装 |
+|------|------|----------|
+| 1 | [Overleaf](https://www.overleaf.com)（默认） | `pip install overleaf-sync` |
+| 2 | [中国科技云](https://latex.cstcloud.cn)（CSTCloud） | `pip install overleaf-sync-cstcloud` |
+
+登录命令会调用对应包完成认证、生成 `.olauth`，并将实例配置写入 `settings.json`。
 
 `.olauth` 创建后系统会自动检测。之后即可在任何项目中使用 `/sync pull` 和 `/sync push`。
 

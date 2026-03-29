@@ -30,7 +30,8 @@ class ProjectTool(BaseTool):
             "正确流程：create → switch。必须在 switch 之前完成所有配置。\n"
             "- list: 列出工作区中的所有项目。\n"
             "- create: 创建新项目。传 create_on_overleaf=true 可同时在 Overleaf 上创建并自动关联（推荐）。\n"
-            "- link_overleaf: 关联 Overleaf 项目。本地有内容时自动 push 到 Overleaf，本地为空时从 Overleaf pull。不传 overleaf_id 时列出可选项目。\n"
+            "- import_overleaf: 从 Overleaf 导入已有项目。只需提供 overleaf_id，自动获取项目名、创建本地项目、关联并拉取文件。\n"
+            "- link_overleaf: 将已有的本地项目关联到 Overleaf（适用于本地先创建、后关联的场景）。本地有内容时自动 push，本地为空时从 Overleaf pull。不传 overleaf_id 时列出可选项目。\n"
             "- info: 查看指定项目的配置和状态（git、overleaf、main_tex 等）。\n"
             "- switch: 切换到指定项目，进入工作模式。切换后此工具将不可用。\n"
             "- delete: 删除本地项目（仅删除 workspace 中的目录，不影响 Overleaf 端）。需要 confirm=true 确认。"
@@ -43,7 +44,7 @@ class ProjectTool(BaseTool):
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["list", "create", "switch", "info", "link_overleaf", "delete"],
+                    "enum": ["list", "create", "switch", "info", "import_overleaf", "link_overleaf", "delete"],
                     "description": "执行的动作。"
                 },
                 "project_name": {
@@ -56,7 +57,7 @@ class ProjectTool(BaseTool):
                 },
                 "overleaf_id": {
                     "type": "string",
-                    "description": "Overleaf 项目 ID（URL 中的 ID）。用于 link_overleaf。"
+                    "description": "Overleaf 项目 ID（URL 中的 ID）。用于 import_overleaf 和 link_overleaf。"
                 },
                 "create_on_overleaf": {
                     "type": "boolean",
@@ -96,6 +97,10 @@ class ProjectTool(BaseTool):
             if not project_name:
                 return "[ERROR] 'project_name' is required."
             return self._info(project_name)
+        elif action == "import_overleaf":
+            if not overleaf_id:
+                return "[ERROR] 'overleaf_id' is required for import_overleaf."
+            return await self._import_overleaf(overleaf_id)
         elif action == "link_overleaf":
             if not project_name:
                 return "[ERROR] 'project_name' is required."
@@ -333,6 +338,73 @@ class ProjectTool(BaseTool):
             files = [f.name for f in core.iterdir() if not f.name.startswith(".")][:15]
             lines.append(f"  files: {', '.join(files) if files else 'empty'}")
 
+        return "\n".join(lines)
+
+    # ------------------------------------------------------------------
+    # import_overleaf
+    # ------------------------------------------------------------------
+
+    async def _import_overleaf(self, overleaf_id: str) -> str:
+        """Import a project from Overleaf: auto-detect name, create local, link, pull."""
+        from core.project import Project
+        from core.automation.bootstrap import ensure_project_automation_jobs
+
+        # 1. Get project name from Overleaf API
+        try:
+            from agent.tools.overleaf import OverleafTool
+            ol = OverleafTool(workspace=self.workspace)
+            api = ol._get_api()
+            if not api:
+                return "[ERROR] No valid Overleaf cookie found. Please run `ols login` first."
+
+            projects = api.get_projects()
+            target = None
+            for p in projects:
+                if getattr(p, 'id', None) == overleaf_id:
+                    target = p
+                    break
+            if not target:
+                return (
+                    f"[ERROR] Overleaf project with ID '{overleaf_id}' not found.\n"
+                    f"Use overleaf(action='list') to see available projects."
+                )
+            project_name = target.name
+        except Exception as e:
+            return f"[ERROR] Failed to query Overleaf: {e}"
+
+        # 2. Check local conflict
+        project_path = self._get_project_path(project_name)
+        if project_path.exists():
+            return (
+                f"[ERROR] Project '{project_name}' already exists locally. "
+                f"Use 'switch' to enter it, or 'link_overleaf' to re-link."
+            )
+
+        # 3. Create local project + link + pull
+        proj = Project(project_name, self.workspace)
+        proj.link_overleaf(overleaf_id)
+
+        lines = []
+        try:
+            result = proj.sync_from_overleaf()
+            if result.success:
+                pulled = len(result.pulled) if result.pulled else 0
+                lines.append(f"✅ Imported '{project_name}' from Overleaf (ID: {overleaf_id}), pulled {pulled} files.")
+            else:
+                errors = ', '.join(result.errors) if result.errors else 'unknown'
+                lines.append(f"✅ Created '{project_name}' and linked Overleaf, but pull had issues: {errors}")
+                lines.append("Retry with /sync pull after switching.")
+        except Exception as e:
+            lines.append(f"✅ Created '{project_name}' and linked Overleaf, but pull failed: {e}")
+            lines.append("Retry with /sync pull after switching.")
+
+        # 4. Automation bootstrap
+        ensure_project_automation_jobs(proj)
+        autoplan_line = await self._run_initial_autoplan(proj)
+        if autoplan_line:
+            lines.append(autoplan_line)
+
+        lines.append(f"\nNext: use 'switch' with project_name='{project_name}' to enter the project.")
         return "\n".join(lines)
 
     # ------------------------------------------------------------------

@@ -229,28 +229,63 @@ class OverleafSync:
 
     # -- API --
 
+    def _get_overleaf_settings(self) -> dict:
+        """Read global overleaf settings from settings.json."""
+        try:
+            from config.loader import get_config_service
+            cfg = get_config_service().config
+            return {
+                "base_url": cfg.overleaf.base_url,
+                "login_path": cfg.overleaf.login_path,
+                "cookie_names": cfg.overleaf.cookie_names,
+            }
+        except Exception:
+            return {"base_url": "", "login_path": "/login", "cookie_names": ["overleaf_session2"]}
+
     def _get_api(self):
         if self._api is None:
-            cookie = self._load_cookie()
-            if not cookie:
-                raise RuntimeError("Overleaf cookie not found. Run 'ols login' first.")
-            try:
-                import pyoverleaf
-            except ImportError:
-                raise RuntimeError("pyoverleaf is not installed.")
-            self._api = pyoverleaf.Api()
-            self._api.login_from_cookies(cookie)
+            settings = self._get_overleaf_settings()
+            base_url = settings.get("base_url", "")
+            olauth_path = self._find_olauth()
+
+            if not olauth_path:
+                raise RuntimeError("Overleaf cookie not found. Run 'python cli/main.py login' first.")
+
+            # Auto-detect from .olauth if settings not configured
+            if not base_url:
+                import pickle as _pk
+                try:
+                    with open(olauth_path, "rb") as f:
+                        store = _pk.load(f)
+                    instance = store.get("instance", {}) if isinstance(store, dict) else {}
+                    base_url = instance.get("base_url", "")
+                except Exception:
+                    pass
+
+            is_official = not base_url or "overleaf.com" in base_url
+
+            if is_official:
+                # Use pyoverleaf for official overleaf.com
+                try:
+                    import pyoverleaf
+                except ImportError:
+                    raise RuntimeError("pyoverleaf is not installed.")
+                cookie = self._load_cookie_from(olauth_path)
+                self._api = pyoverleaf.Api()
+                self._api.login_from_cookies(cookie)
+            else:
+                # Use compat client for CSTCloud / self-hosted
+                from core.overleaf_compat import CompatOverleafApi
+                api = CompatOverleafApi()
+                api.login_from_olauth(olauth_path)
+                self._api = api
+
         return self._api
 
-    def _load_cookie(self) -> Optional[Any]:
-        """从多个位置搜索 .olauth 文件。"""
-        import pickle as _pickle
-        # core_path = workspace/<project>/<project>
-        # workspace = core_path.parent.parent
-        # project root (.bot_data) = workspace.parent
+    def _find_olauth(self) -> Optional[Path]:
+        """Search for .olauth file in standard locations."""
         workspace = self.core_path.parent.parent
         project_root = workspace.parent
-        # 同时搜索代码仓库根目录（即包含 cli/main.py 的目录）
         repo_root = Path(__file__).resolve().parent.parent
         search_paths = [
             repo_root / ".olauth",
@@ -262,13 +297,19 @@ class OverleafSync:
         ]
         for p in search_paths:
             if p.exists():
-                try:
-                    with open(p, "rb") as f:
-                        data = _pickle.load(f)
-                    return data.get("cookie") if isinstance(data, dict) else data
-                except Exception as e:
-                    logger.warning(f"Could not load cookie from {p}: {e}")
+                return p
         return None
+
+    def _load_cookie_from(self, olauth_path: Path) -> Optional[Any]:
+        """Load cookie from a .olauth pickle file."""
+        import pickle as _pickle
+        try:
+            with open(olauth_path, "rb") as f:
+                data = _pickle.load(f)
+            return data.get("cookie") if isinstance(data, dict) else data
+        except Exception as e:
+            logger.warning(f"Could not load cookie from {olauth_path}: {e}")
+            return None
 
     @staticmethod
     def _file_hash(path: Path) -> str:

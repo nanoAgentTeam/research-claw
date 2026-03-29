@@ -1456,8 +1456,8 @@ class AgentLoop:
         progress_hint = t(progress_key) if progress_key else None
         if tool_call.name == "overleaf":
             action = args.get("action", "")
-            if action == "download":
-                progress_hint = t("tool.overleaf_download")
+            if action == "pull":
+                progress_hint = t("tool.overleaf_pull")
             elif action == "list":
                 progress_hint = t("tool.overleaf_list")
             # sync 的进度提示不在这里发，因为工具内部可能直接报错（无项目等）

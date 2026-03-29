@@ -24,7 +24,7 @@ except ImportError:
 class OverleafTool(BaseTool):
     """
     Tool to interact with Overleaf projects using pyoverleaf.
-    Supports: list, download (full), sync (incremental upload/delete).
+    Supports: list, pull (from Overleaf), push (to Overleaf).
     """
 
     def __init__(self, workspace: Path, work_dir: Optional[Path] = None, project: Any = None):
@@ -58,9 +58,8 @@ class OverleafTool(BaseTool):
         return (
             "Interact with Overleaf.\n"
             "- list: List all Overleaf projects.\n"
-            "- create_project: Create a new blank project on Overleaf (returns project ID).\n"
-            "- download: Download an Overleaf project to local.\n"
-            "- sync: Push local changes to Overleaf (requires active project context)."
+            "- pull: Pull latest files from Overleaf to local (requires active project linked to Overleaf).\n"
+            "- push: Push local changes to Overleaf (requires active project linked to Overleaf)."
         )
 
     @property
@@ -71,15 +70,11 @@ class OverleafTool(BaseTool):
                 "action": {
                     "type": "string",
                     "description": "Action to perform.",
-                    "enum": ["list", "download", "sync", "create_project"]
-                },
-                "project_id": {
-                    "type": "string",
-                    "description": "Project ID (required for 'download')."
+                    "enum": ["list", "pull", "push"]
                 },
                 "project_name": {
                     "type": "string",
-                    "description": "Project name (optional for 'download', used for folder name). For 'sync', acts as the folder name to sync. Required for 'create_project'."
+                    "description": "Project name. Required for 'create_project'."
                 }
             },
             "required": ["action"]
@@ -87,9 +82,6 @@ class OverleafTool(BaseTool):
 
     def execute(self, action: str, project_id: str = None, project_name: str = None, **kwargs) -> str:
         """Execute the Overleaf action."""
-        if not HAS_PYOVERLEAF:
-            return "[ERROR] `pyoverleaf` is not installed. Please install it via pip."
-
         api = self._get_api()
         if not api:
             return "[ERROR] No valid Overleaf cookie found. Please run `ols login` (or equivalent) to generate a .olauth file."
@@ -98,33 +90,36 @@ class OverleafTool(BaseTool):
             if action == "list":
                 return self._list_projects(api)
             
-            elif action == "download":
-                if not project_id:
-                    return "[ERROR] project_id is required for download."
-                # If project_name is not provided, we try to fetch it or use ID
-                if not project_name:
-                    # Try to find name from list
-                    try:
-                        projects = api.get_projects()
-                        for p in projects:
-                            if hasattr(p, 'id') and p.id == project_id:
-                                project_name = p.name
-                                break
-                    except:
-                        pass
-                    if not project_name:
-                        project_name = f"project_{project_id}"
-                
-                return self._download_project(api, project_id, project_name)
+            elif action == "pull":
+                # Pull latest files from Overleaf (same as /sync pull)
+                if not self._project:
+                    return (
+                        "[ERROR] Cannot download: no active project. "
+                        "Use project_manager(action='switch', project_name='...') to enter a project first."
+                    )
+                if self._project.is_default:
+                    return "[ERROR] Cannot download in Default project."
+                result = self._project.sync_from_overleaf()
+                if not result.success:
+                    errors = ', '.join(result.errors) if result.errors else 'unknown'
+                    return f"[ERROR] Pull failed: {errors}"
+                pulled = len(result.pulled) if result.pulled else 0
+                msg = f"Pulled {pulled} files from Overleaf."
+                if result.pulled:
+                    for f in result.pulled:
+                        msg += f"\n  + {f}"
+                if result.deleted:
+                    msg += f"\n  Deleted {len(result.deleted)} file(s) no longer on remote."
+                return msg
             
-            elif action == "sync":
+            elif action == "push":
                 # Delegate to Project.sync_to_overleaf() — the canonical push path
                 if not self._project:
                     return (
                         "[ERROR] Cannot sync: no active project in current session. "
                         "You are in Default mode. To sync, you MUST first call "
                         "project_manager(action='switch', project_name='...') to enter the project, "
-                        "then retry overleaf(action='sync'). "
+                        "then retry overleaf(action='push'). "
                         "Do NOT attempt to sync via bash or read .overleaf.json as a workaround."
                     )
                 if self._project.is_default:
@@ -144,11 +139,6 @@ class OverleafTool(BaseTool):
                     for err in result.errors:
                         msg += f"\n  - {err}"
                 return msg
-
-            elif action == "create_project":
-                if not project_name:
-                    return "[ERROR] project_name is required for create_project."
-                return self._create_project(api, project_name)
 
             else:
                 return f"Unknown action: {action}"
@@ -173,13 +163,43 @@ class OverleafTool(BaseTool):
                     logger.warning(f"Could not load cookie from {path}: {e}")
         return None
 
+    def _get_overleaf_base_url(self) -> str:
+        """Read overleaf base_url from settings.json, fallback to .olauth instance."""
+        try:
+            from config.loader import get_config_service
+            url = get_config_service().config.overleaf.base_url
+            if url:
+                return url
+        except Exception:
+            pass
+        # Auto-detect from .olauth
+        cookie = self._load_cookie()
+        if isinstance(cookie, dict) and "instance" in cookie:
+            url = cookie["instance"].get("base_url", "")
+            if url:
+                return url
+        return "https://www.overleaf.com"
+
     def _get_api(self):
         try:
-            api = pyoverleaf.Api()
+            base_url = self._get_overleaf_base_url()
+            is_official = "overleaf.com" in base_url
             cookie = self._load_cookie()
-            if cookie:
-                api.login_from_cookies(cookie.get('cookie'))
+            if not cookie:
+                return None
+
+            if is_official:
+                api = pyoverleaf.Api()
+                api.login_from_cookies(cookie.get("cookie"))
                 return api
+            else:
+                from core.overleaf_compat import CompatOverleafApi
+                api = CompatOverleafApi()
+                for path in self.cookie_paths:
+                    if path.exists():
+                        api.login_from_olauth(path)
+                        return api
+                return None
         except Exception as e:
             logger.error(f"Failed to init Overleaf API: {e}")
         return None
@@ -239,7 +259,7 @@ class OverleafTool(BaseTool):
             session.cookies.update(cookie_jar)
             
             # Get CSRF from project list page
-            r = session.get("https://www.overleaf.com/project")
+            r = session.get(f"{self._get_overleaf_base_url()}/project")
             soup = BeautifulSoup(r.content, 'html.parser')
             csrf = None
             meta_csrf = soup.find('meta', {'name': 'ol-csrfToken'})
@@ -266,11 +286,12 @@ class OverleafTool(BaseTool):
                 return f"[ERROR] Could not find CSRF token for project creation. Please run `ols login` to refresh session."
             
             # Create project
-            create_url = "https://www.overleaf.com/project/new"
+            _base = self._get_overleaf_base_url()
+            create_url = f"{_base}/project/new"
             headers = {
                 "x-csrf-token": csrf,
                 "X-Requested-With": "XMLHttpRequest",
-                "Referer": "https://www.overleaf.com/project",
+                "Referer": f"{_base}/project",
                 "Content-Type": "application/json"
             }
             json_payload = {

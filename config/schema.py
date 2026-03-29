@@ -235,6 +235,13 @@ class SmtpConfig(BaseModel):
     profiles: list[SmtpProfile] = Field(default_factory=list)
 
 
+class OverleafSettings(BaseModel):
+    """Global Overleaf instance configuration. Set via `python cli/main.py login`."""
+    base_url: str = ""  # Empty means not configured. e.g. "https://www.overleaf.com" or "https://latex.cstcloud.cn"
+    login_path: str = "/login"
+    cookie_names: list[str] = Field(default_factory=lambda: ["overleaf_session2"])
+
+
 class UserInfoConfig(BaseModel):
     """User information and preferences."""
     language: str = "zh"
@@ -272,6 +279,7 @@ class Config(BaseSettings):
     push_subscriptions: PushSubscriptionsConfig = Field(default_factory=PushSubscriptionsConfig)
     smtp: SmtpConfig = Field(default_factory=SmtpConfig)
     user_info: UserInfoConfig = Field(default_factory=UserInfoConfig)
+    overleaf: OverleafSettings = Field(default_factory=OverleafSettings)
 
     @property
     def workspace_path(self) -> Path:

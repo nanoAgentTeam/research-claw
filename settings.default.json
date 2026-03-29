@@ -61,5 +61,10 @@
   "userInfo": {
     "language": "zh",
     "llmLanguage": "auto"
+  },
+  "overleaf": {
+    "baseUrl": "",
+    "loginPath": "/login",
+    "cookieNames": ["overleaf_session2"]
   }
 }

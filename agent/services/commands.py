@@ -77,11 +77,6 @@ class BaseCommandHandler:
 
 def _list_overleaf_projects(services: "AgentServices") -> CommandResult:
     """Shared implementation for listing remote Overleaf projects."""
-    try:
-        import pyoverleaf  # noqa: F401
-    except ImportError:
-        return CommandResult(response="[ERROR] pyoverleaf 未安装，无法连接 Overleaf。")
-
     from agent.tools.overleaf import OverleafTool
     from pathlib import Path
 
@@ -92,7 +87,7 @@ def _list_overleaf_projects(services: "AgentServices") -> CommandResult:
     api = ol_tool._get_api()
     if not api:
         return CommandResult(
-            response="[ERROR] 未找到 Overleaf 认证信息。请先运行 `ols login` 生成 .olauth 文件。"
+            response="[ERROR] 未找到 Overleaf 认证信息。请先运行 `python cli/main.py login` 生成 .olauth 文件。"
         )
     try:
         projects = api.get_projects()
@@ -189,7 +184,7 @@ class PullProjectHandler(BaseCommandHandler):
             f"I will now Sync the project **{project_name}** with Overleaf.\n"
             f"Steps:\n"
             f"1. Check `overleaf(action='list')` to find a matching project.\n"
-            f"2. If found, run `overleaf(action='sync', project_name='{project_name}')`.\n"
+            f"2. If found, run `overleaf(action='push', project_name='{project_name}')`.\n"
             f"3. If successful, run `git add .` and `git commit -m 'Sync {project_name} from Overleaf'` in the project folder.\n"
             "Please execute this workflow now."
         )

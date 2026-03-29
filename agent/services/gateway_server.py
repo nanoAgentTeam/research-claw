@@ -286,6 +286,57 @@ async def restart_server(request: Request):
     return {"status": "restarting"}
 
 
+@app.post("/api/reset")
+async def reset_system(request: Request):
+    """Reset workspace and Overleaf data. Preserves LLM provider and IM channel config."""
+    if request.client and request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(status_code=403, detail="Reset only allowed from localhost")
+
+    import shutil
+    project_root = Path(__file__).resolve().parent.parent.parent
+    cleaned = []
+
+    # 1. Delete workspace
+    workspace = _gw_config_service.config.workspace_path
+    if workspace.exists():
+        shutil.rmtree(workspace)
+        cleaned.append(f"workspace: {workspace}")
+
+    # 2. Delete .olauth
+    for olauth in [project_root / ".olauth", Path.home() / ".olauth"]:
+        if olauth.exists():
+            olauth.unlink()
+            cleaned.append(f"olauth: {olauth}")
+
+    # 3. Clear overleaf from settings.json (keep everything else)
+    config_path = get_config_path()
+    if config_path.exists():
+        settings = json.loads(config_path.read_text(encoding="utf-8"))
+        settings.pop("overleaf", None)
+        config_path.write_text(json.dumps(settings, ensure_ascii=False, indent=2), encoding="utf-8")
+        cleaned.append("settings: overleaf cleared")
+
+    # 4. Delete logs
+    logs_dir = project_root / "logs"
+    if logs_dir.exists():
+        shutil.rmtree(logs_dir)
+        cleaned.append(f"logs: {logs_dir}")
+
+    # 5. Delete runtime state
+    runtime_dir = project_root / ".open_research_claw"
+    if runtime_dir.exists():
+        shutil.rmtree(runtime_dir)
+        cleaned.append(f"runtime: {runtime_dir}")
+
+    logger.warning(f"System reset completed: {cleaned}")
+
+    # Trigger restart
+    import threading, os
+    logger.warning("Reset done, restarting via exit code 42...")
+    threading.Timer(1.0, lambda: os._exit(42)).start()
+    return {"status": "ok", "cleaned": cleaned}
+
+
 @app.post("/api/update")
 async def update_from_github(request: Request):
     """Pull latest code from GitHub, install deps, and restart.

@@ -842,17 +842,17 @@
     "pt": "🌐 Navegando em páginas web...",
     "ar": "🌐 جارٍ تصفح صفحات الويب..."
   },
-  "tool.overleaf_download": {
-    "zh": "⏳ 正在从 Overleaf 下载项目...",
-    "en": "⏳ Downloading project from Overleaf...",
-    "ja": "⏳ Overleaf からプロジェクトをダウンロード中...",
-    "ko": "⏳ Overleaf에서 프로젝트를 다운로드하는 중...",
-    "fr": "⏳ Téléchargement du projet depuis Overleaf...",
-    "de": "⏳ Projekt wird von Overleaf heruntergeladen...",
-    "es": "⏳ Descargando proyecto desde Overleaf...",
-    "ru": "⏳ Загрузка проекта из Overleaf...",
-    "pt": "⏳ Baixando projeto do Overleaf...",
-    "ar": "⏳ جارٍ تنزيل المشروع من Overleaf..."
+  "tool.overleaf_pull": {
+    "zh": "⏳ 正在从 Overleaf 拉取项目...",
+    "en": "⏳ Pulling project from Overleaf...",
+    "ja": "⏳ Overleaf からプロジェクトをプル中...",
+    "ko": "⏳ Overleaf에서 프로젝트를 가져오는 중...",
+    "fr": "⏳ Récupération du projet depuis Overleaf...",
+    "de": "⏳ Projekt wird von Overleaf abgerufen...",
+    "es": "⏳ Obteniendo proyecto desde Overleaf...",
+    "ru": "⏳ Получение проекта из Overleaf...",
+    "pt": "⏳ Obtendo projeto do Overleaf...",
+    "ar": "⏳ جارٍ سحب المشروع من Overleaf..."
   },
   "tool.overleaf_list": {
     "zh": "📋 正在获取 Overleaf 项目列表...",

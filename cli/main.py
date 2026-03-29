@@ -175,73 +175,151 @@ def main():
     """Research Claw - AI Research Assistant."""
     pass
 
-def _do_overleaf_login() -> Path:
-    """Read Overleaf cookies from the browser, verify, and save to .olauth.
+_OVERLEAF_PRESETS = {
+    "1": {
+        "name": "Overleaf",
+        "base_url": "https://www.overleaf.com",
+        "login_path": "/login",
+        "cookie_names": ["overleaf_session2"],
+        "login_cmd": ["ols", "login"],
+        "login_module": "olsync",
+        "login_pkg": "overleaf-sync",
+    },
+    "2": {
+        "name": "CSTCloud",
+        "base_url": "https://latex.cstcloud.cn",
+        "login_path": "/oidc/login",
+        "cookie_names": ["overleaf.sid", "overleaf_session2", "GCLB"],
+        "login_cmd": [sys.executable, "-m", "core.olsync_cstcloud.olsync", "login"],
+        "login_module": "core.olsync_cstcloud.olsync",
+        "login_pkg": "PySide6 (pip install PySide6)",
+    },
+}
 
-    Returns the path to the saved .olauth file.
-    Raises RuntimeError on any failure.
-    """
-    import pickle
-    import requests
 
-    try:
-        import browsercookie
-    except ImportError:
-        raise RuntimeError(
-            "browsercookie is not installed. Run: pip install browsercookie"
-        )
+def _save_overleaf_settings(preset: dict) -> None:
+    """Write overleaf base_url/login_path/cookie_names back to settings.json."""
+    from config.loader import get_config_service, get_config_path
+    import json
 
-    try:
-        all_cookies = browsercookie.load()
-    except Exception as e:
-        raise RuntimeError(
-            f"Failed to read browser cookies: {e}\n"
-            "Tip: make sure you have logged into overleaf.com in Chrome/Firefox."
-        )
+    config_path = get_config_path()
+    if config_path.exists():
+        with open(config_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    else:
+        data = {}
 
-    session = requests.Session()
-    found = False
-    for c in all_cookies:
-        if "overleaf" in c.domain:
-            session.cookies.set(c.name, c.value, domain=c.domain, path=c.path)
-            found = True
-
-    if not found:
-        raise RuntimeError(
-            "No Overleaf cookies found in browser. Please log in to overleaf.com first."
-        )
-
-    try:
-        r = session.get("https://www.overleaf.com/project", allow_redirects=False)
-        if r.status_code != 200:
-            raise RuntimeError(
-                f"Cookie found but session is invalid (HTTP {r.status_code}). "
-                "Please re-login in browser."
-            )
-    except requests.RequestException as e:
-        raise RuntimeError(f"Failed to verify login: {e}")
-
-    olauth_path = root_path / ".olauth"
-    with open(olauth_path, "wb") as f:
-        pickle.dump({"cookie": session.cookies}, f)
-
-    return olauth_path
+    data["overleaf"] = {
+        "baseUrl": preset["base_url"],
+        "loginPath": preset["login_path"],
+        "cookieNames": preset["cookie_names"],
+    }
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 @app.command()
 def login():
-    """Login to Overleaf by reading cookies from your browser."""
-    console.print("Make sure you are logged into Overleaf in your browser first.\n")
-    console.print("Reading cookies from browser...")
+    """Login to an Overleaf instance (overleaf.com or CSTCloud)."""
+    console.print("[bold]Select Overleaf instance:[/bold]\n")
+    for key, preset in _OVERLEAF_PRESETS.items():
+        console.print(f"  [{key}] {preset['name']} ({preset['base_url']})")
+    console.print()
 
-    try:
-        olauth_path = _do_overleaf_login()
-    except RuntimeError as e:
-        console.print(f"[red]Error: {e}[/red]")
+    choice = typer.prompt("Enter choice", default="1")
+    preset = _OVERLEAF_PRESETS.get(choice)
+    if not preset:
+        console.print(f"[red]Invalid choice: {choice}[/red]")
         raise typer.Exit(1)
 
-    console.print("[green]Login verified.[/green]")
-    console.print(f"[green]Saved credentials to {olauth_path}[/green]")
+    console.print(f"\n[blue]Logging in to {preset['name']} ({preset['base_url']})...[/blue]\n")
+
+    # Check if required dependencies are available
+    try:
+        __import__(preset["login_module"])
+    except ImportError as e:
+        console.print(
+            f"[red]Required dependency missing: {e}[/red]\n"
+            f"  pip install {preset['login_pkg']}"
+        )
+        raise typer.Exit(1)
+
+    # Run the external login command
+    result = subprocess.run(preset["login_cmd"])
+    if result.returncode != 0:
+        console.print("[red]Login failed.[/red]")
+        raise typer.Exit(1)
+
+    # Save overleaf settings
+    _save_overleaf_settings(preset)
+    console.print(f"\n[green]Login successful. Overleaf instance set to {preset['name']}.[/green]")
+
+
+@app.command()
+def reset():
+    """Reset workspace and Overleaf data. Keeps LLM provider and IM channel config."""
+    import json
+    import shutil
+    from config.loader import get_config_path
+
+    console.print("[bold red]This will delete:[/bold red]")
+    console.print("  - All projects (workspace/)")
+    console.print("  - Overleaf credentials (.olauth)")
+    console.print("  - Overleaf settings")
+    console.print("  - Logs")
+    console.print()
+    console.print("[bold green]Preserved:[/bold green]")
+    console.print("  - LLM provider configuration")
+    console.print("  - IM channel accounts")
+    console.print()
+
+    if not typer.confirm("Proceed with reset?", default=False):
+        console.print("Cancelled.")
+        raise typer.Exit(0)
+
+    # 1. Delete workspace
+    config_path = get_config_path()
+    if config_path.exists():
+        with open(config_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        workspace_dir = Path(data.get("agents", {}).get("defaults", {}).get("workspace", "./workspace"))
+        if not workspace_dir.is_absolute():
+            workspace_dir = (root_path / workspace_dir).resolve()
+    else:
+        workspace_dir = root_path / "workspace"
+
+    if workspace_dir.exists():
+        shutil.rmtree(workspace_dir)
+        console.print(f"  [dim]Deleted {workspace_dir}[/dim]")
+
+    # 2. Delete .olauth
+    for olauth in [root_path / ".olauth", Path.home() / ".olauth"]:
+        if olauth.exists():
+            olauth.unlink()
+            console.print(f"  [dim]Deleted {olauth}[/dim]")
+
+    # 3. Clear overleaf settings from settings.json (keep everything else)
+    if config_path.exists():
+        with open(config_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        data.pop("overleaf", None)
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        console.print("  [dim]Cleared overleaf settings[/dim]")
+
+    # 4. Delete logs
+    logs_dir = root_path / "logs"
+    if logs_dir.exists():
+        shutil.rmtree(logs_dir)
+        console.print(f"  [dim]Deleted {logs_dir}[/dim]")
+
+    # 5. Delete runtime state
+    runtime_dir = root_path / ".open_research_claw"
+    if runtime_dir.exists():
+        shutil.rmtree(runtime_dir)
+        console.print(f"  [dim]Deleted {runtime_dir}[/dim]")
+
+    console.print("\n[green]Reset complete. Run 'python cli/main.py login' to reconfigure Overleaf.[/green]")
 
 
 def _find_latest_session_for(workspace: Path, project_id: str) -> Optional[str]:

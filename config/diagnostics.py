@@ -236,6 +236,22 @@ async def test_im_connection(platform: str, credentials: dict, timeout: float = 
         return TestResult(ok=False, message=f"不支持的平台: {platform}")
 
 
+def _get_overleaf_instance_name() -> str:
+    """Return a human-readable name for the configured Overleaf instance."""
+    try:
+        from config.loader import get_config_service
+        base_url = get_config_service().config.overleaf.base_url
+        if not base_url:
+            return "Overleaf (not configured)"
+        if "cstcloud" in base_url:
+            return "CSTCloud"
+        if "overleaf.com" in base_url:
+            return "Overleaf"
+        return base_url
+    except Exception:
+        return "Overleaf"
+
+
 # ── Full diagnostics ─────────────────────────────────────────
 
 async def run_all_diagnostics(config) -> list[dict]:
@@ -283,10 +299,11 @@ async def run_all_diagnostics(config) -> list[dict]:
             Path.home() / ".olauth",
         ]
         olauth_found = next((p for p in olauth_candidates if p.exists()), None)
+        instance_name = _get_overleaf_instance_name()
         if olauth_found:
-            results.append({"name": "Overleaf", "status": "success", "message": f"已登录 ({olauth_found})"})
+            results.append({"name": "Overleaf", "status": "success", "message": f"已登录 — {instance_name} ({olauth_found})"})
         else:
-            results.append({"name": "Overleaf", "status": "skip", "message": "未登录 (可选: 运行 ols login)"})
+            results.append({"name": "Overleaf", "status": "skip", "message": "未登录 (运行 python cli/main.py login)"})
     except Exception:
         results.append({"name": "Overleaf", "status": "skip", "message": "检测跳过"})
 
@@ -315,8 +332,8 @@ def get_overleaf_status_snippet(project=None) -> str:
     else:
         lines.append(
             "Overleaf login: not found. "
-            "To enable Overleaf sync, an admin needs to run "
-            "'ols login' on the server."
+            "To enable Overleaf sync, run "
+            "'python cli/main.py login' on the server."
         )
 
     if project and not getattr(project, "is_default", True):
