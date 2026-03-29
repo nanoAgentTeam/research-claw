@@ -91,13 +91,10 @@ class SDDExecutor:
                 task.feedback_history.append(feedback)
                 await _emit(f"🧐 [{task.id}] 审核未通过: {feedback[:100]}...")
 
-        logger.warning(f"Task {task.id} failed review after {self.max_retries} retries. Defaulting to PASS.")
-        await _emit(f"⚠️ [{task.id}] 审核重试耗尽, 默认通过")
-
-        task.status = TaskStatus.COMPLETED
-        self._merge_worker_to_core(task)
-        await _emit(f"✅ [{task.id}] 完成: {task.title}")
-        return True
+        logger.warning(f"Task {task.id} failed after {self.max_retries} retries.")
+        task.status = TaskStatus.FAILED
+        await _emit(f"❌ [{task.id}] 失败: 重试耗尽")
+        return False
 
     async def _run_worker(self, task: ResearchTask, work_dir: Any, on_log: Optional[Callable[[str], Any]] = None, proposal: str = "") -> bool:
         """Run the Worker Agent."""
@@ -440,7 +437,10 @@ class SDDExecutor:
         worker_session = self._worker_sessions.get(task_id)
         if not worker_session:
             return
-        for dep_id in self._injected_deps.get(task_id, set()):
+        dep_ids = set(self._injected_deps.get(task_id, set()))
+        if not dep_ids:
+            dep_ids = set(self._collect_all_ancestors(task_id))
+        for dep_id in dep_ids:
             dep_dir = worker_session.root / dep_id
             if dep_dir.exists():
                 for f in dep_dir.rglob("*"):
