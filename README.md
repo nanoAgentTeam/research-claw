@@ -168,6 +168,8 @@ Ubuntu-18.04    Ubuntu 18.04 LTS
 Ubuntu-20.04    Ubuntu 20.04 LTS
 ```
 
+Choose a version to install.
+
 ```powershell
 wsl --install -d Ubuntu-20.04
 ```
@@ -241,7 +243,7 @@ python cli/main.py login
 This will prompt you to choose an Overleaf instance:
 
 | Option | Instance | Required package |
-|--------|----------|-----------------|
+| ------ | -------- | ---------------- |
 | 1 | [Overleaf](https://www.overleaf.com) (default) | `pip install overleaf-sync` |
 | 2 | [CSTCloud](https://latex.cstcloud.cn) (China Science & Technology Cloud) | `pip install PySide6` (built-in, browser login only) |
 
@@ -295,9 +297,9 @@ graph TB
 
 The system has two spaces:
 
-|                 | Default (Lobby)                          | Project (Workspace)                                             |
-| --------------- | ---------------------------------------- | --------------------------------------------------------------- |
-| Purpose         | Create, list, switch projects            | Work on a specific paper                                        |
+|                 | Default (Lobby) | Project (Workspace) |
+| --------------- | --------------- | ------------------- |
+| Purpose         | Create, list, switch projects | Work on a specific paper |
 | Available tools | Project management (create, import from Overleaf), Overleaf list | File editing, LaTeX compile, Git, Overleaf sync, sub-agents, literature search |
 
 ```
@@ -322,11 +324,13 @@ workspace/
 | `/task <goal>` | Decompose a complex goal into sub-tasks, execute in parallel |
 | `/start`       | Approve the task plan and begin execution                    |
 | `/done`        | End current TASK session and return to normal mode           |
-| `/resume`      | Resume a failed or interrupted task from checkpoint          |
+| `/resume`      | Show failed or interrupted tasks                             |
+| `/resume <task-name>` | Resume a failed or interrupted task                   |
 | `/compile`     | Compile LaTeX to PDF                                         |
 | `/sync pull`   | Pull latest files from Overleaf                              |
 | `/sync push`   | Push local changes to Overleaf                               |
-| `/session`     | List or switch sessions in current project                   |
+| `/session`     | List sessions in the current project                         |
+| `/session <session-name|number>` | View or switch sessions in the current project |
 | `/git`         | Enter interactive Git mode (history, diff, rollback)         |
 | `/stop`        | Force-cancel the current operation                           |
 | `/reset`       | Clear current session history                                |

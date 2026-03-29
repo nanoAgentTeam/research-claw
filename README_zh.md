@@ -167,7 +167,9 @@ Ubuntu          Ubuntu
 Ubuntu-18.04    Ubuntu 18.04 LTS
 Ubuntu-20.04    Ubuntu 20.04 LTS
 ```
+
 选择一个版本进行下载
+
 ```powershell
 wsl --install -d Ubuntu-20.04
 ```
@@ -240,10 +242,10 @@ python cli/main.py login
 
 会提示你选择 Overleaf 实例：
 
-| 选项 | 实例 | 所需安装 |
-|------|------|----------|
-| 1 | [Overleaf](https://www.overleaf.com)（默认） | `pip install overleaf-sync` |
-| 2 | [中国科技云](https://latex.cstcloud.cn)（CSTCloud） | `pip install PySide6`（已内置，仅需浏览器登录依赖） |
+| 选项 | 实例                                             | 所需安装                                              |
+| ---- | ------------------------------------------------ | ----------------------------------------------------- |
+| 1    | [Overleaf](https://www.overleaf.com)（默认）        | `pip install overleaf-sync`                         |
+| 2    | [中国科技云](https://latex.cstcloud.cn)（CSTCloud） | `pip install PySide6`（已内置，仅需浏览器登录依赖） |
 
 登录命令会调用对应的登录工具完成认证、生成 `.olauth`，并将实例配置写入 `settings.json`。
 
@@ -295,9 +297,9 @@ graph TB
 
 系统有两个空间：
 
-|          | Default（大厅）              | Project（工作间）                             |
-| -------- | ---------------------------- | --------------------------------------------- |
-| 用途     | 创建、列出、切换项目         | 在具体论文项目中工作                          |
+|          | Default（大厅）                                   | Project（工作间）                                            |
+| -------- | ------------------------------------------------- | ------------------------------------------------------------ |
+| 用途     | 创建、列出、切换项目                              | 在具体论文项目中工作                                         |
 | 可用工具 | 项目管理（创建、从 Overleaf 导入）、Overleaf 列表 | 文件编辑、LaTeX 编译、Git、Overleaf 同步、子 Agent、文献检索 |
 
 ```
@@ -313,24 +315,26 @@ workspace/
 
 ### 命令一览
 
-| 命令             | 功能                                    |
-| ---------------- | --------------------------------------- |
-| `/help`        | 显示所有可用命令                        |
-| `/list`        | 列出本地项目                            |
-| `/olist`       | 列出 Overleaf 远程项目                  |
-| `/switch <名称>` | 切换到指定项目                       |
-| `/task <目标>` | 将复杂目标分解为子任务，并行执行        |
-| `/start`       | 确认任务计划并开始执行                  |
-| `/done`        | 结束 Task 会话，回到普通模式            |
-| `/resume`      | 从断点恢复中断或失败的任务              |
-| `/compile`     | 编译 LaTeX 生成 PDF                     |
-| `/sync pull`   | 从 Overleaf 拉取最新文件                |
-| `/sync push`   | 推送本地修改到 Overleaf                 |
-| `/session`     | 查看或切换当前项目的会话                |
-| `/git`         | 进入交互式 Git 模式（历史、差异、回退） |
-| `/stop`        | 强制中断当前操作                        |
-| `/reset`       | 清空当前 Session 对话历史               |
-| `/back`        | 返回 Default 大厅                       |
+| 命令                     | 功能                                    |
+| ------------------------ | --------------------------------------- |
+| `/help`                  | 显示所有可用命令                        |
+| `/list`                  | 列出本地项目                            |
+| `/olist`                 | 列出 Overleaf 远程项目                  |
+| `/switch <名称>`         | 切换到指定项目                          |
+| `/task <目标>`           | 将复杂目标分解为子任务，并行执行        |
+| `/start`                 | 确认任务计划并开始执行                  |
+| `/done`                  | 结束 Task 会话，回到普通模式            |
+| `/resume`                | 显示失败或中断的任务列表                |
+| `/resume <任务名>`       | 恢复失败或中断的任务                    |
+| `/compile`               | 编译 LaTeX 生成 PDF                     |
+| `/sync pull`             | 从 Overleaf 拉取最新文件                |
+| `/sync push`             | 推送本地修改到 Overleaf                 |
+| `/session`               | 查看当前项目的会话列表                  |
+| `/session <会话名｜序号>` | 查看或切换当前项目的会话                |
+| `/git`                   | 进入交互式 Git 模式（历史、差异、回退） |
+| `/stop`                  | 强制中断当前操作                        |
+| `/reset`                 | 清空当前 Session 对话历史               |
+| `/back`                  | 返回 Default 大厅                       |
 
 ### Task 模式
 
@@ -359,13 +363,13 @@ workspace/
 <details>
 <summary><strong>阶段详情</strong></summary>
 
-| 阶段                 | Bot 做什么                                 | 你做什么                             |
-| -------------------- | ------------------------------------------ | ------------------------------------ |
-| **UNDERSTAND** | 阅读项目文件，理解上下文                   | 无需操作 — 自动进行                 |
-| **PROPOSE**    | 通过 `task_propose` 生成方案             | 审阅并回复修改意见，或确认           |
-| **PLAN**       | 通过 `task_build` 构建任务 DAG           | 审阅，可调整，然后输入 **`/start`** |
-| **EXECUTE**    | 通过 `task_execute` 分批并行执行子 Agent | 等待 — 进度会实时推送给你           |
-| **FINALIZE**   | 整合产出并通过 `task_commit` 提交        | 输入 **`/done`** 退出 Task 模式     |
+| 阶段           | Bot 做什么                                 | 你做什么                             |
+| -------------- | ------------------------------------------ | ------------------------------------ |
+| **UNDERSTAND** | 阅读项目文件，理解上下文                   | 无需操作 — 自动进行                  |
+| **PROPOSE**    | 通过 `task_propose` 生成方案               | 审阅并回复修改意见，或确认            |
+| **PLAN**       | 通过 `task_build` 构建任务 DAG             | 审阅，可调整，然后输入 **`/start`**  |
+| **EXECUTE**    | 通过 `task_execute` 分批并行执行子 Agent   | 等待 — 进度会实时推送给你            |
+| **FINALIZE**   | 整合产出并通过 `task_commit` 提交          | 输入 **`/done`** 退出 Task 模式      |
 
 </details>
 
@@ -454,17 +458,17 @@ config/.skills/
 
 ## 文档
 
-| 指南 | |
-| --- | --- |
-| [项目概览](README/guide/01_项目概览.md) | [English](README/guide/01_Overview_en.md) |
-| [工作空间与 Session](README/guide/02_工作空间与Session.md) | [English](README/guide/02_Workspace_and_Session_en.md) |
-| [Agent 协作](README/guide/03_Agent协作.md) | [English](README/guide/03_Agent_Collaboration_en.md) |
-| [项目隔离与安全](README/guide/04_项目隔离与安全.md) | [English](README/guide/04_Isolation_and_Security_en.md) |
-| [Git 版本管理](README/guide/05_Git版本管理.md) | [English](README/guide/05_Git_Version_Control_en.md) |
-| [Overleaf 同步](README/guide/06_Overleaf同步.md) | [English](README/guide/06_Overleaf_Sync_en.md) |
-| [使用指南](README/guide/07_使用指南.md) | [English](README/guide/07_Usage_Guide_en.md) |
-| [配置与快速开始](README/guide/08_配置与快速开始.md) | [English](README/guide/08_Configuration_and_Quick_Start_en.md) |
-| [Web 界面功能说明](README/guide/webui操作手册.md) | [English](README/guide/webui_guide_en.md) |
+| 指南                                                    |                                                             |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| [项目概览](README/guide/01_项目概览.md)                    | [English](README/guide/01_Overview_en.md)                      |
+| [工作空间与 Session](README/guide/02_工作空间与Session.md) | [English](README/guide/02_Workspace_and_Session_en.md)         |
+| [Agent 协作](README/guide/03_Agent协作.md)                 | [English](README/guide/03_Agent_Collaboration_en.md)           |
+| [项目隔离与安全](README/guide/04_项目隔离与安全.md)        | [English](README/guide/04_Isolation_and_Security_en.md)        |
+| [Git 版本管理](README/guide/05_Git版本管理.md)             | [English](README/guide/05_Git_Version_Control_en.md)           |
+| [Overleaf 同步](README/guide/06_Overleaf同步.md)           | [English](README/guide/06_Overleaf_Sync_en.md)                 |
+| [使用指南](README/guide/07_使用指南.md)                    | [English](README/guide/07_Usage_Guide_en.md)                   |
+| [配置与快速开始](README/guide/08_配置与快速开始.md)        | [English](README/guide/08_Configuration_and_Quick_Start_en.md) |
+| [Web 界面功能说明](README/guide/webui操作手册.md)          | [English](README/guide/webui_guide_en.md)                      |
 
 **IM 配置指南：** [飞书](README/im_config/feishu_ZH.md) · [Telegram](README/im_config/Telegram_ZH.md) · [QQ](README/im_config/QQBot_ZH.md) · [钉钉](README/im_config/DingTalk_ZH.md)
 
@@ -493,5 +497,3 @@ config/.skills/
     </picture>
   </a>
 </p>
-
-
