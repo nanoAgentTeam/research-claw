@@ -1425,7 +1425,7 @@ class AgentLoop:
                              # Greedy match until the last quote? No, JSON is hard to regex.
                              # Simple heuristic: "key"\s*:\s*"(.*)"
                              # This is fragile but it's a rescue attempt.
-                             match = re.search(f'"{key}"\s*:\s*"(.*)', raw_value, re.DOTALL)
+                             match = re.search(rf'"{key}"\s*:\s*"(.*)', raw_value, re.DOTALL)
                              if match:
                                  val = match.group(1)
                                  # Cleanup trailing json structure if present
@@ -1436,7 +1436,7 @@ class AgentLoop:
                                  resurrected_args[key] = val
                         else:
                              # Simple single line match
-                             match = re.search(f'"{key}"\s*:\s*"([^"]+)"', raw_value)
+                             match = re.search(rf'"{key}"\s*:\s*"([^"]+)"', raw_value)
                              if match:
                                  resurrected_args[key] = match.group(1)
 
