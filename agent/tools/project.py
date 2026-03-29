@@ -26,15 +26,15 @@ class ProjectTool(BaseTool):
     @property
     def description(self) -> str:
         return (
-            "项目管理工具（仅在 Default 工作区可用，switch 进入项目后此工具不可用）。\n"
+            "项目管理工具。\n"
             "正确流程：create → switch。必须在 switch 之前完成所有配置。\n"
-            "- list: 列出工作区中的所有项目。\n"
-            "- create: 创建新项目。传 create_on_overleaf=true 可同时在 Overleaf 上创建并自动关联（推荐）。\n"
-            "- import_overleaf: 从 Overleaf 导入已有项目。只需提供 overleaf_id，自动获取项目名、创建本地项目、关联并拉取文件。\n"
-            "- link_overleaf: 将已有的本地项目关联到 Overleaf（适用于本地先创建、后关联的场景）。本地有内容时自动 push，本地为空时从 Overleaf pull。不传 overleaf_id 时列出可选项目。\n"
-            "- info: 查看指定项目的配置和状态（git、overleaf、main_tex 等）。\n"
-            "- switch: 切换到指定项目，进入工作模式。切换后此工具将不可用。\n"
-            "- delete: 删除本地项目（仅删除 workspace 中的目录，不影响 Overleaf 端）。需要 confirm=true 确认。"
+            "- list: 列出工作区中的所有项目。（仅 Default 工作区）\n"
+            "- create: 创建新项目。传 create_on_overleaf=true 可同时在 Overleaf 上创建并自动关联（推荐）。（仅 Default 工作区）\n"
+            "- import_overleaf: 从 Overleaf 导入已有项目。只需提供 overleaf_id，自动获取项目名、创建本地项目、关联并拉取文件。（仅 Default 工作区）\n"
+            "- link_overleaf: 将已有的本地项目关联到 Overleaf（适用于本地先创建、后关联的场景）。本地有内容时自动 push，本地为空时从 Overleaf pull。不传 overleaf_id 时列出可选项目。（项目内也可用，自动使用当前项目名）\n"
+            "- info: 查看指定项目的配置和状态（git、overleaf、main_tex 等）。（项目内也可用，自动使用当前项目名）\n"
+            "- switch: 切换到指定项目，进入工作模式。（仅 Default 工作区）\n"
+            "- delete: 删除本地项目（仅删除 workspace 中的目录，不影响 Overleaf 端）。需要 confirm=true 确认。（仅 Default 工作区）"
         )
 
     @property
@@ -78,8 +78,9 @@ class ProjectTool(BaseTool):
                       session_name: Optional[str] = None, overleaf_id: Optional[str] = None,
                       create_on_overleaf: bool = False, confirm: bool = False,
                       **kwargs) -> str:
-        # Mode check: this tool is only available in Default workspace (CHAT mode)
-        if self.ctx.project_id != "Default":
+        # Mode check: most actions only available in Default workspace,
+        # but link_overleaf and info are also usable inside a project.
+        if self.ctx.project_id != "Default" and action not in ("link_overleaf", "info"):
             return t("project.not_in_default")
 
         if action == "list":
@@ -95,7 +96,10 @@ class ProjectTool(BaseTool):
             return await self._switch(project_name, session_name)
         elif action == "info":
             if not project_name:
-                return "[ERROR] 'project_name' is required."
+                if self.ctx.project_id != "Default":
+                    project_name = self.ctx.project_id
+                else:
+                    return "[ERROR] 'project_name' is required."
             return self._info(project_name)
         elif action == "import_overleaf":
             if not overleaf_id:
@@ -103,7 +107,10 @@ class ProjectTool(BaseTool):
             return await self._import_overleaf(overleaf_id)
         elif action == "link_overleaf":
             if not project_name:
-                return "[ERROR] 'project_name' is required."
+                if self.ctx.project_id != "Default":
+                    project_name = self.ctx.project_id
+                else:
+                    return "[ERROR] 'project_name' is required."
             return await self._link_overleaf(project_name, overleaf_id)
         elif action == "delete":
             if not project_name:

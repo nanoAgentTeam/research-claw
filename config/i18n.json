@@ -302,6 +302,162 @@
     "pt": "Alternado para o projeto [{project}].\nAgora você pode usar comandos de projeto como /task, /sync e /compile.",
     "ar": "تم التبديل إلى المشروع [{project}].\nيمكنك الآن استخدام أوامر المشروع مثل /task و /sync و /compile."
   },
+  "session.list_header": {
+    "zh": "🗂️ 当前项目 [{project}] 的会话：",
+    "en": "🗂️ Sessions for current project [{project}]:",
+    "ja": "🗂️ 現在のプロジェクト [{project}] のセッション:",
+    "ko": "🗂️ 현재 프로젝트 [{project}]의 세션:",
+    "fr": "🗂️ Sessions du projet actuel [{project}] :",
+    "de": "🗂️ Sitzungen für das aktuelle Projekt [{project}]:",
+    "es": "🗂️ Sesiones del proyecto actual [{project}]:",
+    "ru": "🗂️ Сессии текущего проекта [{project}]:",
+    "pt": "🗂️ Sessões do projeto atual [{project}]:",
+    "ar": "🗂️ جلسات المشروع الحالي [{project}]:"
+  },
+  "session.list_empty": {
+    "zh": "当前项目 [{project}] 下没有找到任何 session。",
+    "en": "No sessions were found for current project [{project}].",
+    "ja": "現在のプロジェクト [{project}] にはセッションが見つかりませんでした。",
+    "ko": "현재 프로젝트 [{project}]에 세션이 없습니다.",
+    "fr": "Aucune session n'a été trouvée pour le projet actuel [{project}].",
+    "de": "Für das aktuelle Projekt [{project}] wurden keine Sitzungen gefunden.",
+    "es": "No se encontraron sesiones para el proyecto actual [{project}].",
+    "ru": "Для текущего проекта [{project}] не найдено ни одной сессии.",
+    "pt": "Nenhuma sessão foi encontrada para o projeto atual [{project}].",
+    "ar": "لم يتم العثور على أي جلسات للمشروع الحالي [{project}]."
+  },
+  "session.current_marker": {
+    "zh": " ← 当前",
+    "en": " ← current",
+    "ja": " ← 現在",
+    "ko": " ← 현재",
+    "fr": " ← actuel",
+    "de": " ← aktuell",
+    "es": " ← actual",
+    "ru": " ← текущая",
+    "pt": " ← atual",
+    "ar": " ← الحالية"
+  },
+  "session.updated_label": {
+    "zh": "更新时间",
+    "en": "updated",
+    "ja": "更新日時",
+    "ko": "업데이트",
+    "fr": "mise à jour",
+    "de": "aktualisiert",
+    "es": "actualizado",
+    "ru": "обновлено",
+    "pt": "atualizado",
+    "ar": "آخر تحديث"
+  },
+  "session.phase_label": {
+    "zh": "阶段",
+    "en": "phase",
+    "ja": "フェーズ",
+    "ko": "단계",
+    "fr": "phase",
+    "de": "Phase",
+    "es": "fase",
+    "ru": "фаза",
+    "pt": "fase",
+    "ar": "المرحلة"
+  },
+  "session.summary_label": {
+    "zh": "摘要",
+    "en": "summary",
+    "ja": "要約",
+    "ko": "요약",
+    "fr": "résumé",
+    "de": "Zusammenfassung",
+    "es": "resumen",
+    "ru": "сводка",
+    "pt": "resumo",
+    "ar": "الملخص"
+  },
+  "session.task_state_present": {
+    "zh": "有 task_state",
+    "en": "task_state",
+    "ja": "task_state あり",
+    "ko": "task_state 있음",
+    "fr": "task_state présent",
+    "de": "task_state vorhanden",
+    "es": "task_state presente",
+    "ru": "task_state есть",
+    "pt": "task_state presente",
+    "ar": "يوجد task_state"
+  },
+  "session.task_state_missing": {
+    "zh": "无 task_state",
+    "en": "no task_state",
+    "ja": "task_state なし",
+    "ko": "task_state 없음",
+    "fr": "pas de task_state",
+    "de": "kein task_state",
+    "es": "sin task_state",
+    "ru": "нет task_state",
+    "pt": "sem task_state",
+    "ar": "لا يوجد task_state"
+  },
+  "session.recoverable_count": {
+    "zh": "{count} 个可恢复",
+    "en": "{count} recoverable",
+    "ja": "{count} 件の再開可能",
+    "ko": "{count}개 재개 가능",
+    "fr": "{count} récupérable(s)",
+    "de": "{count} fortsetzbar",
+    "es": "{count} reanudable(s)",
+    "ru": "{count} доступно для восстановления",
+    "pt": "{count} recuperável(is)",
+    "ar": "{count} قابلة للاستئناف"
+  },
+  "session.no_summary": {
+    "zh": "暂无摘要",
+    "en": "No summary",
+    "ja": "要約なし",
+    "ko": "요약 없음",
+    "fr": "Aucun résumé",
+    "de": "Keine Zusammenfassung",
+    "es": "Sin resumen",
+    "ru": "Нет сводки",
+    "pt": "Sem resumo",
+    "ar": "لا يوجد ملخص"
+  },
+  "session.list_hint": {
+    "zh": "使用 `/session <序号|名称>` 切换到对应 session。",
+    "en": "Use `/session <index|name>` to switch to a session.",
+    "ja": "セッションを切り替えるには `/session <番号|名前>` を使用してください。",
+    "ko": "세션을 전환하려면 `/session <번호|이름>`을 사용하세요.",
+    "fr": "Utilisez `/session <index|nom>` pour basculer vers une session.",
+    "de": "Verwenden Sie `/session <Index|Name>`, um zu einer Sitzung zu wechseln.",
+    "es": "Use `/session <índice|nombre>` para cambiar a una sesión.",
+    "ru": "Используйте `/session <индекс|имя>`, чтобы переключиться на сессию.",
+    "pt": "Use `/session <índice|nome>` para alternar para uma sessão.",
+    "ar": "استخدم `/session <الفهرس|الاسم>` للتبديل إلى جلسة."
+  },
+  "session.not_found": {
+    "zh": "没有找到匹配的 session：{selector}",
+    "en": "No matching session was found: {selector}",
+    "ja": "一致するセッションが見つかりませんでした: {selector}",
+    "ko": "일치하는 세션을 찾을 수 없습니다: {selector}",
+    "fr": "Aucune session correspondante trouvée : {selector}",
+    "de": "Keine passende Sitzung gefunden: {selector}",
+    "es": "No se encontró una sesión coincidente: {selector}",
+    "ru": "Не найдена подходящая сессия: {selector}",
+    "pt": "Nenhuma sessão correspondente foi encontrada: {selector}",
+    "ar": "لم يتم العثور على جلسة مطابقة: {selector}"
+  },
+  "session.switch_success": {
+    "zh": "已切换到项目 [{project}] 的 session [{session}]。",
+    "en": "Switched to session [{session}] in project [{project}].",
+    "ja": "プロジェクト [{project}] のセッション [{session}] に切り替えました。",
+    "ko": "프로젝트 [{project}]의 세션 [{session}]으로 전환했습니다.",
+    "fr": "Basculé vers la session [{session}] du projet [{project}].",
+    "de": "Zur Sitzung [{session}] im Projekt [{project}] gewechselt.",
+    "es": "Se cambió a la sesión [{session}] del proyecto [{project}].",
+    "ru": "Переключено на сессию [{session}] проекта [{project}].",
+    "pt": "Alternado para a sessão [{session}] no projeto [{project}].",
+    "ar": "تم التبديل إلى الجلسة [{session}] في المشروع [{project}]."
+  },
   "err_no_project_available": {
     "zh": "[错误] 无可用项目上下文。",
     "en": "[ERROR] No project context available.",
@@ -493,6 +649,78 @@
     "ru": "Предыдущая сессия задач восстановлена. Используйте `/task --new`, чтобы начать заново.",
     "pt": "Sessão de tarefa anterior restaurada. Use `/task --new` para começar do zero.",
     "ar": "تمت استعادة جلسة المهام السابقة. استخدم `/task --new` للبدء من جديد."
+  },
+  "resume.no_state": {
+    "zh": "没有可恢复的任务状态。请先运行 /task 开始任务，或确认当前 session 下存在 task_state.json。",
+    "en": "No resumable task state was found. Start a task with /task first, or make sure task_state.json exists for this session.",
+    "ja": "再開可能なタスク状態が見つかりません。まず /task でタスクを開始するか、このセッションに task_state.json が存在することを確認してください。",
+    "ko": "재개 가능한 작업 상태를 찾을 수 없습니다. 먼저 /task로 작업을 시작하거나, 현재 세션에 task_state.json이 있는지 확인하세요.",
+    "fr": "Aucun état de tâche repris n'a été trouvé. Lancez d'abord une tâche avec /task ou vérifiez que task_state.json existe pour cette session.",
+    "de": "Kein fortsetzbarer Aufgabenstatus gefunden. Starten Sie zuerst eine Aufgabe mit /task oder prüfen Sie, ob task_state.json für diese Sitzung vorhanden ist.",
+    "es": "No se encontró un estado de tarea reanudable. Inicie primero una tarea con /task o asegúrese de que task_state.json exista para esta sesión.",
+    "ru": "Не найдено состояния задачи, которое можно продолжить. Сначала запустите задачу через /task или убедитесь, что для этой сессии существует task_state.json.",
+    "pt": "Nenhum estado de tarefa retomável foi encontrado. Inicie uma tarefa com /task primeiro ou verifique se task_state.json existe para esta sessão.",
+    "ar": "لم يتم العثور على حالة مهمة قابلة للاستئناف. ابدأ مهمة أولاً باستخدام /task أو تأكد من وجود task_state.json لهذه الجلسة."
+  },
+  "resume.no_recoverable": {
+    "zh": "已找到任务状态，但没有 FAILED 或 INTERRUPTED 的可恢复任务。",
+    "en": "A task state was found, but there are no FAILED or INTERRUPTED tasks to resume.",
+    "ja": "タスク状態は見つかりましたが、再開できる FAILED または INTERRUPTED のタスクはありません。",
+    "ko": "작업 상태는 찾았지만, 재개할 수 있는 FAILED 또는 INTERRUPTED 작업이 없습니다.",
+    "fr": "Un état de tâche a été trouvé, mais il n'y a aucune tâche FAILED ou INTERRUPTED à reprendre.",
+    "de": "Ein Aufgabenstatus wurde gefunden, aber es gibt keine FAILED- oder INTERRUPTED-Aufgaben zum Fortsetzen.",
+    "es": "Se encontró un estado de tarea, pero no hay tareas FAILED o INTERRUPTED que reanudar.",
+    "ru": "Состояние задачи найдено, но нет задач со статусом FAILED или INTERRUPTED, которые можно возобновить.",
+    "pt": "Um estado de tarefa foi encontrado, mas não há tarefas FAILED ou INTERRUPTED para retomar.",
+    "ar": "تم العثور على حالة مهمة، ولكن لا توجد مهام بحالة FAILED أو INTERRUPTED يمكن استئنافها."
+  },
+  "resume.list_header": {
+    "zh": "可恢复任务：",
+    "en": "Recoverable tasks:",
+    "ja": "再開可能なタスク:",
+    "ko": "재개 가능한 작업:",
+    "fr": "Tâches récupérables :",
+    "de": "Fortsetzbare Aufgaben:",
+    "es": "Tareas recuperables:",
+    "ru": "Задачи, доступные для восстановления:",
+    "pt": "Tarefas recuperáveis:",
+    "ar": "المهام القابلة للاستئناف:"
+  },
+  "resume.list_hint": {
+    "zh": "使用 `/resume <序号|task_id|任务名>` 继续，必要时可加 `--force`。",
+    "en": "Use `/resume <index|task_id|task_name>` to continue. Add `--force` if you need to reset inconsistent completed descendants.",
+    "ja": "続行するには `/resume <番号|task_id|タスク名>` を使ってください。整合性の取れない完了済み下流タスクもリセットする必要がある場合は `--force` を付けてください。",
+    "ko": "계속하려면 `/resume <번호|task_id|작업명>`을 사용하세요. 일관성 없는 완료된 하위 작업까지 초기화해야 하면 `--force`를 추가하세요.",
+    "fr": "Utilisez `/resume <index|task_id|nom_de_tâche>` pour continuer. Ajoutez `--force` si vous devez aussi réinitialiser des descendants terminés incohérents.",
+    "de": "Verwenden Sie `/resume <Index|task_id|Aufgabenname>`, um fortzufahren. Fügen Sie `--force` hinzu, wenn Sie inkonsistente bereits abgeschlossene Nachfolger ebenfalls zurücksetzen müssen.",
+    "es": "Use `/resume <índice|task_id|nombre_de_tarea>` para continuar. Agregue `--force` si necesita reiniciar descendientes completados inconsistentes.",
+    "ru": "Используйте `/resume <индекс|task_id|имя_задачи>`, чтобы продолжить. Добавьте `--force`, если нужно также сбросить несогласованные уже завершённые дочерние задачи.",
+    "pt": "Use `/resume <índice|task_id|nome_da_tarefa>` para continuar. Adicione `--force` se precisar redefinir descendentes concluídos inconsistentes.",
+    "ar": "استخدم `/resume <الفهرس|task_id|اسم_المهمة>` للمتابعة. أضف `--force` إذا كنت بحاجة أيضاً إلى إعادة تعيين المهام التابعة المكتملة غير المتسقة."
+  },
+  "resume.pending_ready_header": {
+    "zh": "检测到已有任务图，但执行尚未真正开始。当前可继续的任务：",
+    "en": "A task graph exists, but execution had not really started yet. Ready tasks you can continue from:",
+    "ja": "タスクグラフはありますが、実行はまだ実質的に開始されていません。続行可能なタスク:",
+    "ko": "작업 그래프는 있지만 실행이 아직 실제로 시작되지는 않았습니다. 계속할 수 있는 작업:",
+    "fr": "Un graphe de tâches existe, mais l'exécution n'avait pas réellement commencé. Tâches prêtes à reprendre :",
+    "de": "Ein Task-Graph ist vorhanden, aber die Ausführung hatte noch nicht wirklich begonnen. Fortsetzbare bereite Aufgaben:",
+    "es": "Existe un grafo de tareas, pero la ejecución aún no había comenzado realmente. Tareas listas para continuar:",
+    "ru": "Граф задач уже есть, но выполнение ещё фактически не началось. Задачи, с которых можно продолжить:",
+    "pt": "Há um grafo de tarefas, mas a execução ainda não tinha realmente começado. Tarefas prontas para continuar:",
+    "ar": "يوجد مخطط مهام، لكن التنفيذ لم يبدأ فعلياً بعد. المهام الجاهزة التي يمكنك المتابعة منها:"
+  },
+  "resume.pending_ready_hint": {
+    "zh": "使用 `/resume <序号|task_id|任务名>` 从当前可执行任务继续。",
+    "en": "Use `/resume <index|task_id|task_name>` to continue from one of the currently ready tasks.",
+    "ja": "現在実行可能なタスクから続行するには `/resume <番号|task_id|タスク名>` を使用してください。",
+    "ko": "현재 실행 가능한 작업 중 하나에서 계속하려면 `/resume <번호|task_id|작업명>`을 사용하세요.",
+    "fr": "Utilisez `/resume <index|task_id|nom_de_tâche>` pour continuer à partir de l'une des tâches prêtes.",
+    "de": "Verwenden Sie `/resume <Index|task_id|Aufgabenname>`, um von einer der aktuell bereiten Aufgaben fortzusetzen.",
+    "es": "Use `/resume <índice|task_id|nombre_de_tarea>` para continuar desde una de las tareas listas actualmente.",
+    "ru": "Используйте `/resume <индекс|task_id|имя_задачи>`, чтобы продолжить с одной из задач, готовых к запуску.",
+    "pt": "Use `/resume <índice|task_id|nome_da_tarefa>` para continuar a partir de uma das tarefas prontas no momento.",
+    "ar": "استخدم `/resume <الفهرس|task_id|اسم_المهمة>` للمتابعة من إحدى المهام الجاهزة حالياً."
   },
   "task_intro": {
     "zh": "[Task 模式] 进入交互式任务会话。\n当前阶段: {phase}{goal_info}{plan_info}{restored_hint}\n\nTask 模式共 5 个阶段:\n  1. PROPOSE  — 生成方案 → 你确认或提修改意见（此阶段无需输入命令）\n  2. PLAN     — 生成执行计划 → 你确认后输入 /start 开始执行\n  3. EXECUTE  — 子 Agent 并行执行（自动，等待即可）\n  4. FINALIZE — 整合产出到项目文件（自动）\n  5. DONE     — 提交完成，自动退出\n\n可用命令: /start (仅 PLAN 阶段，确认计划后开始执行) | /done (退出 task 模式)",
@@ -722,29 +950,17 @@
     "pt": "Contexto de envio não disponível",
     "ar": "سياق الدفع غير متاح"
   },
-  "help.text_zh": {
-    "zh": "📖 可用命令：\n\n通用：\n  /help        — 显示本帮助信息\n  /reset       — 重置会话，清除对话历史\n  /stop        — 停止当前操作\n\n项目：\n  /switch <名称> — 切换到指定项目\n  /back         — 返回默认项目\n  /compile      — 编译 LaTeX 生成 PDF\n  /sync pull    — 从 Overleaf 拉取最新文件\n  /sync push    — 推送本地修改到 Overleaf\n  /git          — 进入 Git 版本管理模式\n\n研究：\n  /task <目标>  — 启动交互式任务会话\n  /recommend    — 检测项目并调研最新进展\n  /radar        — 管理研究雷达自动化任务\n\n💡 直接用自然语言对话也可以，我会自动调用合适的工具。",
-    "en": "📖 Available Commands:\n\nGeneral:\n  /help        — Show this help message\n  /reset       — Reset session and clear history\n  /stop        — Stop current operation\n\nProject:\n  /switch <name> — Switch to a project\n  /back          — Return to default project\n  /compile       — Compile LaTeX to PDF\n  /sync pull     — Pull latest files from Overleaf\n  /sync push     — Push local changes to Overleaf\n  /git           — Enter Git version control mode\n\nResearch:\n  /task <goal>  — Start interactive task session\n  /recommend    — Detect project and research latest developments\n  /radar        — Manage research radar automation jobs\n\n💡 You can also chat in natural language — I'll use the right tools automatically.",
-    "ja": "📖 利用可能なコマンド:\n\n一般:\n  /help        — このヘルプメッセージを表示\n  /reset       — セッションをリセットし履歴をクリア\n  /stop        — 現在の操作を停止\n\nプロジェクト:\n  /switch <name> — プロジェクトを切り替える\n  /back          — デフォルトプロジェクトに戻る\n  /compile       — LaTeX を PDF にコンパイル\n  /sync pull     — Overleaf から最新ファイルを取得\n  /sync push     — ローカルの変更を Overleaf にプッシュ\n  /git           — Git バージョン管理モードに入る\n\nリサーチ:\n  /task <goal>  — インタラクティブタスクセッションを開始\n  /recommend    — プロジェクトを検出し最新の研究動向を調査\n  /radar        — リサーチレーダー自動化ジョブを管理\n\n💡 自然言語でチャットすることもできます — 適切なツールを自動的に使用します。",
-    "ko": "📖 사용 가능한 명령어:\n\n일반:\n  /help        — 이 도움말 메시지 표시\n  /reset       — 세션 초기화 및 기록 삭제\n  /stop        — 현재 작업 중지\n\n프로젝트:\n  /switch <name> — 프로젝트 전환\n  /back          — 기본 프로젝트로 복귀\n  /compile       — LaTeX를 PDF로 컴파일\n  /sync pull     — Overleaf에서 최신 파일 가져오기\n  /sync push     — 로컬 변경사항을 Overleaf에 푸시\n  /git           — Git 버전 관리 모드 진입\n\n연구:\n  /task <goal>  — 대화형 작업 세션 시작\n  /recommend    — 프로젝트 감지 및 최신 연구 동향 조사\n  /radar        — 연구 레이더 자동화 작업 관리\n\n💡 자연어로 대화할 수도 있습니다 — 적절한 도구를 자동으로 사용합니다.",
-    "fr": "📖 Commandes disponibles :\n\nGénéral :\n  /help        — Afficher ce message d'aide\n  /reset       — Réinitialiser la session et effacer l'historique\n  /stop        — Arrêter l'opération en cours\n\nProjet :\n  /switch <name> — Basculer vers un projet\n  /back          — Revenir au projet par défaut\n  /compile       — Compiler LaTeX en PDF\n  /sync pull     — Récupérer les derniers fichiers depuis Overleaf\n  /sync push     — Envoyer les modifications locales vers Overleaf\n  /git           — Entrer en mode contrôle de version Git\n\nRecherche :\n  /task <goal>  — Démarrer une session de tâche interactive\n  /recommend    — Détecter le projet et rechercher les derniers développements\n  /radar        — Gérer les tâches automatisées du radar de recherche\n\n💡 Vous pouvez aussi discuter en langage naturel — j'utiliserai les bons outils automatiquement.",
-    "de": "📖 Verfügbare Befehle:\n\nAllgemein:\n  /help        — Diese Hilfemeldung anzeigen\n  /reset       — Sitzung zurücksetzen und Verlauf löschen\n  /stop        — Aktuelle Operation stoppen\n\nProjekt:\n  /switch <name> — Zu einem Projekt wechseln\n  /back          — Zum Standardprojekt zurückkehren\n  /compile       — LaTeX zu PDF kompilieren\n  /sync pull     — Neueste Dateien von Overleaf abrufen\n  /sync push     — Lokale Änderungen zu Overleaf hochladen\n  /git           — Git-Versionskontrollmodus aufrufen\n\nForschung:\n  /task <goal>  — Interaktive Aufgabensitzung starten\n  /recommend    — Projekt erkennen und neueste Entwicklungen recherchieren\n  /radar        — Forschungsradar-Automatisierungsjobs verwalten\n\n💡 Sie können auch in natürlicher Sprache chatten — ich verwende automatisch die richtigen Werkzeuge.",
-    "es": "📖 Comandos disponibles:\n\nGeneral:\n  /help        — Mostrar este mensaje de ayuda\n  /reset       — Reiniciar sesión y borrar historial\n  /stop        — Detener la operación actual\n\nProyecto:\n  /switch <name> — Cambiar a un proyecto\n  /back          — Volver al proyecto predeterminado\n  /compile       — Compilar LaTeX a PDF\n  /sync pull     — Obtener los últimos archivos de Overleaf\n  /sync push     — Enviar cambios locales a Overleaf\n  /git           — Entrar en modo de control de versiones Git\n\nInvestigación:\n  /task <goal>  — Iniciar sesión de tarea interactiva\n  /recommend    — Detectar proyecto e investigar últimos avances\n  /radar        — Gestionar trabajos de automatización del radar de investigación\n\n💡 También puedes chatear en lenguaje natural — usaré las herramientas adecuadas automáticamente.",
-    "ru": "📖 Доступные команды:\n\nОбщие:\n  /help        — Показать это справочное сообщение\n  /reset       — Сбросить сессию и очистить историю\n  /stop        — Остановить текущую операцию\n\nПроект:\n  /switch <name> — Переключиться на проект\n  /back          — Вернуться к проекту по умолчанию\n  /compile       — Скомпилировать LaTeX в PDF\n  /sync pull     — Загрузить последние файлы из Overleaf\n  /sync push     — Отправить локальные изменения в Overleaf\n  /git           — Войти в режим управления версиями Git\n\nИсследования:\n  /task <goal>  — Начать интерактивную сессию задачи\n  /recommend    — Определить проект и исследовать последние разработки\n  /radar        — Управление автоматизированными задачами исследовательского радара\n\n💡 Вы также можете общаться на естественном языке — я автоматически использую нужные инструменты.",
-    "pt": "📖 Comandos disponíveis:\n\nGeral:\n  /help        — Mostrar esta mensagem de ajuda\n  /reset       — Redefinir sessão e limpar histórico\n  /stop        — Parar a operação atual\n\nProjeto:\n  /switch <name> — Mudar para um projeto\n  /back          — Voltar ao projeto padrão\n  /compile       — Compilar LaTeX para PDF\n  /sync pull     — Baixar os últimos arquivos do Overleaf\n  /sync push     — Enviar alterações locais para o Overleaf\n  /git           — Entrar no modo de controle de versão Git\n\nPesquisa:\n  /task <goal>  — Iniciar sessão de tarefa interativa\n  /recommend    — Detectar projeto e pesquisar últimos desenvolvimentos\n  /radar        — Gerenciar tarefas de automação do radar de pesquisa\n\n💡 Você também pode conversar em linguagem natural — usarei as ferramentas certas automaticamente.",
-    "ar": "📖 الأوامر المتاحة:\n\nعام:\n  /help        — عرض رسالة المساعدة هذه\n  /reset       — إعادة تعيين الجلسة ومسح السجل\n  /stop        — إيقاف العملية الحالية\n\nالمشروع:\n  /switch <name> — التبديل إلى مشروع\n  /back          — العودة إلى المشروع الافتراضي\n  /compile       — تجميع LaTeX إلى PDF\n  /sync pull     — سحب أحدث الملفات من Overleaf\n  /sync push     — دفع التغييرات المحلية إلى Overleaf\n  /git           — الدخول إلى وضع التحكم بالإصدارات Git\n\nالبحث:\n  /task <goal>  — بدء جلسة مهام تفاعلية\n  /recommend    — اكتشاف المشروع والبحث عن أحدث التطورات\n  /radar        — إدارة مهام أتمتة رادار البحث\n\n💡 يمكنك أيضًا الدردشة بلغة طبيعية — سأستخدم الأدوات المناسبة تلقائيًا."
-  },
-  "help.text_zh_no_project": {
-    "zh": "📖 可用命令：\n\n通用：\n  /help        — 显示本帮助信息\n  /reset       — 重置会话，清除对话历史\n  /stop        — 停止当前操作\n\n项目：\n  /switch <名称> — 切换到指定项目\n  /back         — 返回默认项目\n  /compile      — 编译 LaTeX（需先进入项目）\n  /sync [pull|push] — Overleaf 同步（需先进入项目）\n  /git          — Git 版本管理（需先进入项目）\n\n研究：\n  /task <目标>  — 启动交互式任务会话\n  /recommend    — 检测项目并调研最新进展\n  /radar        — 管理研究雷达自动化任务\n\n💡 直接用自然语言对话也可以，我会自动调用合适的工具。",
-    "en": "📖 Available Commands:\n\nGeneral:\n  /help        — Show this help message\n  /reset       — Reset session and clear history\n  /stop        — Stop current operation\n\nProject:\n  /switch <name> — Switch to a project\n  /back          — Return to default project\n  /compile       — Compile LaTeX (enter a project first)\n  /sync [pull|push] — Overleaf sync (enter a project first)\n  /git           — Git version control (enter a project first)\n\nResearch:\n  /task <goal>  — Start interactive task session\n  /recommend    — Detect project and research latest developments\n  /radar        — Manage research radar automation jobs\n\n💡 You can also chat in natural language — I'll use the right tools automatically.",
-    "ja": "📖 利用可能なコマンド:\n\n一般:\n  /help        — このヘルプメッセージを表示\n  /reset       — セッションをリセットし履歴をクリア\n  /stop        — 現在の操作を停止\n\nプロジェクト:\n  /switch <name> — プロジェクトを切り替える\n  /back          — デフォルトプロジェクトに戻る\n  /compile       — LaTeX をコンパイル（先にプロジェクトに入ってください）\n  /sync [pull|push] — Overleaf 同期（先にプロジェクトに入ってください）\n  /git           — Git バージョン管理（先にプロジェクトに入ってください）\n\nリサーチ:\n  /task <goal>  — インタラクティブタスクセッションを開始\n  /recommend    — プロジェクトを検出し最新の研究動向を調査\n  /radar        — リサーチレーダー自動化ジョブを管理\n\n💡 自然言語でチャットすることもできます — 適切なツールを自動的に使用します。",
-    "ko": "📖 사용 가능한 명령어:\n\n일반:\n  /help        — 이 도움말 메시지 표시\n  /reset       — 세션 초기화 및 기록 삭제\n  /stop        — 현재 작업 중지\n\n프로젝트:\n  /switch <name> — 프로젝트 전환\n  /back          — 기본 프로젝트로 복귀\n  /compile       — LaTeX 컴파일 (먼저 프로젝트에 진입하세요)\n  /sync [pull|push] — Overleaf 동기화 (먼저 프로젝트에 진입하세요)\n  /git           — Git 버전 관리 (먼저 프로젝트에 진입하세요)\n\n연구:\n  /task <goal>  — 대화형 작업 세션 시작\n  /recommend    — 프로젝트 감지 및 최신 연구 동향 조사\n  /radar        — 연구 레이더 자동화 작업 관리\n\n💡 자연어로 대화할 수도 있습니다 — 적절한 도구를 자동으로 사용합니다.",
-    "fr": "📖 Commandes disponibles :\n\nGénéral :\n  /help        — Afficher ce message d'aide\n  /reset       — Réinitialiser la session et effacer l'historique\n  /stop        — Arrêter l'opération en cours\n\nProjet :\n  /switch <name> — Basculer vers un projet\n  /back          — Revenir au projet par défaut\n  /compile       — Compiler LaTeX (entrez d'abord dans un projet)\n  /sync [pull|push] — Synchronisation Overleaf (entrez d'abord dans un projet)\n  /git           — Contrôle de version Git (entrez d'abord dans un projet)\n\nRecherche :\n  /task <goal>  — Démarrer une session de tâche interactive\n  /recommend    — Détecter le projet et rechercher les derniers développements\n  /radar        — Gérer les tâches automatisées du radar de recherche\n\n💡 Vous pouvez aussi discuter en langage naturel — j'utiliserai les bons outils automatiquement.",
-    "de": "📖 Verfügbare Befehle:\n\nAllgemein:\n  /help        — Diese Hilfemeldung anzeigen\n  /reset       — Sitzung zurücksetzen und Verlauf löschen\n  /stop        — Aktuelle Operation stoppen\n\nProjekt:\n  /switch <name> — Zu einem Projekt wechseln\n  /back          — Zum Standardprojekt zurückkehren\n  /compile       — LaTeX kompilieren (zuerst ein Projekt öffnen)\n  /sync [pull|push] — Overleaf-Synchronisation (zuerst ein Projekt öffnen)\n  /git           — Git-Versionskontrolle (zuerst ein Projekt öffnen)\n\nForschung:\n  /task <goal>  — Interaktive Aufgabensitzung starten\n  /recommend    — Projekt erkennen und neueste Entwicklungen recherchieren\n  /radar        — Forschungsradar-Automatisierungsjobs verwalten\n\n💡 Sie können auch in natürlicher Sprache chatten — ich verwende automatisch die richtigen Werkzeuge.",
-    "es": "📖 Comandos disponibles:\n\nGeneral:\n  /help        — Mostrar este mensaje de ayuda\n  /reset       — Reiniciar sesión y borrar historial\n  /stop        — Detener la operación actual\n\nProyecto:\n  /switch <name> — Cambiar a un proyecto\n  /back          — Volver al proyecto predeterminado\n  /compile       — Compilar LaTeX (primero ingrese a un proyecto)\n  /sync [pull|push] — Sincronización con Overleaf (primero ingrese a un proyecto)\n  /git           — Control de versiones Git (primero ingrese a un proyecto)\n\nInvestigación:\n  /task <goal>  — Iniciar sesión de tarea interactiva\n  /recommend    — Detectar proyecto e investigar últimos avances\n  /radar        — Gestionar trabajos de automatización del radar de investigación\n\n💡 También puedes chatear en lenguaje natural — usaré las herramientas adecuadas automáticamente.",
-    "ru": "📖 Доступные команды:\n\nОбщие:\n  /help        — Показать это справочное сообщение\n  /reset       — Сбросить сессию и очистить историю\n  /stop        — Остановить текущую операцию\n\nПроект:\n  /switch <name> — Переключиться на проект\n  /back          — Вернуться к проекту по умолчанию\n  /compile       — Скомпилировать LaTeX (сначала откройте проект)\n  /sync [pull|push] — Синхронизация с Overleaf (сначала откройте проект)\n  /git           — Управление версиями Git (сначала откройте проект)\n\nИсследования:\n  /task <goal>  — Начать интерактивную сессию задачи\n  /recommend    — Определить проект и исследовать последние разработки\n  /radar        — Управление автоматизированными задачами исследовательского радара\n\n💡 Вы также можете общаться на естественном языке — я автоматически использую нужные инструменты.",
-    "pt": "📖 Comandos disponíveis:\n\nGeral:\n  /help        — Mostrar esta mensagem de ajuda\n  /reset       — Redefinir sessão e limpar histórico\n  /stop        — Parar a operação atual\n\nProjeto:\n  /switch <name> — Mudar para um projeto\n  /back          — Voltar ao projeto padrão\n  /compile       — Compilar LaTeX (entre em um projeto primeiro)\n  /sync [pull|push] — Sincronização com Overleaf (entre em um projeto primeiro)\n  /git           — Controle de versão Git (entre em um projeto primeiro)\n\nPesquisa:\n  /task <goal>  — Iniciar sessão de tarefa interativa\n  /recommend    — Detectar projeto e pesquisar últimos desenvolvimentos\n  /radar        — Gerenciar tarefas de automação do radar de pesquisa\n\n💡 Você também pode conversar em linguagem natural — usarei as ferramentas certas automaticamente.",
-    "ar": "📖 الأوامر المتاحة:\n\nعام:\n  /help        — عرض رسالة المساعدة هذه\n  /reset       — إعادة تعيين الجلسة ومسح السجل\n  /stop        — إيقاف العملية الحالية\n\nالمشروع:\n  /switch <name> — التبديل إلى مشروع\n  /back          — العودة إلى المشروع الافتراضي\n  /compile       — تجميع LaTeX (ادخل مشروعًا أولاً)\n  /sync [pull|push] — مزامنة Overleaf (ادخل مشروعًا أولاً)\n  /git           — التحكم بالإصدارات Git (ادخل مشروعًا أولاً)\n\nالبحث:\n  /task <goal>  — بدء جلسة مهام تفاعلية\n  /recommend    — اكتشاف المشروع والبحث عن أحدث التطورات\n  /radar        — إدارة مهام أتمتة رادار البحث\n\n💡 يمكنك أيضًا الدردشة بلغة طبيعية — سأستخدم الأدوات المناسبة تلقائيًا."
+  "help.fallback": {
+    "zh": "📖 输入 /help 查看可用命令。命令列表加载失败，请检查 config/commands.json。",
+    "en": "📖 Type /help to see available commands. Command list failed to load — check config/commands.json.",
+    "ja": "📖 /help を入力して利用可能なコマンドを確認してください。コマンドリストの読み込みに失敗しました。",
+    "ko": "📖 /help를 입력하여 사용 가능한 명령어를 확인하세요. 명령어 목록을 불러오지 못했습니다.",
+    "fr": "📖 Tapez /help pour voir les commandes disponibles. Échec du chargement de la liste des commandes.",
+    "de": "📖 Geben Sie /help ein, um verfügbare Befehle anzuzeigen. Befehlsliste konnte nicht geladen werden.",
+    "es": "📖 Escriba /help para ver los comandos disponibles. No se pudo cargar la lista de comandos.",
+    "ru": "📖 Введите /help для просмотра доступных команд. Не удалось загрузить список команд.",
+    "pt": "📖 Digite /help para ver os comandos disponíveis. Falha ao carregar a lista de comandos.",
+    "ar": "📖 اكتب /help لعرض الأوامر المتاحة. فشل تحميل قائمة الأوامر."
   },
   "greeting.text": {
     "zh": "👋 你好！我是 Research Claw，你的 AI 科研助手。\n\n我可以帮你：\n- 检索文献、追踪学术前沿与研究动态\n- 撰写和编辑 LaTeX 论文，编译 PDF 并同步 Overleaf\n- 自动监控领域进展、截稿日期与热点趋势（研究雷达）\n- 管理项目版本与多 Agent 协作\n\n输入 /help 查看所有可用命令，或者直接用自然语言告诉我你想做什么。",
@@ -1695,8 +1911,8 @@
     "ar": "\n📖 أوامر سريعة:\n  /compile — تجميع PDF\n  /sync pull — سحب من Overleaf\n  /sync push — دفع إلى Overleaf\n  /git — التحكم بالإصدارات Git\n  /task <هدف> — بدء جلسة مهام\n  /help — عرض جميع الأوامر"
   },
   "project.not_in_default": {
-    "zh": "[ERROR] project_manager 仅在 Default 工作区可用。请先用 /back 返回。",
-    "en": "[ERROR] project_manager is only available in Default workspace. Use /back to return first."
+    "zh": "[ERROR] 此操作仅在 Default 工作区可用。请先用 /back 返回。（link_overleaf 和 info 可在项目内使用）",
+    "en": "[ERROR] This action is only available in Default workspace. Use /back first. (link_overleaf and info work inside projects)"
   },
   "project.delete_not_found": {
     "zh": "[ERROR] 项目 '{project_name}' 不存在。",

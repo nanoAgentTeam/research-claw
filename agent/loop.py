@@ -43,6 +43,18 @@ _FULL_LOG_TOOLS = {"task_propose", "task_build", "task_modify", "task_execute"}
 _NO_TRUNCATE_TOOLS = {"task_propose", "task_build", "task_modify", "task_execute",
                        "write_file", "str_replace", "patch_file", "insert_content"}
 
+
+def _should_retry_llm_error(error_content: str) -> bool:
+    """Return whether an LLM error is worth retrying at the agent-loop layer."""
+    normalized = str(error_content or "").lower()
+    terminal_markers = (
+        "data_inspection_failed",
+        "input inspection rejected",
+        "content inspection rejected",
+        "inappropriate content",
+    )
+    return not any(marker in normalized for marker in terminal_markers)
+
 class AgentLoop:
     """
     The agent loop is the core processing engine.
@@ -989,6 +1001,9 @@ class AgentLoop:
                         logger.error(f"❌ LLM Call failed due to context length. Attempting L2 recovery/retry {llm_call_attempts}/2...")
                         messages = await self._recover_from_context_overflow(messages, step_boundary)
                         continue
+                    if not _should_retry_llm_error(error_content):
+                        logger.error(f"❌ Terminal LLM error: {response.content}")
+                        break
                     # Other errors: let the retry loop handle it
                     logger.error(f"❌ LLM error (attempt {llm_call_attempts}/{_LLM_MAX_RETRIES}): {response.content}")
                     continue
@@ -1410,7 +1425,7 @@ class AgentLoop:
                              # Greedy match until the last quote? No, JSON is hard to regex.
                              # Simple heuristic: "key"\s*:\s*"(.*)"
                              # This is fragile but it's a rescue attempt.
-                             match = re.search(f'"{key}"\s*:\s*"(.*)', raw_value, re.DOTALL)
+                             match = re.search(rf'"{key}"\s*:\s*"(.*)', raw_value, re.DOTALL)
                              if match:
                                  val = match.group(1)
                                  # Cleanup trailing json structure if present
@@ -1421,7 +1436,7 @@ class AgentLoop:
                                  resurrected_args[key] = val
                         else:
                              # Simple single line match
-                             match = re.search(f'"{key}"\s*:\s*"([^"]+)"', raw_value)
+                             match = re.search(rf'"{key}"\s*:\s*"([^"]+)"', raw_value)
                              if match:
                                  resurrected_args[key] = match.group(1)
 

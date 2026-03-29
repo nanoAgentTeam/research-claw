@@ -713,6 +713,10 @@ class TaskExecuteTool(BaseTool):
         graph = self._session.task_graph
         total_tasks = len(graph.tasks)
 
+        def persist_state():
+            if self._ctx.session:
+                self._session.save_to_metadata(self._ctx.session.metadata)
+
         # Helper: emit a progress line to terminal
         def emit(msg: str):
             if on_token:
@@ -748,6 +752,7 @@ class TaskExecuteTool(BaseTool):
         notify_im(t("task.execute_start", total_tasks=total_tasks) + "\n" + "\n".join(task_lines))
 
         exec_start = time.time()
+        persist_state()
 
         # ── Condensed progress wrapper ──
         # Filters verbose worker output, only passes key events to terminal
@@ -828,6 +833,7 @@ class TaskExecuteTool(BaseTool):
                     notify_im(_fail_msg)
                 if result.logs:
                     all_logs.extend(result.logs)
+                persist_state()
                 if result.all_complete:
                     total_elapsed = time.time() - exec_start
                     emit(f"\n{'='*50}")
@@ -848,6 +854,7 @@ class TaskExecuteTool(BaseTool):
 
         # Transition to FINALIZE
         self._session.phase = TaskPhase.FINALIZE
+        persist_state()
         await _notify_phase_done(on_token, TaskPhase.EXECUTE,
                                  bus=self._ctx.bus, message_context=message_context)
         await _notify_phase_enter(on_token, TaskPhase.FINALIZE,

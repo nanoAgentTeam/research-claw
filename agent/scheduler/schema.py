@@ -9,6 +9,7 @@ class TaskStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     BLOCKED = "blocked"
+    INTERRUPTED = "interrupted"
 
 class TaskType(str, Enum):
     RESEARCH = "research"
@@ -65,3 +66,26 @@ class TaskGraph(BaseModel):
         if not task:
             return []
         return [self.tasks[dep_id] for dep_id in task.dependencies if dep_id in self.tasks]
+
+    def get_dependents(self, task_id: str) -> List[ResearchTask]:
+        return [
+            task
+            for task in self.tasks.values()
+            if task_id in task.dependencies
+        ]
+
+    def get_descendant_ids(self, task_id: str) -> List[str]:
+        descendants: list[str] = []
+        seen: set[str] = set()
+        queue = [task_id]
+
+        while queue:
+            current = queue.pop(0)
+            for dependent in self.get_dependents(current):
+                if dependent.id in seen:
+                    continue
+                seen.add(dependent.id)
+                descendants.append(dependent.id)
+                queue.append(dependent.id)
+
+        return descendants

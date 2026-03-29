@@ -84,11 +84,15 @@ class TaskSession:
         if tg_data:
             from agent.scheduler.schema import TaskGraph
             session.task_graph = TaskGraph(**tg_data)
+            _normalize_task_graph_for_resume(session.task_graph)
         return session
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(self.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def save_to_metadata(self, metadata_root: Path) -> None:
+        self.save(metadata_root / "task_state.json")
 
     @classmethod
     def load(cls, path: Path) -> Optional["TaskSession"]:
@@ -156,3 +160,122 @@ def format_plan_display(graph) -> str:
     lines.append(f"起始任务: {', '.join(roots)}")
 
     return "\n".join(lines)
+
+
+def _normalize_task_graph_for_resume(graph) -> None:
+    """Convert stale in-flight task states to INTERRUPTED on load."""
+    from agent.scheduler.schema import TaskStatus
+
+    for task in graph.tasks.values():
+        if task.status in {TaskStatus.RUNNING, TaskStatus.REVIEWING}:
+            task.status = TaskStatus.INTERRUPTED
+
+
+def get_recoverable_tasks(task_session: TaskSession) -> list[Any]:
+    from agent.scheduler.schema import TaskStatus
+
+    if not task_session.task_graph:
+        return []
+    recoverable = []
+    for task in task_session.task_graph.tasks.values():
+        if task.status in {TaskStatus.FAILED, TaskStatus.INTERRUPTED}:
+            recoverable.append(task)
+    return recoverable
+
+
+def get_ready_pending_tasks(task_session: TaskSession) -> list[Any]:
+    """Return currently executable PENDING tasks for an interrupted EXECUTE phase."""
+    from agent.scheduler.schema import TaskStatus
+
+    if not task_session.task_graph or task_session.phase != TaskPhase.EXECUTE:
+        return []
+
+    ready = []
+    for task in task_session.task_graph.tasks.values():
+        if task.status != TaskStatus.PENDING:
+            continue
+        deps_met = all(
+            (dep := task_session.task_graph.get_task(dep_id))
+            and dep.status == TaskStatus.COMPLETED
+            for dep_id in task.dependencies
+        )
+        if deps_met:
+            ready.append(task)
+    return ready
+
+
+def resolve_recoverable_task(task_session: TaskSession, selector: str) -> tuple[Optional[Any], Optional[str]]:
+    """Resolve task by 1-based index, exact task id, or case-insensitive title substring."""
+    recoverable = get_recoverable_tasks(task_session)
+    if not recoverable:
+        return None, "No recoverable tasks."
+
+    value = selector.strip()
+    if not value:
+        return None, "Task selector is required."
+
+    if value.isdigit():
+        index = int(value) - 1
+        if 0 <= index < len(recoverable):
+            return recoverable[index], None
+        return None, f"No recoverable task at index {value}."
+
+    exact = [task for task in recoverable if task.id == value]
+    if len(exact) == 1:
+        return exact[0], None
+
+    lowered = value.lower()
+    matches = [task for task in recoverable if lowered in task.title.lower()]
+    if len(matches) == 1:
+        return matches[0], None
+    if len(matches) > 1:
+        return None, "Multiple recoverable tasks match that name. Use the index or task id."
+    return None, f"No recoverable task matches '{value}'."
+
+
+def reset_task_for_resume(task_session: TaskSession, task_id: str, force: bool = False) -> list[str]:
+    """Reset the selected task and all unfinished descendants to PENDING."""
+    from agent.scheduler.schema import TaskStatus
+
+    if not task_session.task_graph:
+        raise ValueError("Task session has no task graph to resume.")
+
+    graph = task_session.task_graph
+    task = graph.get_task(task_id)
+    if not task:
+        raise ValueError(f"Task '{task_id}' not found.")
+    if task.status not in {TaskStatus.FAILED, TaskStatus.INTERRUPTED}:
+        raise ValueError(f"Task '{task_id}' is not resumable from status '{task.status.value}'.")
+
+    descendants = graph.get_descendant_ids(task_id)
+    completed_descendants = [
+        desc_id
+        for desc_id in descendants
+        if graph.get_task(desc_id) and graph.get_task(desc_id).status == TaskStatus.COMPLETED
+    ]
+    if completed_descendants and not force:
+        raise ValueError(
+            "Completed downstream tasks detected: "
+            + ", ".join(completed_descendants)
+            + ". Re-run with --force to reset them too."
+        )
+
+    reset_ids = [task_id]
+    for desc_id in descendants:
+        desc_task = graph.get_task(desc_id)
+        if not desc_task:
+            continue
+        if desc_task.status != TaskStatus.COMPLETED or force:
+            reset_ids.append(desc_id)
+
+    for reset_id in reset_ids:
+        reset_task = graph.get_task(reset_id)
+        if not reset_task:
+            continue
+        reset_task.status = TaskStatus.PENDING
+        reset_task.retry_count = 0
+        reset_task.feedback_history = []
+
+    task_session.phase = TaskPhase.EXECUTE
+    task_session.committed = False
+    return reset_ids

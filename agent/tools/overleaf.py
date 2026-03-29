@@ -327,9 +327,9 @@ class OverleafTool(BaseTool):
         safe_name = project_name.replace("/", "_").replace(" ", "_")
         project_folder = self.projects_root / safe_name
         project_folder.mkdir(parents=True, exist_ok=True)
-        
+
         zip_path = project_folder / "_temp.zip"
-        
+
         # Download ZIP
         try:
             api.download_project(project_id, str(zip_path))
@@ -341,9 +341,9 @@ class OverleafTool(BaseTool):
         with zipfile.ZipFile(zip_path, 'r') as zf:
             zf.extractall(project_folder)
             tex_files_count = len([n for n in zf.namelist() if n.endswith('.tex')])
-        
+
         os.remove(zip_path)
-        
+
         # Build Metadata (.overleaf.json)
         # We need to fetch file structure from API to get IDs
         try:

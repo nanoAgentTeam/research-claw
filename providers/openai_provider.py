@@ -116,10 +116,50 @@ class OpenAIProvider(LLMProvider):
     _REASONING_MODELS: set[str] = {
         "step-3.5-flash", "step-3",
     }
+
+    async def _close_stream(self, stream: Any) -> None:
+        """Best-effort close for streaming responses to avoid hanging sockets."""
+        close = getattr(stream, "aclose", None)
+        if callable(close):
+            try:
+                await close()
+            except Exception as e:
+                logger.debug(f"Ignoring stream close failure: {e}")
+
     def _is_reasoning_model(self, model: str) -> bool:
         """Check if the model is a reasoning model that rejects max_tokens."""
         model_lower = (model or "").lower()
         return any(rm in model_lower for rm in self._REASONING_MODELS)
+
+    @staticmethod
+    def _extract_error_text(error: Any) -> str:
+        """Extract the most useful error text from OpenAI-compatible exceptions."""
+        body = getattr(error, "body", None)
+        if isinstance(body, dict):
+            payload = body.get("error")
+            if isinstance(payload, dict):
+                message = payload.get("message")
+                code = payload.get("code") or payload.get("type")
+                if message and code:
+                    return f"{code}: {message}"
+                if message:
+                    return str(message)
+        return str(error) or f"Unknown error (type: {type(error).__name__})"
+
+    @staticmethod
+    def _is_input_inspection_error(error: Any) -> bool:
+        """Detect terminal upstream prompt-filter/input-inspection failures."""
+        body = getattr(error, "body", None)
+        if isinstance(body, dict):
+            payload = body.get("error")
+            if isinstance(payload, dict):
+                code = str(payload.get("code") or payload.get("type") or "").lower()
+                if code == "data_inspection_failed":
+                    return True
+                message = str(payload.get("message") or "").lower()
+                if "inappropriate content" in message or "content inspection" in message:
+                    return True
+        return False
 
     async def chat(
         self,
@@ -183,8 +223,24 @@ class OpenAIProvider(LLMProvider):
                     tool_calls_data = [] # List of dicts to accumulate tool chunks
                     finish_reason = "stop"
                     stream_usage = {}
+                    stream_chunk_timeout = max(
+                        0.01, float(getattr(self, "stream_chunk_timeout", 120.0))
+                    )
 
-                    async for chunk in stream:
+                    while True:
+                        try:
+                            chunk = await asyncio.wait_for(
+                                stream.__anext__(),
+                                timeout=stream_chunk_timeout,
+                            )
+                        except StopAsyncIteration:
+                            break
+                        except asyncio.TimeoutError as e:
+                            await self._close_stream(stream)
+                            raise TimeoutError(
+                                f"Stream timeout after {stream_chunk_timeout}s without receiving a chunk"
+                            ) from e
+
                         # Capture usage from final chunk (sent when stream_options.include_usage=True)
                         if hasattr(chunk, 'usage') and chunk.usage:
                             stream_usage = {
@@ -261,9 +317,11 @@ class OpenAIProvider(LLMProvider):
                             # Notify progress for tool call chunks too
                             if on_token:
                                 on_token("")
-                        
+
                         if chunk.choices[0].finish_reason:
                             finish_reason = chunk.choices[0].finish_reason
+
+                    await self._close_stream(stream)
                     
                     # Reconstruct final response object
                     full_content = "".join(accumulated_content) if accumulated_content else ""
@@ -322,7 +380,7 @@ class OpenAIProvider(LLMProvider):
                     
                     return llm_resp
                             
-            except (openai.RateLimitError, openai.InternalServerError, openai.APITimeoutError, openai.APIConnectionError) as e:
+            except (TimeoutError, openai.RateLimitError, openai.InternalServerError, openai.APITimeoutError, openai.APIConnectionError) as e:
                 last_exception = e
                 # httpx.ReadTimeout and ConnectTimeout often bubble up here or under APIConnectionError
                 # We normalize the check
@@ -345,15 +403,20 @@ class OpenAIProvider(LLMProvider):
                 import traceback as _tb
                 logger.error(f"LLM exception traceback:\n{_tb.format_exc()}")
                 # Fallback check for transient phrases in generic exceptions
-                e_str = str(e).lower()
+                e_str = self._extract_error_text(e).lower()
                 if any(phrase in e_str for phrase in ["timeout", "429", "500", "502", "503", "connection reset"]):
                     if attempt < retries - 1:
                         wait_time = 2 ** attempt
                         logger.warning(f"Detected transient LLM error in fallback ({type(e).__name__}): {e}. Retrying in {wait_time}s...")
                         await asyncio.sleep(wait_time)
                         continue
-                
-                error_msg = str(e) or f"Unknown non-retriable error (type: {type(e).__name__})"
+
+                error_msg = self._extract_error_text(e)
+                if self._is_input_inspection_error(e):
+                    error_msg = (
+                        "Terminal LLM error (data_inspection_failed): "
+                        f"Upstream content inspection rejected the request. {error_msg}"
+                    )
                 return LLMResponse(
                     content=f"Error calling LLM: {error_msg}",
                     finish_reason="error",

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import Optional, List, Any, Dict
@@ -292,13 +293,27 @@ async def reset_system(request: Request):
     if request.client and request.client.host not in ("127.0.0.1", "::1"):
         raise HTTPException(status_code=403, detail="Reset only allowed from localhost")
 
-    import shutil
+    import stat
     project_root = Path(__file__).resolve().parent.parent.parent
     cleaned = []
 
     # 1. Delete workspace
     workspace = _gw_config_service.config.workspace_path
     if workspace.exists():
+        # Fix read-only dirs/files (e.g. overlay worker dirs) before removal
+        for root, dirs, files in os.walk(str(workspace)):
+            for d in dirs:
+                p = os.path.join(root, d)
+                try:
+                    os.chmod(p, stat.S_IRWXU)
+                except OSError:
+                    pass
+            for f in files:
+                p = os.path.join(root, f)
+                try:
+                    os.chmod(p, stat.S_IRWXU)
+                except OSError:
+                    pass
         shutil.rmtree(workspace)
         cleaned.append(f"workspace: {workspace}")
 
@@ -331,7 +346,7 @@ async def reset_system(request: Request):
     logger.warning(f"System reset completed: {cleaned}")
 
     # Trigger restart
-    import threading, os
+    import threading
     logger.warning("Reset done, restarting via exit code 42...")
     threading.Timer(1.0, lambda: os._exit(42)).start()
     return {"status": "ok", "cleaned": cleaned}

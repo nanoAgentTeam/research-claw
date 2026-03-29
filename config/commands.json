@@ -102,6 +102,14 @@
       "tool_arg_key": "request"
     },
     {
+      "name": "/resume",
+      "handler": "agent.services.commands.ResumeTaskHandler",
+      "description": "Resume a persisted task session from a failed or interrupted task",
+      "requires_args": false,
+      "args_usage": "/resume — list recoverable tasks\n/resume <index|task_id|task_name> — reset that task and unfinished downstream tasks\n/resume --force <selector> — also reset inconsistent completed downstream tasks",
+      "require_project": true
+    },
+    {
       "name": "/start",
       "handler": "agent.services.commands.TaskStartHandler",
       "description": "Approve the proposed task plan and begin execution (requires /task first)",
@@ -133,6 +141,14 @@
       "requires_args": true,
       "args_usage": "/switch <project_name> — switch to project and create a new session\n/switch <project_name> <MMDD_NN> — resume a specific session",
       "require_project": false
+    },
+    {
+      "name": "/session",
+      "handler": "agent.services.commands.SessionHandler",
+      "description": "List sessions for the current project or switch to one by name/index",
+      "requires_args": false,
+      "args_usage": "/session — list sessions for current project\n/session <session_name|index> — switch to that session",
+      "require_project": true
     }
   ]
 }

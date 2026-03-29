@@ -6,6 +6,8 @@ instead of the entire AgentLoop, keeping coupling minimal.
 """
 
 from __future__ import annotations
+from datetime import datetime
+from pathlib import Path
 import re
 import uuid
 from typing import Any, Optional, Protocol, runtime_checkable
@@ -108,11 +110,134 @@ def _list_overleaf_projects(services: "AgentServices") -> CommandResult:
         if getattr(p, 'trashed', False):
             flags.append("TRASHED")
         flag_str = f" [{' '.join(flags)}]" if flags else ""
-        lines.append(f"  {idx}. [{pid[:10]}...] {name}{flag_str}")
+        lines.append(f"  {idx}. [{pid}] {name}{flag_str}")
     if len(projects) > 30:
         lines.append(f"  ... 以及另外 {len(projects) - 30} 个项目")
     lines.append("\n回复序号或项目名即可下载到本地。")
     return CommandResult(response="\n".join(lines))
+
+
+def _activate_task_mode(services: "AgentServices", task_session, tool_context: Any) -> None:
+    """Switch service registry into task mode and register task tools."""
+    services.profile = "project_task_agent"
+    from agent.tools.registry import ToolRegistry
+    services.tools = ToolRegistry()
+    services._register_default_tools()
+
+    bash_tool = services.tools.get("bash")
+    if bash_tool:
+        bash_tool.block_git = True
+
+    from agent.tools.task_tools import (
+        TaskProposeTool,
+        TaskBuildTool,
+        TaskModifyTool,
+        TaskExecuteTool,
+        TaskCommitTool,
+    )
+
+    task_tools = [
+        TaskProposeTool(session=task_session, ctx=tool_context),
+        TaskBuildTool(session=task_session, ctx=tool_context),
+        TaskModifyTool(session=task_session, ctx=tool_context),
+        TaskExecuteTool(session=task_session, ctx=tool_context),
+        TaskCommitTool(session=task_session, ctx=tool_context),
+    ]
+    for tool in task_tools:
+        services.tools.register(tool)
+
+
+def _read_first_nonempty_line(path: Path) -> str:
+    """Return the first non-empty line from a text file."""
+    if not path.exists():
+        return ""
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if stripped:
+                return stripped
+    except Exception:
+        return ""
+    return ""
+
+
+def _collect_project_sessions(project_root: Path, current_session: str | None = None) -> list[dict[str, Any]]:
+    """Collect session metadata for one project."""
+    from agent.task_agent import TaskSession, get_recoverable_tasks
+
+    sessions: list[dict[str, Any]] = []
+    if not project_root.exists():
+        return sessions
+
+    for session_dir in project_root.iterdir():
+        if not session_dir.is_dir() or session_dir.name.startswith(".") or session_dir.name == project_root.name:
+            continue
+
+        mtime = session_dir.stat().st_mtime
+        task_state_path = session_dir / ".bot" / "task_state.json"
+        active_context_path = session_dir / ".bot" / "memory" / "active_context.md"
+
+        task_state = TaskSession.load(task_state_path) if task_state_path.exists() else None
+        phase = task_state.phase.value.upper() if task_state else "-"
+        recoverable_count = len(get_recoverable_tasks(task_state)) if task_state else 0
+        summary = ""
+        if task_state:
+            summary = (task_state.goal or "").strip()
+        if not summary:
+            summary = _read_first_nonempty_line(active_context_path)
+        if not summary:
+            summary = t("session.no_summary")
+
+        sessions.append(
+            {
+                "name": session_dir.name,
+                "mtime": mtime,
+                "updated": datetime.fromtimestamp(mtime).strftime("%m-%d %H:%M"),
+                "has_task_state": task_state is not None,
+                "phase": phase,
+                "recoverable_count": recoverable_count,
+                "summary": summary,
+                "is_current": session_dir.name == current_session,
+            }
+        )
+
+    # Session ids are generated in MMDD_NN form, so reverse lexical order matches newest-first.
+    sessions.sort(key=lambda item: item["name"], reverse=True)
+    return sessions
+
+
+def _format_session_listing(project_name: str, sessions: list[dict[str, Any]]) -> str:
+    """Render the /session list output."""
+    if not sessions:
+        return t("session.list_empty", project=project_name)
+
+    lines = [t("session.list_header", project=project_name)]
+    for idx, session in enumerate(sessions, 1):
+        current_marker = t("session.current_marker") if session["is_current"] else ""
+        state_label = (
+            t("session.task_state_present")
+            if session["has_task_state"]
+            else t("session.task_state_missing")
+        )
+        lines.append(f"{idx}. {session['name']}{current_marker}")
+        lines.append(
+            "   "
+            + f"{t('session.updated_label')}: {session['updated']} | "
+            + f"{state_label} | "
+            + f"{t('session.phase_label')}: {session['phase']} | "
+            + (
+                t("session.recoverable_count", count=session["recoverable_count"])
+                if t("session.recoverable_count", count=session["recoverable_count"])
+                == f"{session['recoverable_count']} recoverable"
+                else (
+                    f"{t('session.recoverable_count', count=session['recoverable_count'])} "
+                    f"({session['recoverable_count']} recoverable)"
+                )
+            )
+        )
+        lines.append(f"   {t('session.summary_label')}: {session['summary']}")
+    lines.append(t("session.list_hint"))
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -277,6 +402,56 @@ class SwitchProjectHandler(BaseCommandHandler):
         )
 
 
+class SessionHandler(BaseCommandHandler):
+    """/session [session_name|index] — list or switch sessions within current project."""
+
+    async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
+        project_name = getattr(self.services, "project_id", None)
+        workspace = getattr(self.services, "workspace", None)
+        if not project_name or project_name == "Default" or workspace is None:
+            return CommandResult(response=t("err_no_project"))
+
+        project_root = Path(workspace) / project_name
+        if not project_root.exists() or not project_root.is_dir():
+            return CommandResult(response=t("err_no_project"))
+
+        sessions = _collect_project_sessions(
+            project_root,
+            current_session=getattr(self.services, "session_id", None),
+        )
+
+        raw = args.strip()
+        if not raw:
+            return CommandResult(response=_format_session_listing(project_name, sessions))
+
+        selected = None
+        if raw.isdigit():
+            index = int(raw) - 1
+            if 0 <= index < len(sessions):
+                selected = sessions[index]
+        else:
+            for session in sessions:
+                if session["name"] == raw:
+                    selected = session
+                    break
+
+        if not selected:
+            return CommandResult(response=t("session.not_found", selector=raw))
+
+        if hasattr(self.services, "switch_project"):
+            await self.services.switch_project(project_name, selected["name"])
+        else:
+            await self.services.switch_mode("NORMAL", project_id=project_name, session_id=selected["name"])
+
+        return CommandResult(
+            response=t(
+                "session.switch_success",
+                project=project_name,
+                session=selected["name"],
+            )
+        )
+
+
 class TaskHandler(BaseCommandHandler):
     async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
         # Parse flags
@@ -326,30 +501,7 @@ class TaskHandler(BaseCommandHandler):
         if raw and not task_session.goal:
             task_session.goal = raw
 
-        # Switch to project_task_agent profile (rebuild registry with base tools only)
-        self.services.profile = "project_task_agent"
-        from agent.tools.registry import ToolRegistry
-        self.services.tools = ToolRegistry()
-        self.services._register_default_tools()
-
-        # Block git in task mode (auto-commit handles versioning)
-        bash_tool = self.services.tools.get("bash")
-        if bash_tool:
-            bash_tool.block_git = True
-
-        # Register task tools on the new registry (they depend on TaskSession, can't be in profile)
-        from agent.tools.task_tools import TaskProposeTool, TaskBuildTool, TaskModifyTool, TaskExecuteTool, TaskCommitTool
-        tools_registry = self.services.tools
-
-        task_tools = [
-            TaskProposeTool(session=task_session, ctx=tool_context),
-            TaskBuildTool(session=task_session, ctx=tool_context),
-            TaskModifyTool(session=task_session, ctx=tool_context),
-            TaskExecuteTool(session=task_session, ctx=tool_context),
-            TaskCommitTool(session=task_session, ctx=tool_context),
-        ]
-        for tool in task_tools:
-            tools_registry.register(tool)
+        _activate_task_mode(self.services, task_session, tool_context)
 
         if context_manager:
             context_manager._task_session = task_session
@@ -434,6 +586,121 @@ class TaskDoneHandler(BaseCommandHandler):
 
         summary = self.services._exit_task_mode()
         return CommandResult(response=t("exit_task_mode", summary=summary))
+
+
+class ResumeTaskHandler(BaseCommandHandler):
+    """/resume — restore a persisted task session and resume from a selected task."""
+
+    async def execute(self, args: str, ctx: CommandContext) -> CommandResult:
+        raw = args.strip()
+        force = False
+        if raw.startswith("--force"):
+            force = True
+            raw = raw[len("--force"):].strip()
+
+        project = getattr(self.services, "_project", None)
+        if not project:
+            return CommandResult(response=t("err_no_project"))
+        if project.id == "Default":
+            return CommandResult(response=t("err_task_needs_project"))
+
+        tool_context = getattr(self.services, "_tool_context", None)
+        if not tool_context:
+            return CommandResult(response=t("err_tool_context"))
+
+        context_manager = getattr(self.services, "context", None)
+        if context_manager and context_manager._task_session:
+            phase = context_manager._task_session.phase.value.upper()
+            return CommandResult(response=t("already_in_task", phase=phase))
+
+        from agent.task_agent import (
+            TaskSession,
+            get_recoverable_tasks,
+            get_ready_pending_tasks,
+            resolve_recoverable_task,
+            reset_task_for_resume,
+        )
+
+        session = getattr(self.services, "_session", None)
+        state_path = session.metadata / "task_state.json" if session else None
+        if not state_path or not state_path.exists():
+            return CommandResult(response=t("resume.no_state"))
+
+        task_session = TaskSession.load(state_path)
+        if not task_session or not task_session.task_graph:
+            return CommandResult(response=t("resume.no_state"))
+
+        recoverable = get_recoverable_tasks(task_session)
+        ready_pending = get_ready_pending_tasks(task_session) if not recoverable else []
+        if not recoverable and not ready_pending:
+            return CommandResult(response=t("resume.no_recoverable"))
+
+        if not raw:
+            lines = [t("resume.list_header") if recoverable else t("resume.pending_ready_header")]
+            for idx, task in enumerate(recoverable or ready_pending, 1):
+                lines.append(f"{idx}. [{task.id}] {task.title} — {task.status.value}")
+            lines.append(t("resume.list_hint") if recoverable else t("resume.pending_ready_hint"))
+            return CommandResult(response="\n".join(lines))
+
+        if recoverable:
+            target_task, error = resolve_recoverable_task(task_session, raw)
+            if error:
+                return CommandResult(response=error)
+
+            try:
+                reset_ids = reset_task_for_resume(task_session, target_task.id, force=force)
+            except ValueError as e:
+                return CommandResult(response=str(e))
+        else:
+            target_task = None
+            error = None
+            value = raw.strip()
+            if value.isdigit():
+                index = int(value) - 1
+                if 0 <= index < len(ready_pending):
+                    target_task = ready_pending[index]
+                else:
+                    error = f"No resumable task at index {value}."
+            else:
+                exact = [task for task in ready_pending if task.id == value]
+                if len(exact) == 1:
+                    target_task = exact[0]
+                else:
+                    lowered = value.lower()
+                    matches = [task for task in ready_pending if lowered in task.title.lower()]
+                    if len(matches) == 1:
+                        target_task = matches[0]
+                    elif len(matches) > 1:
+                        error = "Multiple resumable tasks match that name. Use the index or task id."
+                    else:
+                        error = f"No resumable task matches '{value}'."
+            if error:
+                return CommandResult(response=error)
+            reset_ids = [task.id for task in ready_pending]
+
+        _activate_task_mode(self.services, task_session, tool_context)
+        if context_manager:
+            context_manager._task_session = task_session
+        if session:
+            task_session.save_to_metadata(session.metadata)
+
+        reset_list = ", ".join(reset_ids)
+        return CommandResult(
+            should_continue=True,
+            modified_message=(
+                (
+                    f"用户已恢复任务 [{target_task.id}] {target_task.title}。"
+                    f"已重置任务: {reset_list}。"
+                    "请立即调用 task_execute(action='run') 继续执行。"
+                )
+                if recoverable
+                else (
+                    f"用户已恢复执行入口 [{target_task.id}] {target_task.title}。"
+                    f"当前可执行任务: {reset_list}。"
+                    "请立即调用 task_execute(action='run') 继续执行。"
+                )
+            ),
+        )
 
 
 class BackToDefaultHandler(BaseCommandHandler):
@@ -1014,8 +1281,7 @@ def build_help_text(in_project: bool = False) -> str:
         registry = ConfigRegistry()
         cmds = registry.get_visible_commands()
     except Exception:
-        # Fallback to static i18n text if registry fails
-        return t("help.text_zh") if in_project else t("help.text_zh_no_project")
+        return t("help.fallback")
 
     general_lines = []
     project_lines = []
@@ -1075,8 +1341,10 @@ HANDLER_CLASSES: dict[str, type[BaseCommandHandler]] = {
     "/list": ListProjectsHandler,
     "/olist": OverleafListHandler,
     "/switch": SwitchProjectHandler,
+    "/session": SessionHandler,
     "/pull-project": PullProjectHandler,
     "/task": TaskHandler,
+    "/resume": ResumeTaskHandler,
     "/start": TaskStartHandler,
     "/done": TaskDoneHandler,
     # Project commands

@@ -89,6 +89,8 @@ class BatchRunner:
             task.status = TaskStatus.RUNNING
             try:
                 success = await self.executor.execute_task(task, on_log=on_log, proposal=self.proposal)
+                if not success:
+                    task.status = TaskStatus.FAILED
                 return task.id, success
             except Exception as e:
                 logger.error(f"BatchRunner: task {task.id} raised: {e}")
