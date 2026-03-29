@@ -1,6 +1,7 @@
 """Tools for project and session navigation and management."""
 
 from __future__ import annotations
+import asyncio
 import os
 from pathlib import Path
 from typing import Any, Optional, TYPE_CHECKING
@@ -215,7 +216,7 @@ class ProjectTool(BaseTool):
                         loop_project = getattr(self.ctx, 'project', None)
                         if loop_project and getattr(loop_project, 'id', None) == project_name:
                             loop_project.reload_config()
-                        sync_result = proj.sync_from_overleaf()
+                        sync_result = await asyncio.to_thread(proj.sync_from_overleaf)
                         if sync_result.success:
                             pulled = len(sync_result.pulled) if sync_result.pulled else 0
                             lines.append(f"✅ Linked and pulled {pulled} files from Overleaf.")
@@ -393,7 +394,7 @@ class ProjectTool(BaseTool):
 
         lines = []
         try:
-            result = proj.sync_from_overleaf()
+            result = await asyncio.to_thread(proj.sync_from_overleaf)
             if result.success:
                 pulled = len(result.pulled) if result.pulled else 0
                 lines.append(f"✅ Imported '{project_name}' from Overleaf (ID: {overleaf_id}), pulled {pulled} files.")
@@ -453,7 +454,7 @@ class ProjectTool(BaseTool):
 
         try:
             if local_has_content:
-                result = proj.sync_to_overleaf()
+                result = await asyncio.to_thread(proj.sync_to_overleaf)
                 if result.success:
                     pushed = len(result.pushed) if result.pushed else 0
                     sync_msg = f"Linked Overleaf (ID: {overleaf_id}) and pushed {pushed} local files to Overleaf."
@@ -463,7 +464,7 @@ class ProjectTool(BaseTool):
                     errors = ', '.join(result.errors) if result.errors else 'unknown'
                     sync_msg = f"Linked Overleaf to '{project_name}', but push failed: {errors}\nRetry with /sync push after switching."
             else:
-                result = proj.sync_from_overleaf()
+                result = await asyncio.to_thread(proj.sync_from_overleaf)
                 if result.success:
                     pulled = len(result.pulled) if result.pulled else 0
                     sync_msg = f"Linked Overleaf (ID: {overleaf_id}) and pulled {pulled} files from Overleaf."

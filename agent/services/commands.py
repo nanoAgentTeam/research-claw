@@ -8,6 +8,7 @@ instead of the entire AgentLoop, keeping coupling minimal.
 from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
+import asyncio
 import re
 import uuid
 from typing import Any, Optional, Protocol, runtime_checkable
@@ -757,7 +758,7 @@ class SyncHandler(BaseCommandHandler):
         if action == "pull":
             await self._send_progress(ctx, t("sync_pull_progress"))
             try:
-                result = project.sync_from_overleaf()
+                result = await asyncio.to_thread(project.sync_from_overleaf)
             except Exception as e:
                 err_text = str(e).lower()
                 if any(kw in err_text for kw in ("unauthenticated", "cookie", "login", "401", "olauth")):
@@ -847,7 +848,7 @@ class SyncHandler(BaseCommandHandler):
         elif action == "push":
             await self._send_progress(ctx, t("sync_push_progress"))
             try:
-                result = project.sync_to_overleaf()
+                result = await asyncio.to_thread(project.sync_to_overleaf)
             except Exception as e:
                 err_text = str(e).lower()
                 if any(kw in err_text for kw in ("unauthenticated", "cookie", "login", "401", "olauth")):
