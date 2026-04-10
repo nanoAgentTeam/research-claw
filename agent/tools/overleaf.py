@@ -33,7 +33,7 @@ class OverleafTool(BaseTool):
         self.projects_root = self.workspace
         self.projects_root.mkdir(parents=True, exist_ok=True)
         self._project = project  # Core Project instance for sync delegation
-        
+
         # Cookie search paths
         repo_root = Path(__file__).resolve().parent.parent
         self.cookie_paths = [
@@ -89,7 +89,7 @@ class OverleafTool(BaseTool):
         try:
             if action == "list":
                 return self._list_projects(api)
-            
+
             elif action == "pull":
                 # Pull latest files from Overleaf (same as /sync pull)
                 if not self._project:
@@ -111,7 +111,7 @@ class OverleafTool(BaseTool):
                 if result.deleted:
                     msg += f"\n  Deleted {len(result.deleted)} file(s) no longer on remote."
                 return msg
-            
+
             elif action == "push":
                 # Delegate to Project.sync_to_overleaf() — the canonical push path
                 if not self._project:
@@ -211,13 +211,13 @@ class OverleafTool(BaseTool):
     def _list_projects(self, api) -> str:
         projects = api.get_projects()
         # active = [p for p in projects if not getattr(p, 'archived', False) and not getattr(p, 'trashed', False)]
-        
+
         if not projects:
             return "No projects found (active, archived, or trashed)."
 
         lines = ["--- Overleaf Projects ---"]
         active_count = 0
-        
+
         # Sort by last updated
         sorted_projects = sorted(projects, key=lambda x: getattr(x, 'last_updated', ''), reverse=True)
 
@@ -226,17 +226,17 @@ class OverleafTool(BaseTool):
             flags = []
             if getattr(p, 'archived', False): flags.append("ARCHIVED")
             if getattr(p, 'trashed', False): flags.append("TRASHED")
-            
+
             flag_str = f" [{' '.join(flags)}]" if flags else ""
-            
+
             # Show all, or maybe limit to 50?
             if active_count < 30:
                 lines.append(f"- [{updated}] {p.name} (ID: {p.id}){flag_str}")
                 active_count += 1
-        
+
         if len(projects) > 30:
             lines.append(f"... and {len(projects) - 30} more.")
-            
+
         return "\n".join(lines)
 
     # =========================================================================
@@ -248,7 +248,7 @@ class OverleafTool(BaseTool):
         import requests
         import re
         from bs4 import BeautifulSoup
-        
+
         cookie = self._load_cookie()
         if not cookie:
             return "[ERROR] No auth cookie."
@@ -257,7 +257,7 @@ class OverleafTool(BaseTool):
         try:
             session = requests.Session()
             session.cookies.update(cookie_jar)
-            
+
             # Get CSRF from project list page
             r = session.get(f"{self._get_overleaf_base_url()}/project")
             soup = BeautifulSoup(r.content, 'html.parser')
@@ -265,12 +265,12 @@ class OverleafTool(BaseTool):
             meta_csrf = soup.find('meta', {'name': 'ol-csrfToken'})
             if meta_csrf:
                 csrf = meta_csrf.get('content')
-            
+
             if not csrf:
                 match = re.search(r'window\.csrfToken\s*=\s*"([^"]+)"', r.text)
                 if match:
                     csrf = match.group(1)
-            
+
             if not csrf:
                 # Try new API blob
                 try:
@@ -284,7 +284,7 @@ class OverleafTool(BaseTool):
 
             if not csrf:
                 return f"[ERROR] Could not find CSRF token for project creation. Please run `ols login` to refresh session."
-            
+
             # Create project
             _base = self._get_overleaf_base_url()
             create_url = f"{_base}/project/new"
@@ -298,9 +298,9 @@ class OverleafTool(BaseTool):
                 "projectName": project_name,
                 "template": "blank"
             }
-            
+
             resp = session.post(create_url, json=json_payload, headers=headers)
-            
+
             if resp.status_code in [200, 201]:
                 try:
                     data = resp.json()
@@ -309,13 +309,13 @@ class OverleafTool(BaseTool):
                         return f"✅ Successfully created project '{project_name}' (ID: {pid})."
                 except:
                     pass
-            
+
             # Fallback for some endpoints returning redirect
             if resp.status_code == 200 and "/project/" in resp.url:
                  return f"✅ Successfully created project '{project_name}' (Redirected)."
 
             return f"[ERROR] creating project: HTTP {resp.status_code}. Response: {resp.text[:100]}"
-            
+
         except Exception as e:
             return f"[ERROR] creating project: {e}"
 
@@ -365,7 +365,7 @@ class OverleafTool(BaseTool):
         for child in children:
             name = getattr(child, 'name', 'unknown')
             rel_path = f"{prefix}{name}" if prefix else name
-            
+
             if hasattr(child, 'children'):
                 files.extend(self._build_file_tree(child, f"{rel_path}/"))
             else:
@@ -387,7 +387,7 @@ class OverleafTool(BaseTool):
                 "type": f["type"],
                 "mtime": mtime
             }
-        
+
         metadata = {
             "project_id": project_id,
             "project_name": project_name,
@@ -395,7 +395,7 @@ class OverleafTool(BaseTool):
             "root_folder_id": root_id,
             "files": files_with_mtime
         }
-        
+
         with open(project_folder / ".overleaf.json", 'w', encoding='utf-8') as f:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
 
@@ -407,7 +407,7 @@ class OverleafTool(BaseTool):
         projects = []
         if not self.projects_root.exists():
             return projects
-            
+
         for path in self.projects_root.iterdir():
             if path.is_dir():
                 meta_path = path / ".overleaf.json"
@@ -425,7 +425,7 @@ class OverleafTool(BaseTool):
         path = self.projects_root / name_or_folder
         if path.exists() and (path / ".overleaf.json").exists():
             return str(path.name)
-        
+
         # Match project name in metadata
         for p in self._scan_local_projects():
             if p['metadata'].get('project_name') == name_or_folder:
@@ -437,15 +437,15 @@ class OverleafTool(BaseTool):
             project_folder = Path(folder_name_or_path)
         else:
             project_folder = self.projects_root / folder_name_or_path
-            
+
         meta_path = project_folder / ".overleaf.json"
-        
+
         if not meta_path.exists():
             return f"[ERROR] Metadata file missing in {project_folder}. Cannot sync."
-            
+
         with open(meta_path, 'r', encoding='utf-8') as f:
             metadata = json.load(f)
-            
+
         project_id = metadata.get("project_id")
         if not project_id:
             return "[ERROR] Metadata corrupted (no project_id)."
@@ -467,7 +467,7 @@ class OverleafTool(BaseTool):
         # 1. Detect Changes
         changed_files = self._get_changed_files(project_folder, metadata)
         deleted_files = self._get_deleted_files(project_folder, metadata)
-        
+
         if not changed_files and not deleted_files:
             folder_display = str(folder_name_or_path)
             return f"No changes detected for project '{metadata.get('project_name', folder_display)}'."
@@ -480,13 +480,13 @@ class OverleafTool(BaseTool):
         # 2. Upload Changes
         success_up = 0
         uploaded_info = []
-        
+
         for rel_path in changed_files:
             if success_up < 50: # Log first 50 files
                 logs.append(f"  > Uploading: {rel_path}...")
             elif success_up == 50:
                 logs.append(f"  > ... (logging suppressed for remaining uploads)")
-                
+
             ok, file_id = self._upload_file(api, project_id, project_folder, rel_path, metadata.get("root_folder_id"))
             if ok:
                 success_up += 1
@@ -531,14 +531,14 @@ class OverleafTool(BaseTool):
     def _get_changed_files(self, project_folder: Path, metadata: dict) -> List[str]:
         changed = []
         files_info = metadata.get("files", {})
-        
+
         # Check modified existing files
         for rel_path, info in files_info.items():
             local = project_folder / rel_path
             if local.exists():
                 if local.stat().st_mtime > info.get("mtime", 0):
                     changed.append(rel_path)
-        
+
         # Check new files
         for root, dirs, files in os.walk(project_folder):
             dirs[:] = [d for d in dirs if not d.startswith('.')] # Ignore .git, etc
@@ -563,13 +563,13 @@ class OverleafTool(BaseTool):
         try:
             with open(local_path, 'rb') as f:
                 content = f.read()
-            
+
             folder_path = os.path.dirname(rel_path)
             folder_id = self._ensure_folder(api, project_id, root_id, folder_path)
-            
+
             if not folder_id:
                 return False, ""
-                
+
             filename = os.path.basename(rel_path)
             # project_upload_file returns a File object
             file_obj = api.project_upload_file(project_id, folder_id, filename, content)
@@ -581,7 +581,7 @@ class OverleafTool(BaseTool):
     def _ensure_folder(self, api, project_id: str, root_id: str, folder_path: str) -> Optional[str]:
         """Find or create folder recursively."""
         if not folder_path or folder_path == ".":
-            # If we don't know root_id, we need to fetch it. 
+            # If we don't know root_id, we need to fetch it.
             # But we passed it. If it's None, we try to fetch root.
             if root_id: return root_id
             return getattr(api.project_get_files(project_id), 'id', None)
@@ -593,11 +593,11 @@ class OverleafTool(BaseTool):
              current_id = getattr(api.project_get_files(project_id), 'id', None)
 
         # This logic is complex because we need to check existence at each level
-        # PyOverleaf project_get_files returns the tree. 
+        # PyOverleaf project_get_files returns the tree.
         # For efficiency, we should cache the tree, but here we might just re-fetch or optimistically create.
         # Let's re-fetch root for traversal
         current_folder = api.project_get_files(project_id)
-        
+
         parts = folder_path.split("/")
         for part in parts:
             found = None
@@ -606,13 +606,13 @@ class OverleafTool(BaseTool):
                 if getattr(child, 'name', '') == part and hasattr(child, 'children'):
                     found = child
                     break
-            
+
             if found:
                 current_folder = found
             else:
                 # Create
                 current_folder = api.project_create_folder(project_id, current_folder.id, part)
-        
+
         return getattr(current_folder, 'id', None)
 
     def _delete_entity_by_id(self, api, project_id: str, entity_id: str) -> bool:
@@ -644,11 +644,11 @@ class OverleafTool(BaseTool):
                 mtime = local.stat().st_mtime
                 if rel_path not in metadata["files"]:
                     metadata["files"][rel_path] = {"type": "file"}
-                
+
                 metadata["files"][rel_path]["mtime"] = mtime
                 if file_id:
                     metadata["files"][rel_path]["id"] = file_id
-    
+
     def _update_metadata_final(self, project_folder: Path, metadata: dict):
         metadata["last_synced"] = datetime.now().isoformat()
         with open(project_folder / ".overleaf.json", 'w', encoding='utf-8') as f:

@@ -78,17 +78,17 @@ class OpenTaskPlannerTool(BaseTool):
         import datetime
         import re
         from pathlib import Path
-        
+
         # Clean up request for safe filename
         safe_req = re.sub(r'[^a-zA-Z0-9]+', '_', request).strip('_')[:30]
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
         project_name = f"{timestamp}_{safe_req}".strip("_")
-        
+
         # [NEW] Session-Centric Path: session/{id}/{research_id}
         # Refactored: Removed redundant 'research/' folder to match VFS expected structure
         project_root = self.ctx.get_virtual_root() / project_name
         project_root.mkdir(parents=True, exist_ok=True)
-        
+
         logger.info(f"Created Task Research Project Root: {project_root}")
 
         # 2. Generate Plan
@@ -102,13 +102,13 @@ class OpenTaskPlannerTool(BaseTool):
 
         # 3. Setup Executor and Scheduler
         executor = SDDExecutor(self.ctx)
-        
+
         # Pass this project root to the scheduler/executor context
         executor.project_root = project_root
-        
+
         # Track active tasks for smart card splitting
         active_tasks = set()
-        
+
         # Callback to push updates to the bus
         async def status_callback(msg: str, stream_id: str = "progress"):
             # 1. Log to console for visibility (Consolidated)
@@ -117,20 +117,20 @@ class OpenTaskPlannerTool(BaseTool):
                 logger.info(f"📋 [Scheduler] [{stream_id}] {msg}")
             else:
                 logger.debug(f"📋 [Scheduler] [{stream_id}] {msg}")
-            
+
             # 2. Determine if we need a new card
             force_new_card = False
-            
+
             if "Starting task:" in msg and stream_id != "progress":
                 # Extract task ID from stream_id (e.g., progress_task_1)
                 task_id = stream_id.replace("progress_", "")
-                
+
                 # If no tasks are currently active, this is a new sequential phase -> New Card
                 if not active_tasks:
                     force_new_card = True
-                
+
                 active_tasks.add(task_id)
-                
+
             elif "Task completed:" in msg or "Task failed:" in msg:
                 # Remove task from active set
                 task_id = stream_id.replace("progress_", "")
@@ -144,13 +144,13 @@ class OpenTaskPlannerTool(BaseTool):
                 chat_id=chat_id,
                 content=msg, # No forced newline
                 is_chunk=True,
-                stream_id=stream_id, 
-                new_message=force_new_card 
+                stream_id=stream_id,
+                new_message=force_new_card
             )
             await self.ctx.bus.publish_outbound(outbound)
-            
+
         scheduler = SchedulerEngine(graph, executor.execute_task, on_task_update=status_callback)
-        
+
         # 3. Launch in Background
         # We use asyncio.create_task to run the scheduler concurrently with the main loop
         OpenTaskPlannerTool._is_running = True
@@ -162,16 +162,16 @@ class OpenTaskPlannerTool(BaseTool):
                 OpenTaskPlannerTool._is_running = False
 
         bg_task = asyncio.create_task(_run_and_cleanup())
-        
+
         # Register with AgentLoop for management (e.g. cancellation)
         self.ctx.register_background_task(bg_task)
-        
+
         # Format task list for display
         task_list_str = "\n".join([
-            f"- {t.id}: {t.title} (Deps: {', '.join(t.dependencies) if t.dependencies else 'None'})" 
+            f"- {t.id}: {t.title} (Deps: {', '.join(t.dependencies) if t.dependencies else 'None'})"
             for t in graph.tasks.values()
         ])
-        
+
         return t(
             "scheduler.plan_created",
             count=len(graph.tasks),

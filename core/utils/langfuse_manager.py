@@ -25,7 +25,7 @@ def _ensure_langfuse():
     if _initialized:
         return
     _initialized = True
-    
+
     # 强制禁用开关 (不再打印 Log)
     if not Config.LANGFUSE_ENABLED or os.environ.get("DISABLE_LANGFUSE", "").lower() == "true":
         HAS_LANGFUSE = False
@@ -65,7 +65,7 @@ def observe(*args, **kwargs):
     """
     # 判断是 @observe 还是 @observe(...)
     is_direct = len(args) == 1 and callable(args[0])
-    
+
     def decorator(func):
         import inspect as _inspect
         # 这里的代码在函数定义时执行，不触发初始化

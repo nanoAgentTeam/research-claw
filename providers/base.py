@@ -23,7 +23,7 @@ class LLMResponse:
     tool_calls: list[ToolCallRequest] = field(default_factory=list)
     finish_reason: str = "stop"
     usage: dict[str, int] = field(default_factory=dict)
-    
+
     @property
     def has_tool_calls(self) -> bool:
         """Check if response contains tool calls."""
@@ -33,11 +33,11 @@ class LLMResponse:
 class LLMProvider(ABC):
     """
     Abstract base class for LLM providers.
-    
+
     Implementations should handle the specifics of each provider's API
     while maintaining a consistent interface.
     """
-    
+
     def __init__(self, api_key: Optional[str] = None, api_base: Optional[str] = None):
         self.api_key = api_key
         self.api_base = self._normalize_api_base(api_base)
@@ -51,7 +51,7 @@ class LLMProvider(ABC):
         if api_base.endswith("/v1"):
             api_base = api_base[:-3]
         return api_base
-    
+
     @abstractmethod
     async def chat(
         self,
@@ -64,19 +64,19 @@ class LLMProvider(ABC):
     ) -> LLMResponse:
         """
         Send a chat completion request.
-        
+
         Args:
             messages: List of message dicts with 'role' and 'content'.
             tools: Optional list of tool definitions.
             model: Model identifier (provider-specific).
             max_tokens: Maximum tokens in response.
             temperature: Sampling temperature.
-        
+
         Returns:
             LLMResponse with content and/or tool calls.
         """
         pass
-    
+
     @staticmethod
     def _sanitize_messages(messages: list) -> list:
         """Remove orphaned tool result messages whose tool_call_id

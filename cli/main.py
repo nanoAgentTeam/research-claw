@@ -448,7 +448,7 @@ def agent(
     renderer = TerminalRenderer(console=console, verbose=verbose)
     on_token = renderer.on_token
     on_event = renderer.on_event
-    
+
     # --e2e: auto-inject --e2e into /task command so user doesn't need to write it twice
     if e2e and message and message.lstrip().startswith("/task") and "--e2e" not in message:
         # Insert --e2e after "/task"
@@ -495,7 +495,7 @@ def agent(
                 pass
             finally:
                 printer.cancel()
-        
+
         try:
             asyncio.run(run_once())
         except KeyboardInterrupt:
@@ -504,7 +504,7 @@ def agent(
         # Interactive mode
         console.print("🤖 Interactive mode (Ctrl+C to exit)")
         console.print("[dim]输入 /help 查看可用命令[/dim]\n")
-        
+
         async def run_interactive():
             nonlocal agent_loop
             # Start a background task to print outbound messages from the bus
@@ -526,10 +526,10 @@ def agent(
             while True:
                 try:
                     user_input = await asyncio.to_thread(console.input, f"[bold blue][{current_params['project_id']}:{current_params['session_id']}] You:[/bold blue] ")
-                    
+
                     if not user_input.strip():
                         continue
-                        
+
                     # [HOT RELOAD] Handle Management Commands
                     if user_input.lower().startswith("/switch "):
                         new_project = user_input.split(" ", 1)[1].strip()
@@ -559,7 +559,7 @@ def agent(
                         agent_loop = create_agent(current_params, new_proj, new_sess)
                         console.print(f"[green]Switched to new session: {new_session}[/green]")
                         continue
-                    
+
                     console.print("\n🤖 ", end="")
                     await agent_loop.process_direct(user_input, current_params["session_id"], on_token=on_token, on_event=on_event)
                     # Sync CLI state after agent may have changed project/session (e.g. /reset, /switch)
@@ -672,7 +672,7 @@ def agent(
                     console.print("\nGoodbye!")
                     printer.cancel()
                     break
-        
+
         asyncio.run(run_interactive())
 
 @app.command()
@@ -702,7 +702,7 @@ def subagent(
     api_key = config.get_api_key()
     api_base = config.get_api_base()
     model_name = config.get_api_model() or config.agents.defaults.model
-    
+
     bus = MessageBus()
     provider = OpenAIProvider(
         api_key=api_key,
@@ -945,7 +945,7 @@ def legacy_gateway(
     from channels.im_qq import ImQQChannel
     from channels.im_dingtalk import ImDingTalkChannel
     from core.automation.runtime import AutomationRuntime
-    
+
     console.print(f"Starting Research Claw gateway...")
 
     config = load_config()
@@ -1033,7 +1033,7 @@ def legacy_gateway(
 
         # Dispatcher loop
         tasks.append(bus.dispatch_outbound())
-        
+
         # Subscribe channels to outbound
         if im_telegram:
             bus.subscribe_outbound("im_telegram", im_telegram.send)
@@ -1050,7 +1050,7 @@ def legacy_gateway(
             await asyncio.gather(*tasks)
         finally:
             await automation_runtime.stop()
-        
+
     try:
         asyncio.run(run())
     except KeyboardInterrupt:

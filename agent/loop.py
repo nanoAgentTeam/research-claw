@@ -125,7 +125,7 @@ class AgentLoop:
         # [NEW] Configuration
         from config.schema import Config
         self.config = config or Config()
-        
+
         self.model = model or (
             provider.get_default_model()
             if provider and hasattr(provider, "get_default_model")
@@ -178,14 +178,14 @@ class AgentLoop:
         # This keeps logs isolated per project/session.
         self.project_root = self.workspace / self.project_id
         self.session_root = self.project_root / self.session_id
-        
+
         if metadata_root:
             self.metadata_root = metadata_root
         else:
             self.metadata_root = self.session_root / ".bot"
-            
+
         self.metadata_root.mkdir(parents=True, exist_ok=True)
-        
+
         # [NEW] Action tracking for loop detection and meta-diagnosis
         self.action_history: List[Dict[str, Any]] = []
         self.MAX_ACTION_HISTORY = 10
@@ -204,7 +204,7 @@ class AgentLoop:
             self.work_dir = working_directory or self.session_root
         self.work_dir.mkdir(parents=True, exist_ok=True)
         self.file_root.mkdir(parents=True, exist_ok=True)
-        
+
         self._config_registry = ConfigRegistry()
         self._command_router = CommandRouter(self._config_registry)
 
@@ -566,44 +566,44 @@ class AgentLoop:
         # Bind project context for blacklist filtering
         if self._project:
             self.tools.bind_context(self._project)
-    
+
     async def run(self) -> None:
         """Run the agent loop, processing messages from the bus."""
         self._running = True
         logger.info("Agent loop started")
-        
+
         # Task for consuming messages
         consumer_task = asyncio.create_task(self.bus.consume_inbound())
         # Task for processing the current message
         processor_task: asyncio.Task | None = None
-        
+
         while self._running:
             try:
                 # Prepare list of tasks to wait on
                 active_tasks = [consumer_task]
                 if processor_task:
                     active_tasks.append(processor_task)
-                
+
                 # Wait for something to happen
                 done, pending = await asyncio.wait(
                     active_tasks,
                     return_when=asyncio.FIRST_COMPLETED
                 )
-                
+
                 # 1. Handle Message Arrival
                 if consumer_task in done:
                     try:
                         msg = consumer_task.result()
-                        
+
                         # Handle STOP command
                         if msg.content.strip() == "/stop":
                             logger.info("Received /stop command")
-                            
+
                             # 1. Force hard cancellation of current processor
                             if processor_task and not processor_task.done():
                                 logger.warning("🛑 FORCING HARD STOP: Cancelling active task...")
                                 processor_task.cancel()
-                            
+
                             # 2. Cancel active background tasks (Schedulers)
                             cancelled_count = 0
                             for task in list(self.active_background_tasks):
@@ -611,10 +611,10 @@ class AgentLoop:
                                     task.cancel()
                                     cancelled_count += 1
                             self.active_background_tasks.clear()
-                            
+
                             if cancelled_count > 0:
                                 logger.warning(f"🛑 Cancelled {cancelled_count} background tasks.")
-                            
+
                             # Send confirmation immediately
                             await self.bus.publish_outbound(OutboundMessage(
                                 channel=msg.channel,
@@ -622,7 +622,7 @@ class AgentLoop:
                                 content="🛑 Hard Stop triggered. Current operation and background tasks cancelled.",
                                 is_notification=True,
                             ))
-                        
+
                         # Handle Normal Message
                         else:
                             if processor_task and not processor_task.done():
@@ -636,10 +636,10 @@ class AgentLoop:
                             else:
                                 # Start Processing (inbound logging handled by bus hook)
                                 processor_task = asyncio.create_task(self._process_message(msg, on_token=None))
-                        
+
                     except Exception as e:
                         logger.error(f"Consumer error: {e}")
-                    
+
                     # Re-arm consumer immediately
                     consumer_task = asyncio.create_task(self.bus.consume_inbound())
 
@@ -657,23 +657,23 @@ class AgentLoop:
                         # Optionally notify user
                     finally:
                         processor_task = None
-                        
+
             except asyncio.TimeoutError:
                 continue
             except Exception as e:
                 logger.error(f"Loop error: {e}")
                 await asyncio.sleep(1) # Backoff
 
-    
+
     def stop(self) -> None:
         """Stop the agent loop."""
         self._running = False
         logger.info("Agent loop stopping")
-    
+
     async def _diagnose_deadlock(self, history: List[Dict[str, Any]], on_token: Any | None = None) -> str:
         """[META-DIAGNOSIS] Use another model instance to diagnose and break the deadlock."""
         logger.info(f"🧠 [Meta-Diagnosis] Diagnosing deadlock for role: {self.role_name}...")
-        
+
         # Build diagnosis prompt from recent history
         recent_actions = []
         for m in history[-10:]:
@@ -704,7 +704,7 @@ class AgentLoop:
             "loop_meta_diagnosis.txt", _DIAGNOSIS_FALLBACK,
             role_name=self.role_name, recent_actions=chr(10).join(recent_actions)
         )
-        
+
         try:
             # Fresh chat call with no history
             diag_response = await self.provider.chat(
@@ -885,7 +885,7 @@ class AgentLoop:
         iteration = 0
         final_content = None
         trajectory_steps = [] # [NEW] Track the decision process
-        
+
         # [REFACTORED] Helper for bus publishing now located at method top
 
         # Context for tool execution
@@ -899,7 +899,7 @@ class AgentLoop:
 
         while iteration < self.max_iterations:
             iteration += 1
-            
+
             # [STEP LOGGING] Log current iteration status
             remaining = self.max_iterations - iteration
             trace.mark_step_start(iteration)
@@ -939,7 +939,7 @@ class AgentLoop:
 
             # Track how many 'steps' this iteration consumed (default 1)
             iteration_step_consumption = 1
-            
+
             # Check for global termination signal
             if self.is_terminated and self.is_terminated():
                 logger.info("🛑 Termination signal detected. Stopping agent loop.")
@@ -948,22 +948,22 @@ class AgentLoop:
 
             # Setup iteration-specific streaming
             first_token_sent = False
-            
+
             def iter_on_token(token: str, stream_id: str | None = None):
                 nonlocal first_token_sent
-                
+
                 # Logic: Force new message bubble if this is a subsequent iteration
                 # This separates "Thoughts/Tool Calls" (Iter 1) from "Final Answer" (Iter 2+)
                 force_new = False
                 if iteration > 1 and not first_token_sent:
                      force_new = True
                      first_token_sent = True
-                
+
                 if on_token:
                     # External callback (e.g. CLI), simple pass-through
                     # We might need to format stream_id for CLI if supported
                     if stream_id:
-                        # For CLI, maybe prefix? But that breaks layout. 
+                        # For CLI, maybe prefix? But that breaks layout.
                         # Just pass token for now or let CLI handle it if it updates on_token signature.
                         # Assuming CLI on_token is simple print.
                         on_token(token)
@@ -972,13 +972,13 @@ class AgentLoop:
                 else:
                     # Bus publishing with smart logic
                     publish_chunk(token, new_message=force_new, stream_id=stream_id)
-            
+
             # Call LLM
-            # When there are tool calls, we temporarily disable streaming to the user to avoid 
+            # When there are tool calls, we temporarily disable streaming to the user to avoid
             # showing raw tool call XML/JSON in the chat window, unless it's intended.
             # However, for pure text streaming we need on_token.
             # The provider now handles XML extraction.
-            
+
             tool_defs = self.tools.get_definitions()
             logger.debug(f"Sending {len(tool_defs)} tools to LLM: {[d['function']['name'] for d in tool_defs]}")
 
@@ -994,7 +994,7 @@ class AgentLoop:
                     model=self.model,
                     on_token=iter_on_token if stream_progress else None
                 )
-                
+
                 if response.finish_reason == "error":
                     error_content = str(response.content).lower()
                     if "context_length_exceeded" in error_content or "too long" in error_content:
@@ -1023,7 +1023,7 @@ class AgentLoop:
 
                 # Success or length — break retry loop
                 break
-            
+
             # If all retries exhausted and still error, terminate
             if response and response.finish_reason == "error":
                 logger.error(f"❌ LLM call failed after {_LLM_MAX_RETRIES} retries. Terminating. Last error: {response.content}")
@@ -1045,7 +1045,7 @@ class AgentLoop:
                 trace.emit(llm_end_event)
                 if on_event:
                     on_event(llm_end_event)
-            
+
             # Handle tool calls
             if hasattr(response, 'tool_calls') and response.tool_calls:
                  # Add assistant message with tool calls
@@ -1063,7 +1063,7 @@ class AgentLoop:
                 messages = self.context.add_assistant_message(
                     messages, response.content, tool_call_dicts
                 )
-                
+
                 # Show Tool Call in Chat
                 for tc in response.tool_calls:
                      # [TRACE] Emit structured tool call event
@@ -1099,7 +1099,7 @@ class AgentLoop:
                              on_token(tool_info)
                          else:
                              publish_chunk(tool_info)
-                
+
                 # Prepare tools for execution
                 execution_tasks = []
                 _this_iter_tools: list[str] = []  # Track which tools are dispatched this iteration
@@ -1150,7 +1150,7 @@ class AgentLoop:
                     tool_results = await asyncio.gather(*execution_tasks)
                 else:
                     tool_results = []
-                
+
                 # Check for meta-reset and loop warning tracking
                 has_reset = False
                 has_loop_warning = False
@@ -1172,7 +1172,7 @@ class AgentLoop:
                 # Reset deadlock counter only if NO tool had a loop warning
                 if not has_reset and not has_loop_warning:
                     self.consecutive_deadlocks = 0
-                
+
                 # [MODE SWITCH DETECTION]
                 # If the mode has changed during tool execution (e.g. switch tool),
                 # we MUST stop the current turn to prevent "history pollution".
@@ -1203,7 +1203,7 @@ class AgentLoop:
                 for tc, res_obj in zip(response.tool_calls, tool_results):
                     result = res_obj["output"]
                     warning = res_obj["warning"]
-                    
+
                     # [STEP CONSUMPTION] Check if tool signals extra step consumption
                     consume_match = re.search(r'<consume_steps>(\d+)</consume_steps>', result)
                     if consume_match:
@@ -1241,17 +1241,17 @@ class AgentLoop:
                             on_event(tr_event)
                     except Exception:
                         pass
-                    
+
                     # Construct final result string for the LLM history
                     # Keep the output at the top for potential parsing, put warning at bottom
                     final_tool_output = result
                     if warning:
                         final_tool_output = f"{result}\n\n<system_warning>\n{warning}\n</system_warning>"
-                        
+
                     messages = self.context.add_tool_result(
                         messages, tc.id, tc.name, final_tool_output
                     )
-                    
+
                     # [NEW] Append structured action/result to current step
                     current_step["actions"].append({
                         "id": tc.id,
@@ -1307,10 +1307,10 @@ class AgentLoop:
                 # No tool calls, we're done
                 final_content = response.content
                 break
-        
+
         if final_content is None:
             final_content = t("loop.no_response")
-        
+
         # [NEW] Finalize and persist full trajectory
         full_trajectory = {
             "chat_id": msg.chat_id,
@@ -1357,7 +1357,7 @@ class AgentLoop:
             chat_id=msg.chat_id,
             content=final_content
         )
-    
+
     def _get_overleaf_sync_hint(self) -> str:
         """Return an Overleaf sync hint message based on project state.
 
@@ -1391,7 +1391,7 @@ class AgentLoop:
         # e.g. {"raw": "{\"path\": \"...\", \"content\": \"...\"}"}
         args = tool_call.arguments
         fix_warning = ""
-        
+
         if isinstance(args, dict) and "raw" in args and len(args) == 1:
             raw_value = args["raw"]
             if isinstance(raw_value, str):
@@ -1406,7 +1406,7 @@ class AgentLoop:
                 except json.JSONDecodeError:
                     # [ROBUSTNESS] If JSON is broken (e.g. truncated), try to rescue with regex
                     logger.warning(f"Detected broken 'raw' JSON for {tool_call.name}. Attempting regex rescue...")
-                    
+
                     # [SAFETY] DO NOT rescue file-writing tools if they are truncated
                     if tool_call.name in ["write_file", "str_replace", "patch_file", "insert_content"]:
                         logger.error(f"❌ Refusing to rescue truncated {tool_call.name} to avoid file corruption.")
@@ -1447,7 +1447,7 @@ class AgentLoop:
                         fix_warning = t("loop.malformed_rescue_warning", tool_name=tool_call.name)
                     else:
                         logger.error(f"Failed to rescue broken 'raw' arguments for {tool_call.name}")
-                
+
         # Pretty print arguments for logging (Real output, no ascii escape)
         try:
             args_str = json.dumps(tool_call.arguments, ensure_ascii=False, indent=2)
@@ -1513,10 +1513,10 @@ class AgentLoop:
                 import inspect
                 if hasattr(tool, 'execute'):
                     sig = inspect.signature(tool.execute)
-                    
+
                     # Copy args to avoid modifying original tool_call for retries if any
                     final_args = args.copy()
-                    
+
                     # Safe injection of on_token
                     if 'on_token' in sig.parameters:
                         final_args["on_token"] = on_token
@@ -1530,7 +1530,7 @@ class AgentLoop:
                         # Remove it first if it was added blindly above
                         if "message_context" in final_args:
                             del final_args["message_context"]
-                            
+
                         if 'message_context' in sig.parameters or \
                            any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()):
                             final_args["message_context"] = message_context
@@ -1555,7 +1555,7 @@ class AgentLoop:
                     result = await self.tools.execute(tool_call.name, args)
         except Exception as e:
             result = f"Error executing tool {tool_call.name}: {str(e)}"
-            
+
         # [ROBUSTNESS] Truncate huge outputs to prevent context window explosion
         result_str = str(result)
         if len(result_str) > MAX_TOOL_OUTPUT_LENGTH and tool_call.name not in TOOL_TRUNCATION_EXEMPT and tool_call.name not in _NO_TRUNCATE_TOOLS:
@@ -1573,7 +1573,7 @@ class AgentLoop:
                 f"Full output saved to: {tmp_file} " \
                 f"(lines {approx_lines_shown + 1}–{total_lines} not shown). " \
                 f"Use read_file(\"{tmp_file}\", start_line={approx_lines_shown + 1}) to read the rest."
-        
+
         # Overleaf sync hint after .tex file edits (once per turn)
         if (not getattr(self, '_overleaf_hint_given', False)
                 and tool_call.name in ("write_file", "str_replace")):
@@ -1595,11 +1595,11 @@ class AgentLoop:
         projects = [d for d in projects_dir.iterdir() if d.is_dir() and not d.name.startswith(".") and d.name != "Default"]
         if not projects:
             return None
-            
+
         # Find latest by mtime of any file inside
         latest_project = None
         max_mtime = 0
-        
+
         for p in projects:
             # Check project dir itself
             curr_mtime = p.stat().st_mtime
@@ -1607,14 +1607,14 @@ class AgentLoop:
             # Let's check common files
             for f in p.glob("*.tex"):
                 curr_mtime = max(curr_mtime, f.stat().st_mtime)
-            
+
             if curr_mtime > max_mtime:
                 max_mtime = curr_mtime
                 latest_project = p
-                
+
         if not latest_project:
             return None
-            
+
         # Extract Topic
         topic = await self._extract_topic_from_project(latest_project, on_token=on_token)
         return latest_project.name, latest_project, topic
@@ -1624,11 +1624,11 @@ class AgentLoop:
         tex_files = list(project_path.glob("*.tex"))
         if not tex_files:
             return project_path.name.replace("_", " ").title()
-            
+
         # Prioritize files
         priority = ["main.tex", "abstract.tex", "intro.tex"]
         sorted_files = sorted(tex_files, key=lambda f: (f.name not in priority, priority.index(f.name) if f.name in priority else 999))
-        
+
         combined_text = ""
         for f in sorted_files[:5]: # Take first 5 relevant tex files
             try:
@@ -1636,10 +1636,10 @@ class AgentLoop:
                 combined_text += f"\n--- File: {f.name} ---\n{content}\n"
             except:
                 continue
-                
+
         if not combined_text:
             return project_path.name.replace("_", " ").title()
-            
+
         # Call LLM to summarize topic
         _RESEARCH_TOPIC_FALLBACK = (
             "You are a research assistant. Based on the following snippets from a LaTeX project, "
@@ -1678,11 +1678,11 @@ class AgentLoop:
             logger.error(f"Failed to log inbound message (CLI): {e}")
 
         response = await self._process_message(msg, on_token=on_token, on_event=on_event)
-        
+
         if response:
             try:
                 await self.history_logger.log_outbound(response)
             except Exception as e:
                 logger.error(f"Failed to log outbound message (CLI): {e}")
-        
+
         return response.content if response else ""

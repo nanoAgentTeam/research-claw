@@ -11,7 +11,7 @@ class PlannerAgent:
     """
     Generates a TaskGraph from a user request.
     """
-    
+
     def __init__(self):
         from config.loader import load_config
         from providers.openai_provider import OpenAIProvider
@@ -60,40 +60,40 @@ class PlannerAgent:
             "Keep dependencies logical. Research tasks usually come first. 'output_dir' should be a simple directory name."
         )
         prompt = render_prompt("scheduler_planner.txt", _PLANNER_FALLBACK)
-        
+
         messages = [{"role": "user", "content": f"Request: {user_request}"}]
-        
+
         full_response = ""
         try:
             # 这里的 run 已经变为 async generator
             async for event in self.engine.run(
                 messages=messages,
                 system_config=SystemPromptConfig(base_prompt=prompt),
-                tools=[], 
+                tools=[],
                 max_iterations=1,
                 return_full_history=False
             ):
                 if event.type == "token":
                     full_response += event.data["delta"]
-            
+
             # Clean up JSON (remove markdown blocks if any)
             full_response = full_response.strip()
             if full_response.startswith("```json"):
                 full_response = full_response[7:]
             if full_response.endswith("```"):
                 full_response = full_response[:-3]
-                
+
             # Parse JSON
             data = json.loads(full_response)
-            
+
             # Convert to TaskGraph object
             graph = TaskGraph(project_id=data.get("project_id", "default"))
             for t_data in data.get("tasks", []):
                 task = ResearchTask(**t_data)
                 graph.add_task(task)
-                
+
             logger.info(f"Plan created with {len(graph.tasks)} tasks.")
-            
+
             # Persist the plan to disk
             try:
                 # Determine plan directory
@@ -101,15 +101,15 @@ class PlannerAgent:
                     plan_dir = project_root / "plans"
                 else:
                     plan_dir = Path("workspace/tasks")
-                
+
                 if not plan_dir.exists():
                      plan_dir.mkdir(parents=True, exist_ok=True)
-                
+
                 # Save JSON
                 plan_file_base = plan_dir / "latest_plan"
                 with open(f"{plan_file_base}.json", "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
-                
+
                 # Save Markdown Visualization
                 md_content = f"# Project Plan: {graph.project_id}\n\n"
                 md_content += "## Task Dependency Graph\n\n"
@@ -122,7 +122,7 @@ class PlannerAgent:
                     for dep in t.dependencies:
                         md_content += f"    {dep} --> {t.id}\n"
                 md_content += "```\n\n"
-                
+
                 md_content += "## Task Details\n\n"
                 for t in graph.tasks.values():
                     md_content += f"### {t.id}: {t.title}\n"
@@ -131,17 +131,17 @@ class PlannerAgent:
                     md_content += f"- **Output**: `{t.output_dir}`\n"
                     md_content += f"- **Dependencies**: {', '.join(t.dependencies) if t.dependencies else 'None'}\n"
                     md_content += f"- **Description**: {t.description}\n\n"
-                    
+
                 with open(f"{plan_file_base}.md", "w", encoding="utf-8") as f:
                     f.write(md_content)
-                    
+
                 logger.info(f"Plan persisted to {plan_file_base}.md")
-                
+
             except Exception as e:
                 logger.error(f"Failed to persist plan: {e}")
 
             return graph
-            
+
         except Exception as e:
             logger.error(f"Planning failed: {e}")
             logger.debug(f"Raw response: {full_response}")

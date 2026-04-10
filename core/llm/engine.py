@@ -206,7 +206,7 @@ class AgentEngine:
 
                 # --- LLM 调用部分 ---
                 model = self.model
-                
+
                 # Inject iteration info and progressive urgency warnings
                 # Milestone warnings (50%/60%/70%/80%/90%) trigger once each;
                 # last-5 warnings trigger every iteration.
@@ -254,7 +254,7 @@ class AgentEngine:
                 msgs = [{"role": "system", "content": session.system_config.build()}] + session.history
                 if iter_info:
                     msgs.append({"role": "system", "content": iter_info})
-                
+
                 # --- LLM Call via LLMProvider ---
 
                 try:
@@ -309,7 +309,7 @@ class AgentEngine:
                     }}
                     for tc in response.tool_calls
                 ]
-                
+
                 if not tool_calls:
                     if search_citations:
                         citation_text = "\\n\\n**参考来源：**\\n"
@@ -317,7 +317,7 @@ class AgentEngine:
                             title = item.get("title", "No Title")
                             href = item.get("href", "#")
                             citation_text += f"{idx}. [{title}]({href})\\n"
-                        
+
                         full_content += citation_text
                         yield AgentEvent(type="token", data={"delta": citation_text})
 
@@ -328,8 +328,8 @@ class AgentEngine:
                     break
 
                 session.history.append({
-                    "role": "assistant", 
-                    "content": full_content or None, 
+                    "role": "assistant",
+                    "content": full_content or None,
                     "tool_calls": [{
                         "id": tc["id"],
                         "type": "function",
@@ -339,7 +339,7 @@ class AgentEngine:
                 yield AgentEvent(type="message", data=session.history[-1])
 
                 if on_step_log: on_step_log("tool_call_request", tool_calls=tool_calls, assistant_content=full_content)
-                
+
                 # Yield tool call events
                 yield AgentEvent(type="tool_call", data={"tool_calls": tool_calls})
 
@@ -351,11 +351,11 @@ class AgentEngine:
                     """执行单个工具调用，返回 (tc, result, fn_name, args)"""
                     fn_name = tc["function"]["name"]
                     args_str = tc["function"]["arguments"]
-                    try: 
+                    try:
                         args = json.loads(args_str)
-                    except: 
+                    except:
                         args = {}
-                    
+
                     tool = next((t for t in tools if t.name == fn_name), None)
                     result = None
                     if tool:
@@ -364,7 +364,7 @@ class AgentEngine:
                             is_async = inspect.iscoroutinefunction(tool.execute)
                             if not is_async and hasattr(tool.execute, '__call__'): # Handle callable objects
                                 is_async = inspect.iscoroutinefunction(tool.execute.__call__)
-                            
+
                             # [FIX] Inject on_token for real-time progress rendering
                             tool_args = args.copy()
                             sig = inspect.signature(tool.execute)
@@ -379,7 +379,7 @@ class AgentEngine:
                             else:
                                 # 同步执行
                                 result = await asyncio.to_thread(tool.execute, **tool_args)
-                                
+
                                 # Double check
                                 if inspect.isawaitable(result):
                                     result = await result
@@ -388,7 +388,7 @@ class AgentEngine:
                             Logger.error(f"Tool execution failed: {e}")
                     else:
                         result = f"Error: Tool {fn_name} not found."
-                    
+
                     # --- Output Truncation ---
                     result_str = str(result)
                     if len(result_str) > MAX_TOOL_OUTPUT_LENGTH and fn_name not in TOOL_TRUNCATION_EXEMPT:
@@ -402,7 +402,7 @@ class AgentEngine:
                         )
 
                     return (tc, result, fn_name, args)
-                
+
                 # 执行工具调用（并行，带循环检测）
                 execution_tasks = []
                 for tc in tool_calls:
@@ -434,9 +434,9 @@ class AgentEngine:
 
                 async def run_parallel_tools():
                     return await asyncio.gather(*execution_tasks)
-                
+
                 tool_task = asyncio.create_task(run_parallel_tools())
-                
+
                 # While tools are running, yield progress events from the queue
                 while not tool_task.done():
                     try:
@@ -447,13 +447,13 @@ class AgentEngine:
                         continue
                     except Exception:
                         break
-                
+
                 # Final drain of the queue
                 while not event_queue.empty():
                     yield event_queue.get_nowait()
 
                 tool_results = await tool_task
-                
+
                 # 按顺序处理结果
                 has_loop_warning = False
                 for tc, result, fn_name, args in tool_results:
@@ -469,7 +469,7 @@ class AgentEngine:
                                     if isinstance(item, dict) and item.get("href") and not any(x.get("href") == item.get("href") for x in search_citations):
                                         search_citations.append(item)
                         except: pass
-                    
+
                     yield AgentEvent(type="tool_result", data={
                         "tool_call_id": tc["id"],
                         "name": fn_name,
@@ -502,7 +502,7 @@ class AgentEngine:
                             consecutive_deadlocks = 0
                             action_history.clear()
                             break
-            
+
             # End of loop — check if we exhausted iterations (no break)
             iterations_exhausted = (session.metadata.get("iteration_count", 0) >= max_iterations)
             if iterations_exhausted:
@@ -521,7 +521,7 @@ class AgentEngine:
             error_msg = f"{type(e).__name__}: {str(e)}"
             if not str(e):
                 error_msg += f"\nTraceback: {traceback.format_exc()}"
-            
+
             Logger.error(f"AgentEngine execution error: {error_msg}")
             yield AgentEvent(type="error", data={"error": error_msg})
             raise e

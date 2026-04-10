@@ -101,7 +101,7 @@ class ContextManager:
             self.global_memory_dir.mkdir(parents=True, exist_ok=True)
             self.global_key_memory_file = self.global_metadata_root / global_key_rel
             self.project_index_file = self.global_memory_dir / "PROJECT_INDEX.md"
-    
+
     def _read_file_safe(self, path: Path) -> str:
         if path and path.exists():
             return path.read_text(encoding="utf-8")
@@ -426,7 +426,7 @@ class ContextManager:
                 pb.remove(key)
             else:
                 pb.set(key, value)
-    
+
     def build_messages(
         self,
         history: list[dict[str, Any]],
@@ -443,12 +443,12 @@ class ContextManager:
         return messages
 
     def add_tool_result(self, messages: list[dict[str, Any]], tool_call_id: str, tool_name: str, result: str) -> list[dict[str, Any]]:
-        MAX_TOOL_OUTPUT_CHARS = 100000 
+        MAX_TOOL_OUTPUT_CHARS = 100000
         if len(result) > MAX_TOOL_OUTPUT_CHARS:
             result = f"{result[:MAX_TOOL_OUTPUT_CHARS]}\n... [SYSTEM MESSAGE: Output truncated.]"
         messages.append({"role": "tool", "tool_call_id": tool_call_id, "name": tool_name, "content": result})
         return messages
-    
+
     def add_assistant_message(self, messages: list[dict[str, Any]], content: str | None, tool_calls: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
         msg: dict[str, Any] = {"role": "assistant", "content": content or ""}
         if tool_calls: msg["tool_calls"] = tool_calls
@@ -461,13 +461,13 @@ class ContextManager:
         """Summarize current history into active_context.md."""
         if not self.provider:
             return "Error: Summarization requires an LLM Provider."
-            
+
         current_context = self._read_file_safe(self.context_memory_file)
         history = await self.history_logger.get_recent_history(chat_id=chat_id, limit=limit)
-        
+
         if not history:
             return "No recent history to summarize."
-            
+
         history_text = ""
         for msg in history:
             role, content = msg.get("role", "unknown"), msg.get("content", "")
@@ -492,7 +492,7 @@ class ContextManager:
 [Recent History]
 {history_text}
 Output ONLY the new summary (bullet points)."""
-        
+
         try:
             response = await self.provider.chat(
                 messages=[{"role": "user", "content": prompt}],
@@ -510,7 +510,7 @@ Output ONLY the new summary (bullet points)."""
         """Summarize middle messages to stay within context limits."""
         if len(messages) <= 15 or not self.provider:
             return messages
-        
+
         logger.info(f"🚀 Compressing context for {chat_id}")
         system_message = messages[0]
         recent_messages = messages[-6:]

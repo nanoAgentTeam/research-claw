@@ -90,7 +90,7 @@ class ToolLoader:
             if tool:
                 tools.append(tool)
         return tools
-        
+
     def _load_tool(self, entry: Dict[str, Any], context: Dict[str, Any]) -> Optional[Any]:
         """
         Load a single tool entry with smart dependency injection.
@@ -98,27 +98,27 @@ class ToolLoader:
         import inspect
         class_path = entry.get("class")
         args_config = entry.get("args", {})
-        
+
         if not class_path:
             logger.warning(f"Tool entry missing 'class': {entry}")
             return None
-            
+
         try:
             # Import class
             module_name, class_name = class_path.rsplit('.', 1)
             module = importlib.import_module(module_name)
             tool_class = getattr(module, class_name)
-            
+
             # 1. Inspect Constructor Signature
             signature = inspect.signature(tool_class.__init__)
             params = signature.parameters
-            
+
             # 2. Smart Injection & Argument Resolution
             resolved_args = {}
             for param_name, _ in params.items():
                 if param_name == "self":
                     continue
-                
+
                 # Priority 1: Explicit Override from tools.json
                 if param_name in args_config:
                     val = args_config[param_name]
@@ -128,7 +128,7 @@ class ToolLoader:
                         resolved_args[param_name] = context.get(context_key, val)
                     else:
                         resolved_args[param_name] = val
-                
+
                 # Priority 2: Implicit Injection from Agent Context
                 elif param_name in context:
                     resolved_args[param_name] = context[param_name]
@@ -144,12 +144,12 @@ class ToolLoader:
             except TypeError as e:
                 logger.error(f"Injection mismatch for {class_name}: {e}. Resolved: {list(resolved_args.keys())}")
                 return None
-            
+
             # Attach metadata
             tool._name = entry.get("name", "")
 
             return tool
-            
+
         except Exception as e:
             logger.error(f"Failed to load tool {class_name if 'class_name' in locals() else class_path}: {e}")
             return None

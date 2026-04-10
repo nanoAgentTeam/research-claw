@@ -13,7 +13,7 @@ class DockerEnvironment(Environment):
         """
         Args:
             image: Docker image name (e.g., 'python:3.9-slim').
-            mount_map: Dictionary for volume mounts. 
+            mount_map: Dictionary for volume mounts.
                        Format: {'/local/path': {'bind': '/container/path', 'mode': 'rw'}}
         """
         self.image = image
@@ -25,7 +25,7 @@ class DockerEnvironment(Environment):
         try:
             import docker
             self.client = docker.from_env()
-            
+
             # Start container detached
             print(f"[DockerEnv] Starting container from image: {self.image}")
             self.container = self.client.containers.run(
@@ -36,7 +36,7 @@ class DockerEnvironment(Environment):
                 command="tail -f /dev/null" # Keep alive
             )
             print(f"[DockerEnv] Container started: {self.container.short_id}")
-            
+
         except ImportError:
             print("Error: docker SDK not installed.")
         except Exception as e:
@@ -51,12 +51,12 @@ class DockerEnvironment(Environment):
             return "Error: Docker container is not active."
 
         target_cwd = cwd or self.workdir
-        
+
         try:
             # exec_run
             # env needs to be passed if supported, otherwise export in shell
             cmd_to_run = ["bash", "-c", command]
-            
+
             # Docker SDK exec_run supports environment dict
             exit_code, output_bytes = self.container.exec_run(
                 cmd=cmd_to_run,
@@ -64,25 +64,25 @@ class DockerEnvironment(Environment):
                 environment=env_vars,
                 demux=True
             )
-            
+
             stdout = output_bytes[0].decode('utf-8', errors='replace') if output_bytes[0] else ""
             stderr = output_bytes[1].decode('utf-8', errors='replace') if output_bytes[1] else ""
-            
+
             output = stdout
             if stderr:
                 output += f"\nSTDERR:\n{stderr}"
-            
+
             if exit_code != 0:
                 output = f"Command failed with exit code {exit_code}\n{output}"
-                
+
             return output if output else "Command executed successfully."
-            
+
         except Exception as e:
             return f"Error executing command in Docker: {str(e)}"
 
     def read_file(self, path: str) -> str:
         if not self.container: return "Error: Container not active."
-        
+
         # Simple implementation: cat the file
         # For more robust binary handling, uses get_archive but that returns tar stream
         # cat is fine for text
@@ -93,10 +93,10 @@ class DockerEnvironment(Environment):
 
     def write_file(self, path: str, content: str) -> str:
         if not self.container: return "Error: Container not active."
-        
+
         # Write using shell redirection. Be careful with escaping.
         # Ideally use copy mechanism or encoded write
-        # Simple approach: write to temp local then copy? 
+        # Simple approach: write to temp local then copy?
         # But we want to avoid dependency on local fs state if possible.
         # Base64 approach is robust for shell writing
         import base64
@@ -116,13 +116,13 @@ class DockerEnvironment(Environment):
         try:
             import tarfile
             import io
-            
+
             # Create tar stream
             stream = io.BytesIO()
             with tarfile.open(fileobj=stream, mode='w') as tar:
                 tar.add(local_path, arcname=os.path.basename(remote_path))
             stream.seek(0)
-            
+
             # Put archive
             # Note: put_archive extracts to the directory, so we need dirname of remote_path
             remote_dir = os.path.dirname(remote_path)
@@ -139,12 +139,12 @@ class DockerEnvironment(Environment):
             # This yields a tar stream
             import tarfile
             import io
-            
+
             stream = io.BytesIO()
             for chunk in bits:
                 stream.write(chunk)
             stream.seek(0)
-            
+
             # Extract
             with tarfile.open(fileobj=stream, mode='r') as tar:
                 # We want to extract just the file content to local_path

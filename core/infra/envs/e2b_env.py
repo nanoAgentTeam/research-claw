@@ -16,24 +16,24 @@ class E2BEnvironment(Environment):
         self.api_key = api_key
         self.sandbox = None
         self._workdir = "/home/user" # Default E2B workdir
-        
+
         try:
             from e2b_code_interpreter import Sandbox
             if sandbox_id:
                  # Reconnect logic if supported by SDK or just new
                  # For now, we assume we create new or pass existing object if we refactor differently
                  # But sticking to the plan: wrapper.
-                 # Note: Reconnecting by ID might need specific SDK method, 
+                 # Note: Reconnecting by ID might need specific SDK method,
                  # defaulting to create new for simplicity if ID not provided.
                  pass
-            
+
             # Create the sandbox instance
             self.sandbox = Sandbox.create(api_key=self.api_key)
             print(f"[E2BEnv] Sandbox created: {self.sandbox.sandbox_id}")
-            
+
             # Ensure directories exist
             self.run_command("mkdir -p /home/user/files/data /home/user/output /home/user/tmp")
-            
+
         except ImportError:
             print("Error: e2b_code_interpreter not installed.")
         except Exception as e:
@@ -48,7 +48,7 @@ class E2BEnvironment(Environment):
             return "Error: E2B Sandbox is not active."
 
         target_cwd = cwd or self.workdir
-        
+
         # Chain cd if cwd is different from default, because execution is stateless
         final_cmd = command
         if target_cwd:
@@ -61,18 +61,18 @@ class E2BEnvironment(Environment):
                 final_cmd = f"{exports} {final_cmd}"
 
             execution = self.sandbox.commands.run(final_cmd, timeout=timeout)
-            
+
             output = ""
             if execution.stdout:
                 output += execution.stdout
             if execution.stderr:
                 output += f"\nSTDERR:\n{execution.stderr}"
-            
+
             if execution.exit_code != 0:
                 output = f"Command failed with exit code {execution.exit_code}\n{output}"
-                
+
             return output if output else "Command executed successfully."
-            
+
         except Exception as e:
             return f"Error executing command in E2B: {str(e)}"
 

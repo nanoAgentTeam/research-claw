@@ -15,11 +15,11 @@ class WriteFileTool(BaseTool):
     def __init__(self, env: Optional[Environment] = None):
         super().__init__()
         self.env = env
-    
+
     @property
     def name(self) -> str:
         return "write_file"
-    
+
     @property
     def description(self) -> str:
         return (
@@ -29,7 +29,7 @@ class WriteFileTool(BaseTool):
             "- Documents: .docx (Word), .pdf\n"
             "- Spreadsheet: .xlsx (Excel)"
         )
-    
+
     @property
     def parameters_schema(self) -> Dict[str, Any]:
         return {
@@ -51,7 +51,7 @@ class WriteFileTool(BaseTool):
             },
             "required": ["file_path", "content"]
         }
-    
+
     def configure(self, context: Dict[str, Any]):
         """Inject environment"""
         if "env" in context and isinstance(context["env"], Environment):
@@ -69,7 +69,7 @@ class WriteFileTool(BaseTool):
             # Using shell append is more efficient for remote envs but risky with escaping.
             # Reading and writing is safer but slower.
             # Let's try shell append for efficiency if env supports run_command.
-            
+
             if append:
                 # Basic text append via shell
                 # Note: This is a bit fragile with complex content.
@@ -78,18 +78,18 @@ class WriteFileTool(BaseTool):
                     existing = self.env.read_file(file_path)
                     if not existing.startswith("Error"):
                         content = existing + content
-                
+
                 # Proceed to overwrite with new total content
                 return self.env.write_file(file_path, content)
-            
+
             # Special formats handling
             # Note: Generating PDF/Docx/Excel usually requires libraries.
             # If we run this logic locally (in the Agent process), we can generate the binary content
             # and then write it to the environment.
             # This is "Control Plane" generation, "Execution Plane" storage.
-            
+
             ext = os.path.splitext(file_path)[1].lower()
-            
+
             if ext == ".docx":
                 return self._write_docx(file_path, content)
             elif ext == ".pdf":
@@ -101,14 +101,14 @@ class WriteFileTool(BaseTool):
             else:
                 # Standard text write
                 return self.env.write_file(file_path, content)
-                
+
         except Exception as e:
             return f"Error writing file '{file_path}': {str(e)}"
 
     def _write_structured_data(self, file_path: str, content: str, ext: str, append: bool) -> str:
         # Process content locally to CSV format
         delimiter = '\t' if ext == ".tsv" else ','
-        
+
         lines = content.strip().split('\n')
         processed_rows = []
         for line in lines:
@@ -125,7 +125,7 @@ class WriteFileTool(BaseTool):
         writer = csv.writer(output, delimiter=delimiter)
         writer.writerows(processed_rows)
         final_csv = output.getvalue()
-        
+
         # Write/Append
         if append and self.env.file_exists(file_path):
              existing = self.env.read_file(file_path)
@@ -144,12 +144,12 @@ class WriteFileTool(BaseTool):
             for para in content.split('\n\n'):
                 if para.strip():
                     doc.add_paragraph(para.strip())
-            
+
             # Save to buffer
             buffer = io.BytesIO()
             doc.save(buffer)
             buffer.seek(0)
-            
+
             # Upload binary
             # Env.write_file interface expects str?
             # We need to update Environment.write_file to support bytes or add write_bytes

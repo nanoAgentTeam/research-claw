@@ -279,7 +279,7 @@ class SDDExecutor:
                 # Capture and log events
                 if on_log:
                     log_msg = None
-                    
+
                     if event.type == "token":
                         # Buffer tokens and only log if it contains a newline or is significant
                         token = event.data.get("delta", "")
@@ -287,7 +287,7 @@ class SDDExecutor:
                         if "\n" in token_buffer or len(token_buffer) > 200:
                             log_msg = token_buffer
                             token_buffer = ""
-                    
+
                     if event.type == "tool_call":
                         current_iter += 1
                         remaining = max_worker_iters - current_iter
@@ -296,7 +296,7 @@ class SDDExecutor:
                         if remaining <= 5:
                             header += f"  ⚠️ {remaining} steps remaining — wrap up soon!"
                         header += "\n"
-                        
+
                         tool_calls = event.data["tool_calls"]
                         tool_msgs = []
                         for tc in tool_calls:
@@ -306,11 +306,11 @@ class SDDExecutor:
                                 tool_msgs.append(f"🛠️ Tool: `{tc['function']['name']}`\nArguments:\n{args_str}")
                             except:
                                 tool_msgs.append(f"🛠️ Tool: `{tc['function']['name']}` (raw args: {tc['function'].get('arguments')})")
-                        
+
                         log_msg = (token_buffer + "\n") if token_buffer else ""
                         log_msg += f"{header}" + "\n".join(tool_msgs)
                         token_buffer = ""
-                        
+
                     elif event.type == "tool_result":
                         result_str = str(event.data['result'])
                         trajectory.append({"type": "tool_result", "name": event.data['name'], "result": result_str[:500]})
@@ -318,7 +318,7 @@ class SDDExecutor:
                         log_msg = (token_buffer + "\n") if token_buffer else ""
                         log_msg += f"✅ Tool result: `{event.data['name']}` ->\n{result_str}"
                         token_buffer = ""
-                        
+
                     elif event.type == "message" and event.data.get("role") == "assistant" and event.data.get("content"):
                         content = event.data["content"]
                         trajectory.append({"type": "assistant", "content": content[:500]})
@@ -326,11 +326,11 @@ class SDDExecutor:
                             log_msg = f"💡 Worker Thinking: {content[:300]}..."
                         else:
                             log_msg = f"💡 Worker Thinking: {content}"
-                        if "Iteration" not in log_msg: 
+                        if "Iteration" not in log_msg:
                              log_msg = (token_buffer + "\n\n") if token_buffer else "\n"
                              log_msg += f"💡 Worker Thinking: {content}"
                         token_buffer = ""
-                    
+
                     if log_msg:
                         # Strip emojis so condensed_log won't pass verbose
                         # content through its emoji whitelist filter.
@@ -349,7 +349,7 @@ class SDDExecutor:
 
             self._save_trajectory(task, trajectory)
             return True
-            
+
         except asyncio.TimeoutError:
             logger.error(f"Worker {task.assigned_agent} timed out after {worker_timeout}s")
             trajectory.append({"type": "error", "data": f"Timeout after {worker_timeout}s"})
@@ -493,12 +493,12 @@ class SDDExecutor:
     async def _run_reviewer(self, task: ResearchTask, work_dir: Any, on_log: Optional[Callable[[str], Any]] = None) -> tuple[bool, str]:
         """Run the Reviewer Agent."""
         logger.info(f"Reviewer checking task {task.id}...")
-        
+
         if on_log:
             msg = "🧐 Reviewing work..."
             if asyncio.iscoroutinefunction(on_log): await on_log(msg)
             else: on_log(msg)
-        
+
         spec = task.spec
 
         # Prompt for Reviewer
@@ -524,7 +524,7 @@ class SDDExecutor:
         prompt = render_prompt("scheduler_reviewer.txt", _REVIEWER_FALLBACK,
                                agent_name=task.assigned_agent, task_title=task.title,
                                task_description=task.description, spec=spec, dep_note=dep_note)
-        
+
         from core.llm.engine import AgentEngine
         from core.llm.types import SystemPromptConfig
         _ctx_limit = infer_context_limit(self.ctx.model)
@@ -538,7 +538,7 @@ class SDDExecutor:
         iteration_count = 0
         max_reviewer_iterations = 20
         token_buffer = ""
-        
+
         async for event in temp_engine.run(
             messages=[{"role": "user", "content": "Review the worker's output now."}],
             system_config=SystemPromptConfig(base_prompt=prompt),
@@ -554,12 +554,12 @@ class SDDExecutor:
                         if asyncio.iscoroutinefunction(on_log): await on_log(token_buffer)
                         else: on_log(token_buffer)
                     token_buffer = ""
-            
+
             if event.type == "message" and event.data.get("role") == "assistant":
                 content = event.data.get("content", "")
                 if content:
                     final_response += f"\n{content}" # Accumulate response to handle multi-turn chattiness
-                
+
                 # Progress hint for the user
                 iteration_count += 1
                 if on_log:
@@ -569,19 +569,19 @@ class SDDExecutor:
                     if asyncio.iscoroutinefunction(on_log): await on_log(msg)
                     else: on_log(msg)
                 token_buffer = ""
-        
+
         # Robust Parsing: Check for CONCLUSION or PASS in the accumulated history
         # We check the very end of the response for the conclusion first
         import re
         conclusion_match = re.search(r"CONCLUSION:\s*(PASS|FAIL:?.*)", final_response, re.IGNORECASE | re.DOTALL)
-        
+
         if conclusion_match:
             verdict = conclusion_match.group(1).strip()
             if verdict.upper().startswith("PASS"):
                 return True, "Passed"
             else:
                 return False, verdict
-        
+
         # Fallback to word-boundary keyword check if specific format missing
         tail = final_response.upper()[-200:]
         if re.search(r'\bPASS\b', tail) and not re.search(r'\bFAIL\b', tail):

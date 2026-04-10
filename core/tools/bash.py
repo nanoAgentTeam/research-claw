@@ -17,7 +17,7 @@ class BashTool(BaseTool):
         """
         super().__init__()
         self.env = env
-    
+
     @property
     def name(self) -> str:
         return "bash"

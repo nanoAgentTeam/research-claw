@@ -25,13 +25,13 @@ from core.llm.decorators import schema_strict_validator, environment_guard, outp
 class WebReaderTool(BaseTool):
     """
     网页内容读取工具
-    
+
     调用 Jina Reader API 将指定 URL 的网页内容转化为 Markdown 格式。
     """
     def __init__(self):
         """
         初始化读取工具
-        
+
         从配置中读取 JINA_READER_KEY。如果未提供 Key，API 可能以匿名模式运行（有速率限制）。
         """
         self.api_key = Config.JINA_READER_KEY
@@ -44,7 +44,7 @@ class WebReaderTool(BaseTool):
     @property
     def description(self) -> str:
         return "Read the content of a specific web page and return its markdown content."
-   
+
     @property
     def parameters_schema(self) -> Dict[str, Any]:
         """定义工具参数：url (必填)"""
@@ -58,29 +58,29 @@ class WebReaderTool(BaseTool):
             },
             "required": ["url"]
         }
-  
+
     def get_status_message(self, **kwargs) -> str:
         url = kwargs.get("url", "")
         # 只显示 URL 的前 50 个字符
         return f"\n\n📖 正在读取网页: {url[:50]}...\n"
-  
+
     @schema_strict_validator
     def execute(self, url: str) -> str:
         """
         执行网页读取
-        
+
         Args:
             url: 目标网页的完整 URL
-            
+
         Returns:
             str: 网页内容的 Markdown 字符串，或错误信息
         """
         if not url.startswith("http"):
             return "Error: Invalid URL. URL must start with http or https."
-            
+
         target_url = f"{self.base_url}{url}"
         headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
-        
+
         try:
             # 执行 GET 请求，超时时间设为 30 秒
             response = requests.get(target_url, headers=headers, timeout=30)

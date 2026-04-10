@@ -34,11 +34,11 @@ class SearchProvider(ABC):
     def search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         """
         执行搜索
-        
+
         Args:
             query: 搜索关键词
             max_results: 返回的最大结果数量
-            
+
         Returns:
             List[Dict]: 搜索结果列表，每个字典包含 'title', 'body', 'href' 等字段
         """
@@ -48,7 +48,7 @@ class SearchProvider(ABC):
 class DuckDuckGoProvider(SearchProvider):
     """
     DuckDuckGo 搜索供应商
-    
+
     使用开源的 `duckduckgo-search` (ddgs) 库进行搜索，无需 API Key。
     """
     def __init__(self):
@@ -57,7 +57,7 @@ class DuckDuckGoProvider(SearchProvider):
                 from ddgs import DDGS
             except ImportError:
                 from duckduckgo_search import DDGS
-            
+
             self.ddgs = DDGS
             self.available = True
         except ImportError:
@@ -81,14 +81,14 @@ class DuckDuckGoProvider(SearchProvider):
 class SearchTool(BaseTool):
     """
     统一网页搜索工具
-    
+
     Agent 通过此工具访问互联网。支持在初始化或运行时选择不同的搜索供应商。
     默认供应商由 Config.SEARCH_PROVIDER 定义。
     """
     def __init__(self, provider_name: Optional[str] = None):
         """
         初始化搜索工具
-        
+
         Args:
             provider_name: 供应商名称（如 "duckduckgo"），默认为配置中的默认值
         """
@@ -100,7 +100,7 @@ class SearchTool(BaseTool):
         name = name.lower()
         if name == "duckduckgo":
             return DuckDuckGoProvider()
-        
+
         # 默认回退到 DuckDuckGo
         Logger.warning(f"Unknown search provider '{name}', falling back to DuckDuckGo.")
         return DuckDuckGoProvider()
@@ -137,7 +137,7 @@ class SearchTool(BaseTool):
     def configure(self, context: Dict[str, Any]):
         """
         动态配置搜索供应商
-        
+
         Args:
             context: 包含 'search_provider' 键的配置字典
         """
@@ -154,7 +154,7 @@ class SearchTool(BaseTool):
     def execute(self, query: str, max_results: int = 5) -> str:
         """
         执行搜索并返回 JSON 字符串结果
-        
+
         装饰器说明：
             - @schema_strict_validator: 校验 query 和 max_results
         """

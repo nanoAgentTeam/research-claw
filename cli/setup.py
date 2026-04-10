@@ -16,10 +16,10 @@ def main():
 
     config_dir = Path.home() / ".open_research_claw"
     config_path = config_dir / "config.json"
-    
+
     # Ensure directory exists
     config_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Load existing config if available
     config = {}
     if config_path.exists():
@@ -30,13 +30,13 @@ def main():
                 return
         except:
             pass
-            
+
     # Configure Qwen (via OpenAI compatible interface)
     console.print("\n[bold green]1. LLM Configuration (Qwen/DashScope)[/bold green]")
     console.print("We will configure Qwen-Max using DashScope's OpenAI-compatible API.")
-    
+
     api_key = Prompt.ask("Enter your DashScope API Key (sk-...)")
-    
+
     # Default Qwen config structure
     new_config = {
         "agents": {
@@ -70,14 +70,14 @@ def main():
             }
         }
     }
-    
+
     # Merge with existing telegram config if present
     if "channels" in config and "telegram" in config["channels"]:
         if config["channels"]["telegram"].get("token"):
              console.print("\n[bold green]2. Telegram Configuration[/bold green]")
              if typer.confirm("Keep existing Telegram config?", default=True):
                  new_config["channels"]["telegram"] = config["channels"]["telegram"]
-    
+
     if not new_config["channels"]["telegram"]["token"]:
         console.print("\n[bold green]2. Telegram Configuration (Optional)[/bold green]")
         if typer.confirm("Do you want to configure Telegram now?", default=False):

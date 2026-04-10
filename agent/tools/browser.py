@@ -43,18 +43,18 @@ class RobustChatOpenAI(ChatOpenAI):
         # If we are forcing structured output via API, parent handles it.
         # But for StepFun we set dont_force_structured_output=True, so parent gets a string
         # and tries to parse it directly.
-        
+
         # We can't easily intercept the parent's internal call without copying code.
-        # So we will replicate the critical part of parent's ainvoke logic for the 
+        # So we will replicate the critical part of parent's ainvoke logic for the
         # dont_force_structured_output=True case, but with robust parsing.
-        
+
         if not self.dont_force_structured_output:
             return await super().ainvoke(messages, output_format, **kwargs)
 
         # --- Custom Logic for dont_force_structured_output=True ---
         openai_messages = OpenAIMessageSerializer.serialize_messages(messages)
         model_params = self._get_model_params() # Helper to get params
-        
+
         # Add schema to system prompt if needed (logic from parent)
         if self.add_schema_to_system_prompt and openai_messages and openai_messages[0]['role'] == 'system':
              # We need the schema. Parent creates it using SchemaOptimizer.
@@ -81,15 +81,15 @@ class RobustChatOpenAI(ChatOpenAI):
                 messages=openai_messages,
                 **model_params,
             )
-            
+
             content = response.choices[0].message.content or ""
-            
+
             # Try to extract JSON if it looks like there is extra text
             json_str = self._extract_json(content)
             if not json_str:
                 # If we can't find JSON structure, try to parse content directly (it might fail)
                 json_str = content
-            
+
             try:
                 parsed = output_format.model_validate_json(json_str)
                 # Success!
@@ -117,15 +117,15 @@ class RobustChatOpenAI(ChatOpenAI):
         if xml_match:
             function_name = xml_match.group('name')
             content = xml_match.group('content')
-            
+
             params = {}
             # Extract parameters
             param_matches = re.finditer(r'<parameter=(?P<key>\w+)>(?P<value>.*?)</parameter>', content, re.DOTALL)
-            
+
             for match in param_matches:
                 key = match.group('key')
                 value = match.group('value').strip()
-                
+
                 # Try to convert value to appropriate type
                 if value.lower() == 'true':
                     value = True
@@ -145,15 +145,15 @@ class RobustChatOpenAI(ChatOpenAI):
                         value = float(value)
                     except ValueError:
                         pass # Keep as string
-                
+
                 params[key] = value
-            
+
             # --- Fix 1: Intercept 'think' function ---
             # If the model called <function=think>, we move its 'thought' parameter to the 'thinking' field
             # and provide a default 'wait' action since browser-use requires at least one action.
             thinking_text = "XML output parsed"
             actual_action = {function_name: params}
-            
+
             if function_name == 'think':
                 thinking_text = params.get('thought', params.get('thinking', str(params)))
                 actual_action = {"wait": {"seconds": 1}} # No-op action
@@ -175,18 +175,18 @@ class RobustChatOpenAI(ChatOpenAI):
             start = text.find('{', start_idx)
             if start == -1:
                 break
-            
+
             end_idx = len(text)
             while True:
                 end = text.rfind('}', start, end_idx)
                 if end == -1 or end <= start:
                     break
-                
+
                 json_str = text[start:end+1]
                 try:
                     data = json.loads(json_str)
                     # If we got here, it's valid JSON!
-                    
+
                     # --- Apply Fixes ---
                     # 1. Handle nested 'current_state'
                     if 'current_state' in data and isinstance(data['current_state'], dict):
@@ -194,7 +194,7 @@ class RobustChatOpenAI(ChatOpenAI):
                         for k, v in cs.items():
                             if k not in data:
                                 data[k] = v
-                    
+
                     # 2. Handle 'action' normalization
                     if 'action' in data and isinstance(data['action'], list):
                         new_actions = []
@@ -215,7 +215,7 @@ class RobustChatOpenAI(ChatOpenAI):
                                         }
                                         if key in param_map:
                                             act[key] = {param_map[key]: val}
-                                    
+
                                     # --- Fix 2: Force type conversion for specific fields ---
                                     # Convert numeric tab_id to string to satisfy Pydantic validation
                                     if key in ('switch', 'close') and isinstance(val, dict):
@@ -233,26 +233,26 @@ class RobustChatOpenAI(ChatOpenAI):
                                                     val['files_to_display'] = json.loads(val['files_to_display'])
                                                 except:
                                                     val['files_to_display'] = [val['files_to_display']]
-                                
+
                                 new_actions.append(act)
                             elif isinstance(act, str):
                                 new_actions.append({act: {}})
                         data['action'] = new_actions
-                    
+
                     # 3. Ensure required fields
                     for req in ['evaluation_previous_goal', 'memory', 'next_goal']:
                         if req not in data:
                             data[req] = "Not provided"
-                    
+
                     if 'action' not in data or not data['action']:
                         data['action'] = [{"wait": {"seconds": 1}}]
-                    
+
                     return json.dumps(data)
                 except json.JSONDecodeError:
                     # Not valid JSON, try a smaller end index
                     end_idx = end
                     continue
-            
+
             start_idx = start + 1
 
         return None
@@ -395,12 +395,12 @@ class BrowserUseTool(BaseTool):
             "max_iframes": 40,
             "cross_origin_iframes": False,
             "prohibited_domains": [
-                "google-analytics.com", "doubleclick.net", "adsystem.com", 
+                "google-analytics.com", "doubleclick.net", "adsystem.com",
                 "facebook.net", "googlesyndication.com", "adnxs.com",
                 "quantserve.com", "scorecardresearch.com"
             ]
         }
-        
+
         if self.work_dir:
             downloads_dir = self.work_dir / "resources"
             downloads_dir.mkdir(parents=True, exist_ok=True)
@@ -412,7 +412,7 @@ class BrowserUseTool(BaseTool):
         # Detect if we should disable vision (e.g. for StepFun text-only models)
         use_vision = True
         is_step_model = self.provider_key == "step"
-        
+
         if is_step_model:
             # StepFun models (like step-3.5-flash) might not support image input
             use_vision = False
@@ -421,7 +421,7 @@ class BrowserUseTool(BaseTool):
         try:
             # Create a controller to override default tools if needed
             controller = Controller()
-            
+
             # Override search to use Google by default
             @controller.registry.action(
                 '',
@@ -437,7 +437,7 @@ class BrowserUseTool(BaseTool):
                 }
                 if params.engine.lower() not in search_engines:
                     return ActionResult(error=f'Unsupported search engine: {params.engine}')
-                
+
                 search_url = search_engines[params.engine.lower()]
                 try:
                     event = browser_session.event_bus.dispatch(NavigateToUrlEvent(url=search_url, new_tab=False))
@@ -487,7 +487,7 @@ class BrowserUseTool(BaseTool):
                             action_dict = model_output.action[0].model_dump(exclude_none=True)
                             action_name = list(action_dict.keys())[0]
                             action_params = action_dict[action_name]
-                            
+
                             if action_name == 'navigate' and 'url' in action_params:
                                 msg += f"Navigating to {action_params['url']}"
                             elif action_name == 'search' and 'query' in action_params:
@@ -505,9 +505,9 @@ class BrowserUseTool(BaseTool):
                     on_token(msg + "\n")
 
             agent = Agent(
-                task=task, 
-                llm=self.llm, 
-                browser_profile=profile, 
+                task=task,
+                llm=self.llm,
+                browser_profile=profile,
                 controller=controller,
                 use_vision=use_vision,
                 use_judge=False if is_step_model else True, # Disable judge for step models as in reference
@@ -521,7 +521,7 @@ class BrowserUseTool(BaseTool):
             # Build a comprehensive summary of the browsing process to avoid calling agent retrying
             trace_summary = self._summarize_history(history)
             final_output = history.final_result()
-            
+
             # Automatically consume 5 steps in the calling agent's loop
             consume_tag = "<consume_steps>5</consume_steps>"
 
@@ -557,7 +557,7 @@ class BrowserUseTool(BaseTool):
             loop = asyncio.get_running_loop()
         except RuntimeError:
             return asyncio.run(coroutine)
-        
+
         # If we are in an async loop, we should await it if the caller supports it.
         # But BaseTool.execute signature is synchronous (or at least not explicitly async in base).
         # However, ToolRegistry checks inspect.isawaitable.
@@ -591,7 +591,7 @@ class BrowserUseTool(BaseTool):
                     action_desc = "; ".join(actions)
                 except:
                     action_desc = "Executed browser action"
-            
+
             result_desc = ""
             if step.result:
                 # Use the last result in the step (usually there's only one)

@@ -77,15 +77,15 @@ class SystemPromptConfig:
 class AgentSession:
     """
     AI Agent 会话状态类
-    
+
     封装一次 Agent 执行的完整状态，包括对话历史、工具列表、配置和元数据。
-    
+
     会话是 Agent 执行的基本单位，贯穿整个 ReAct 循环（思考-行动-观察）。
     中间件可以读取和修改会话状态，从而影响 Agent 的行为。
-    
+
     属性：
         history: 对话历史消息列表
-                 格式: [{"role": "user", "content": "..."}, 
+                 格式: [{"role": "user", "content": "..."},
                         {"role": "assistant", "content": "...", "tool_calls": [...]},
                         {"role": "tool", "content": "...", "tool_call_id": "..."}]
         depth: 递归深度（用于子代理委派嵌套调用）
@@ -94,12 +94,12 @@ class AgentSession:
         tools: 当前会话可用的工具列表
         metadata: 自定义元数据字典（用于中间件传递信息）
                   例如: {"iteration_count": 5, "user_id": "123"}
-    
+
     设计特点：
         - 可变状态：history 和 metadata 可以在执行过程中修改
         - 工具隔离：每个会话独立的工具列表（子代理约束）
         - 元数据扩展：支持任意自定义数据
-    
+
     生命周期：
         1. 创建会话：初始化 history 和 tools
         2. 中间件处理：读取/修改会话状态
@@ -107,7 +107,7 @@ class AgentSession:
         4. 工具执行：根据 tools 执行函数调用
         5. 更新历史：追加 assistant 和 tool 消息
         6. 循环继续：直到 LLM 返回最终答案
-    
+
     典型用法：
         >>> from core.tools.base import BaseTool
         >>> session = AgentSession(
@@ -121,11 +121,11 @@ class AgentSession:
         ...     "role": "assistant",
         ...     "content": "The answer is 4."
         ... })
-    
+
     与中间件的交互：
         - ExecutionBudgetManager: 统计 history 中的 assistant 消息数量
     """
-    
+
     history: List[Dict[str, Any]]
     depth: int
     system_config: SystemPromptConfig

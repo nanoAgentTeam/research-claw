@@ -79,14 +79,14 @@ from core.utils.logger import Logger
 class LLMFactory:
     """
     LLM 客户端工厂类
-    
+
     提供静态方法创建 LLM 客户端和获取模型配置。
-    
+
     工厂模式优势：
         - 统一接口：所有 LLM 客户端通过相同的方法创建
         - 配置解耦：客户端创建逻辑与业务逻辑分离
         - 易于测试：可以 mock 整个工厂类
-    
+
     典型用法：
         >>> # 创建默认供应商的客户端
         >>> client = LLMFactory.create_client()
@@ -96,21 +96,21 @@ class LLMFactory:
         ...         model=model,
         ...         messages=[{"role": "user", "content": "Hello"}]
         ...     )
-        
+
         >>> # 创建特定供应商的客户端
         >>> qwen_client = LLMFactory.create_client("qwen")
-    
+
     错误处理：
         - 缺少 openai 包：记录 ERROR 日志，返回 None
         - 缺少 API Key：记录 WARNING 日志，返回 None
         - 配置不存在：Config.get_llm_config 返回 {}，后续逻辑返回 None
     """
-    
+
     @staticmethod
     def create_client(provider_key: Optional[str] = None, api_key: Optional[str] = None, base_url: Optional[str] = None, timeout: float = 60.0) -> Optional[AsyncOpenAI]:
         """
         创建 LLM 客户端 (Async)
-        
+
         Args:
             provider_key: 供应商标识符（对应 settings.json 中的 llm_access 键）。
                           如果为 None，则使用 Config.DEFAULT_PROVIDER。
@@ -120,9 +120,9 @@ class LLMFactory:
         if not HAS_OPENAI:
             Logger.error("OpenAI package not installed.")
             return None
-            
+
         key = provider_key or Config.DEFAULT_PROVIDER
-        
+
         # Priority: Explicit args > Config
         if not api_key:
             llm_config = Config.get_provider_config(key)
@@ -140,7 +140,7 @@ class LLMFactory:
         if not api_key:
             Logger.error(f"LLM API Key missing for provider '{key}'")
             return None
-        
+
         # 调试日志：脱敏打印使用的 Key
         masked_key = f"{api_key[:6]}...{api_key[-4:]}" if len(api_key) > 10 else "***"
         model_name = Config.get_provider_config(key).get("model", "unknown")
@@ -156,11 +156,11 @@ class LLMFactory:
         lf_public = Config.LANGFUSE_PUBLIC_KEY or os.environ.get("LANGFUSE_PUBLIC_KEY", "")
         lf_secret = Config.LANGFUSE_SECRET_KEY or os.environ.get("LANGFUSE_SECRET_KEY", "")
         disable_lf = os.environ.get("DISABLE_LANGFUSE", "").lower() == "true"
-        
+
         # 设置合理的超时时间，防止网络波动导致的 timeout
         if not disable_lf and lf_public and lf_secret and LangfuseOpenAI:
             return LangfuseOpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
-        
+
         return AsyncOpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
 
     @staticmethod

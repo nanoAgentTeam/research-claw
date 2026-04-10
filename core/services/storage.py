@@ -17,20 +17,20 @@ from core.utils.logger import Logger
 class StorageService:
     """
     持久化存储服务
-    
+
     负责系统所有非数据库数据的存储管理，包括：
     1. 浏览历史的 JSONL 归档
     2. 富媒体内容（截图、PDF、MHTML）的物理保存
     3. 内容转换（PDF 到 Markdown）
-    
+
     该类所有方法均为静态方法，提供全局一致的存储访问。
     """
-    
+
     @staticmethod
     def append_history(data: dict):
         """
         将一条浏览记录追加到 JSONL 历史文件中
-        
+
         Args:
             data: 会话数据字典，将被序列化为 JSON 行
         """
@@ -45,20 +45,20 @@ class StorageService:
     def save_content(timestamp: float, capture_mode: str, content_type: str, data: Any) -> str:
         """
         保存捕获的内容文件（截图/文本/PDF/归档）
-        
+
         这是保存富媒体内容的统一入口。它根据 capture_mode 自动路由到不同的存储逻辑。
-        
+
         Args:
             timestamp: 捕获的时间戳（秒），用于生成唯一文件名
             capture_mode: 捕获模式，定义了内容的来源和处理方式
-                          可选值: FULL_SCREENSHOT, VISIBLE_SCREENSHOT, MARKDOWN, 
+                          可选值: FULL_SCREENSHOT, VISIBLE_SCREENSHOT, MARKDOWN,
                                  MARKDOWN_PLUS, MHTML, PDF
             content_type: 内容的 MIME 类型或格式标识（如 'pdf', 'image/png'）
             data: 原始数据
                   - 截图/二进制：Base64 编码字符串
                   - 文本/Markdown：纯文本字符串
                   - MARKDOWN_PLUS：包含 'text' 和 'images' 的字典
-            
+
         Returns:
             str: 存储后的相对路径（如 "screenshots/123.png"），用于数据库记录
                  如果保存失败，返回 None
@@ -66,14 +66,14 @@ class StorageService:
         try:
             # 使用毫秒级时间戳作为文件名基准
             filename_base = str(int(timestamp * 1000))
-            
+
             if not capture_mode:
                 return None
 
             # 路由处理逻辑
             if capture_mode in ["FULL_SCREENSHOT", "VISIBLE_SCREENSHOT"]:
                 return StorageService._save_screenshot(filename_base, data)
-                
+
             elif capture_mode == "MARKDOWN":
                 # 处理 PDF 转换请求
                 if content_type and content_type.lower() == 'pdf':
@@ -85,10 +85,10 @@ class StorageService:
 
             elif capture_mode == "MHTML":
                 return StorageService._save_binary(filename_base, data, Config.ARCHIVE_DIR, "archives", ".mhtml")
-            
+
             elif capture_mode == "PDF":
                 return StorageService._save_binary(filename_base, data, Config.PDF_DIR, "pdfs", ".pdf")
-                
+
             return None
         except Exception as e:
             Logger.error(f"保存内容失败: {e}")
@@ -120,44 +120,44 @@ class StorageService:
         """保存包含内嵌图片的 Markdown"""
         raw_text = data.get('text', '')
         image_map = data.get('images', {})
-        
+
         final_text = raw_text
-        
+
         # 处理内嵌图片
         for img_url, img_data in image_map.items():
             try:
                 ext = ".jpg"
                 if "png" in img_data[:20]: ext = ".png"
                 if "gif" in img_data[:20]: ext = ".gif"
-                
+
                 if "," in img_data:
                     _, encoded = img_data.split(",", 1)
                 else:
                     encoded = img_data
-                
+
                 binary = base64.b64decode(encoded)
-                
+
                 # 使用 URL 哈希作为文件名的一部分，避免重复
                 url_hash = hashlib.md5(img_url.encode('utf-8')).hexdigest()[:10]
                 img_filename = f"{filename_base}_{url_hash}{ext}"
                 img_filepath = os.path.join(Config.IMAGES_DIR, img_filename)
-                
+
                 with open(img_filepath, "wb") as f:
                     f.write(binary)
-                
+
                 # 替换 Markdown 中的图片链接为相对路径
                 rel_path = f"../page_images/{img_filename}"
                 final_text = final_text.replace(img_url, rel_path)
-                
+
             except Exception as e:
                 Logger.error(f"保存内嵌图片失败 {img_url}: {e}")
-        
+
         # 保存处理后的 Markdown
         filename = f"{filename_base}.md"
         filepath = os.path.join(Config.TEXT_DIR, filename)
         with open(filepath, "w", encoding='utf-8') as f:
             f.write(final_text)
-        
+
         return f"page_texts/{filename}"
 
     @staticmethod

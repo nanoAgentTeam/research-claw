@@ -24,7 +24,7 @@ async def test_stepfun(streaming=True):
         def __init__(self):
             self.api_key = "test"
             self.api_base = "test"
-    
+
     workspace = Path(os.getcwd())
     agent = AgentLoop(bus=MessageBus(), provider=MockProvider(), workspace=workspace, model="test")
     tool_defs = agent.tools.get_definitions()
@@ -42,7 +42,7 @@ async def test_stepfun(streaming=True):
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": "hello"}
     ]
-    
+
     kwargs = {
         "model": model,
         "messages": messages,
@@ -66,7 +66,7 @@ async def test_stepfun(streaming=True):
         else:
             response = await client.chat.completions.create(**kwargs)
             print(f"Response: {response.choices[0].message.content}")
-        
+
         print(f"Done in {time.time() - start_time:.2f}s")
     except Exception as e:
         print(f"\nError: {e}")

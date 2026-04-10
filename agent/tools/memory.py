@@ -14,10 +14,10 @@ class SaveMemoryTool(BaseTool):
     Tool to save important facts or preferences to long-term memory.
     Reference: Qwen Agent 'save_memory' implementation.
     """
-    
+
     # Class-level locks to synchronize writes across tool instances
     _locks: dict[str, threading.Lock] = {}
-    
+
     def __init__(self, metadata_root: Path):
         self.metadata_root = Path(metadata_root)
         # Standard layout: <metadata_root>/memory/memory/MEMORY.md
@@ -48,33 +48,33 @@ class SaveMemoryTool(BaseTool):
             },
             "required": ["fact"]
         }
-        
+
     def clone(self) -> "SaveMemoryTool":
         """Create a copy of this tool."""
         return SaveMemoryTool(self.metadata_root)
-        
+
     def execute(self, fact: str, category: str = "general") -> str:
         """
         Execute the tool.
         """
         # Ensure memory directory exists
         self.memory_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         file_path_str = str(self.memory_file.absolute())
         if file_path_str not in self._locks:
             self._locks[file_path_str] = threading.Lock()
-            
+
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         entry = f"- [{timestamp}] [{category.upper()}] {fact}\n"
-        
+
         try:
             with self._locks[file_path_str]:
                 with open(self.memory_file, "a", encoding="utf-8") as f:
                     f.write(entry)
-            
+
             # TODO: In the future, we should also call StorageService to index this
             # StorageService.index_text(fact, metadata={"type": "memory", "category": category})
-            
+
             return f"Memory saved: {fact}"
         except Exception as e:
             return f"Error saving memory: {str(e)}"
@@ -85,7 +85,7 @@ class RetrieveMemoryTool(BaseTool):
     Tool to retrieve information from long-term memory.
     Supports keyword search and recent history.
     """
-    
+
     def __init__(self, metadata_root: Path):
         self.metadata_root = Path(metadata_root)
         self.memory_file = self.metadata_root / "memory" / "memory" / "MEMORY.md"
@@ -119,11 +119,11 @@ class RetrieveMemoryTool(BaseTool):
             },
             "required": ["query"]
         }
-        
+
     def clone(self) -> "RetrieveMemoryTool":
         """Create a copy of this tool."""
         return RetrieveMemoryTool(self.metadata_root)
-        
+
     def execute(self, query: str, limit: int = 5, source: str = "active_memory") -> str:
         """
         Execute the retrieval.
@@ -134,32 +134,32 @@ class RetrieveMemoryTool(BaseTool):
             limit = 5
 
         results = []
-        
+
         if source == "active_memory":
             if not self.memory_file.exists():
                 return "No active memory file found."
-                
+
             try:
                 # Simple keyword search in MEMORY.md
                 # TODO: Upgrade to vector search later
                 content = self.memory_file.read_text(encoding="utf-8")
                 lines = content.splitlines()
-                
+
                 # Filter lines containing the query (case-insensitive)
                 matches = [line for line in lines if query.lower() in line.lower()]
-                
+
                 # Return most recent matches first
                 recent_matches = matches[-limit:] if matches else []
                 results = recent_matches
-                
+
             except Exception as e:
                 return f"Error reading memory file: {str(e)}"
-                
+
         elif source == "archive":
             return "Archive search is not available."
-        
+
         if not results:
             return f"No memories found matching '{query}' in {source}."
-            
+
         formatted_results = "\n".join(results)
         return f"Found {len(results)} relevant memories:\n\n{formatted_results}"

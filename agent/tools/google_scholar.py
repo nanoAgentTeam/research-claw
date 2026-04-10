@@ -49,19 +49,19 @@ class GoogleScholarTool:
         """Execute the search."""
         try:
             logger.info(f"Searching Google Scholar: {query} (limit={limit}, sort={sort_by})")
-            
+
             # Lazy import to prevent background activity during tool registration
             from scholarly import scholarly
-            
+
             search_query = scholarly.search_pubs(query, sort_by="date" if sort_by == "date" else None)
-                
+
             results = []
             count = 0
-            
+
             for pub in search_query:
                 if count >= limit:
                     break
-                
+
                 bib = pub.get('bib', {})
                 title = bib.get('title', 'Unknown Title')
                 author = bib.get('author', 'Unknown Author')
@@ -70,7 +70,7 @@ class GoogleScholarTool:
                 abstract = bib.get('abstract', 'No abstract available.')
                 pub_url = pub.get('pub_url', 'No URL')
                 num_citations = pub.get('num_citations', 0)
-                
+
                 results.append(
                     f"Title: {title}\n"
                     f"Authors: {author}\n"
@@ -80,12 +80,12 @@ class GoogleScholarTool:
                     f"Abstract: {abstract}\n"
                 )
                 count += 1
-            
+
             if not results:
                 return "No results found on Google Scholar."
-                
+
             return "\n---\n".join(results)
-            
+
         except Exception as e:
             err_msg = str(e)
             if "403" in err_msg or "denied" in err_msg.lower():

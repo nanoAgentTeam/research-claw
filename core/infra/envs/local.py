@@ -25,7 +25,7 @@ class LocalEnvironment(Environment):
 
     def run_command(self, command: str, cwd: Optional[str] = None, env_vars: Optional[Dict[str, str]] = None, timeout: int = 60) -> str:
         target_cwd = cwd or self.workdir
-        
+
         if not os.path.exists(target_cwd):
             return f"Error: The provided cwd '{target_cwd}' does not exist."
 
@@ -37,7 +37,7 @@ class LocalEnvironment(Environment):
         env = os.environ.copy()
         if env_vars:
             env.update(env_vars)
-            
+
         # Mock bin path injection (for testing consistency)
         # We assume the mock_bin is at <project_root>/skill_evaluator/mock_bin
         # Current file: backend/infra/envs/local.py
@@ -60,16 +60,16 @@ class LocalEnvironment(Environment):
                 text=True,
                 timeout=timeout
             )
-            
+
             output = result.stdout
             if result.stderr:
                 output += f"\nSTDERR:\n{result.stderr}"
-            
+
             if result.returncode != 0:
                 output = f"Command failed with exit code {result.returncode}\n{output}"
-                
+
             return output if output else "Command executed successfully with no output."
-            
+
         except subprocess.TimeoutExpired:
             return f"Error: Command timed out after {timeout} seconds."
         except Exception as e:
@@ -134,17 +134,17 @@ class LocalEnvironment(Environment):
         """
         is_safe = True
         reason = ""
-        
+
         dangerous_tokens = ["rm ", "mv ", "cp ", "chmod ", "chown ", "dd ", ">", ">>", "sudo ", "su "]
         has_dangerous_token = any(token in command for token in dangerous_tokens)
-        
+
         try:
             parts = shlex.split(command)
         except Exception:
             parts = command.split()
-            
+
         sandbox_abs = self.sandbox_root
-        
+
         if has_dangerous_token:
             for part in parts:
                 if part.startswith("/"):
@@ -153,13 +153,13 @@ class LocalEnvironment(Environment):
                         is_safe = False
                         reason = f"Dangerous command targets outside sandbox: {part}"
                         break
-            
+
             if ".." in command:
                 is_safe = False
                 reason = "Dangerous command contains path traversal ('..')"
 
         safe_read_commands = ["ls", "cat", "grep", "find", "pwd", "whoami", "tail", "head", "wc", "file", "du", "echo"]
-        
+
         if is_safe and parts and parts[0] in safe_read_commands:
             pass # Allow safe read commands
         elif is_safe and not has_dangerous_token:
@@ -173,7 +173,7 @@ class LocalEnvironment(Environment):
              if user_input != 'y':
                  return False
              print("   [Allowed by user]\n")
-             
+
         return True
 
     def _inject_audit_hook(self, command: str, env: Dict[str, str]):
@@ -187,6 +187,6 @@ class LocalEnvironment(Environment):
              # Path to audit_guard.py relative to this file
              # backend/infra/envs/local.py -> backend/utils/audit_guard.py
              guard_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../utils/audit_guard.py"))
-             
+
              if os.path.exists(guard_path):
                  env["PYTHONSTARTUP"] = guard_path

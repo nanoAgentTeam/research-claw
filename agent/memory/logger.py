@@ -33,7 +33,7 @@ class HistoryLogger:
         self.history_dir = workspace / history_rel
         self.trajectory_dir = workspace / trajectory_rel
         self._lock = asyncio.Lock()
-        
+
     async def log_trajectory(self, trajectory_data: dict[str, Any]):
         """
         Logs a full interaction trajectory (turn) to a standalone JSON file.
@@ -176,7 +176,7 @@ class HistoryLogger:
 
         except Exception as e:
             logger.warning(f"Error reading history: {e}")
-            
+
         return messages
 
     async def count_messages(self, chat_id: str) -> int:
@@ -185,23 +185,23 @@ class HistoryLogger:
         """
         month_str = datetime.now().strftime("%Y_%m")
         log_file = self.history_dir / f"chat_{month_str}.jsonl"
-        
+
         if not log_file.exists():
             return 0
-            
+
         count = 0
         try:
-            # We just need to count relevant lines. 
+            # We just need to count relevant lines.
             # Reading lines is simple enough for now.
             lines = log_file.read_text(encoding="utf-8").splitlines()
-            
+
             for line in lines:
                 if not line.strip(): continue
                 try:
                     # Quick string check optimization before JSON parse
                     if f'"{chat_id}"' not in line:
                         continue
-                        
+
                     entry = json.loads(line)
                     if entry.get("chat_id") == chat_id:
                         # Reset logic: if we hit a reset, previous counts might be irrelevant if we were strictly context window counting.
@@ -210,18 +210,18 @@ class HistoryLogger:
                         # However, iterating forward: we count all.
                         # Iterating backward (like get_recent_history) would be better to find the reset point.
                         # Let's count *all* for now as a simple metric, or *since last reset*.
-                        
+
                         # Let's count all in current file for simplicity.
                         if entry.get("type") == "system" and entry.get("content") == "[SESSION_RESET]":
                              count = 0 # Reset count
                              continue
-                        
+
                         count += 1
                 except:
                     continue
         except Exception:
             return 0
-            
+
         return count
 
     async def log_reset(self, channel: str, chat_id: str):
@@ -241,13 +241,13 @@ class HistoryLogger:
         # Create directory if needed
         if not self.history_dir.exists():
             self.history_dir.mkdir(parents=True, exist_ok=True)
-            
+
         # File name: chat_2023_10.jsonl
         month_str = datetime.now().strftime("%Y_%m")
         log_file = self.history_dir / f"chat_{month_str}.jsonl"
-        
+
         json_line = json.dumps(entry, ensure_ascii=False)
-        
+
         async with self._lock:
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(json_line + "\n")

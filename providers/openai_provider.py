@@ -13,9 +13,9 @@ class OpenAIProvider(LLMProvider):
     LLM provider using official OpenAI client.
     Compatible with OpenAI, Qwen (DashScope), DeepSeek, and other OpenAI-compatible APIs.
     """
-    
+
     def __init__(
-        self, 
+        self,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
         default_model: str = "gpt-3.5-turbo"
@@ -41,7 +41,7 @@ class OpenAIProvider(LLMProvider):
         """
         Extract XML-formatted tool calls from content.
         Returns (cleaned_content, list_of_tool_calls).
-        
+
         Format handled:
         <tool_call>
         <function=name>
@@ -50,11 +50,11 @@ class OpenAIProvider(LLMProvider):
         </tool_call>
         """
         tool_calls = []
-        
+
         # Regex to find all tool_call blocks
         # Using dotall to match across newlines
         tool_call_pattern = re.compile(r"<tool_call>\s*<function=(?P<name>\w+)>(?P<body>.*?)</function>\s*</tool_call>", re.DOTALL)
-        
+
         # Find all matches first
         matches = list(tool_call_pattern.finditer(content))
         if not matches:
@@ -63,7 +63,7 @@ class OpenAIProvider(LLMProvider):
         for match in matches:
             name = match.group("name")
             body = match.group("body")
-            
+
             args = {}
             # Parse parameters inside the body
             param_pattern = re.compile(r"<parameter=(?P<key>\w+)>(?P<value>.*?)</parameter>", re.DOTALL)
@@ -83,11 +83,11 @@ class OpenAIProvider(LLMProvider):
                     except ValueError:
                         pass
                 args[key] = value
-            
+
             # Create a unique ID (random or based on name)
             import uuid
             call_id = f"call_{uuid.uuid4().hex[:8]}"
-            
+
             tool_calls.append(ToolCallRequest(
                 id=call_id,
                 name=name,
@@ -98,16 +98,16 @@ class OpenAIProvider(LLMProvider):
         # If we remove it, we must replace it with something or structure the message history carefully.
         # For simplicity in this "fallback" mode, we treat the XML as the "content" of the assistant's thought process.
         # The tool calls are appended as a separate signal to the runtime.
-        
+
         # However, to avoid "double vision" where the user sees XML and then the runtime sees ToolCall,
         # usually runtimes hide the ToolCall.
         # Since we already streamed the XML to the user (via Feishu), they saw it.
         # Returning cleaned_content=None tells the loop "The content is just these tool calls" (if we stripped everything).
-        
-        # Strategy: 
+
+        # Strategy:
         # 1. Keep the original content as the "thought process" for history.
         # 2. Return the extracted tool calls for execution.
-        
+
         return content, tool_calls
 
     # Reasoning models that should NOT receive a max_tokens parameter.
@@ -194,21 +194,21 @@ class OpenAIProvider(LLMProvider):
             # Only pass max_tokens when explicitly set.
             # When None, let the model use its own default output limit.
             kwargs["max_tokens"] = max(1, int(max_tokens))
-        
+
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
-            
+
         logger.debug(f"Sending request to LLM with {len(messages)} messages and {len(tools) if tools else 0} tools.")
         # logger.debug(f"Request kwargs: {json.dumps({k: v for k, v in kwargs.items() if k != 'api_key'}, indent=2)}")
-            
+
         if on_token:
             kwargs["stream"] = True
             kwargs["stream_options"] = {"include_usage": True}
-            
+
         import asyncio
         import openai
-        
+
         last_exception = None
         for attempt in range(retries):
             try:
@@ -218,7 +218,7 @@ class OpenAIProvider(LLMProvider):
                     logger.debug(f"Initiating streaming chat with model: {model}...")
                     stream = await self.get_client().chat.completions.create(**kwargs)
                     logger.debug("Stream started, waiting for tokens...")
-                    
+
                     accumulated_content = []
                     tool_calls_data = [] # List of dicts to accumulate tool chunks
                     finish_reason = "stop"
@@ -266,7 +266,7 @@ class OpenAIProvider(LLMProvider):
                                 on_token(content_piece)
                             # Internal log for debugging
                             # logger.debug(f"Received token: {content_piece}")
-                                
+
                         # Handle Tool Calls (Accumulate chunks)
                         if delta.tool_calls:
                             if attempt == 0 and not tool_calls_data:
@@ -322,28 +322,28 @@ class OpenAIProvider(LLMProvider):
                             finish_reason = chunk.choices[0].finish_reason
 
                     await self._close_stream(stream)
-                    
+
                     # Reconstruct final response object
                     full_content = "".join(accumulated_content) if accumulated_content else ""
-                    
+
                     # Reconstruct ToolCallRequests from native tool calls
                     final_tool_calls = []
                     for tc_data in tool_calls_data:
                         # Skip empty tool calls
                         if not tc_data["function"]["name"]:
                             continue
-                            
+
                         try:
                             args = json.loads(tc_data["function"]["arguments"])
                         except json.JSONDecodeError:
                             args = {"raw": tc_data["function"]["arguments"]}
-                            
+
                         final_tool_calls.append(ToolCallRequest(
                             id=tc_data["id"],
                             name=tc_data["function"]["name"],
                             arguments=args
                         ))
-                    
+
                     # FALLBACK: Check for XML tool calls in content if no native calls found
                     # (Some models like StepFun output XML in content instead of native tool calls)
                     if not final_tool_calls and full_content and "<tool_call>" in full_content:
@@ -362,14 +362,14 @@ class OpenAIProvider(LLMProvider):
                         content=full_content,
                         tool_calls=final_tool_calls,
                         finish_reason=finish_reason,
-                        usage=stream_usage 
+                        usage=stream_usage
                     )
 
                 else:
                     # Non-streaming mode (Standard)
                     response = await self.get_client().chat.completions.create(**kwargs)
                     llm_resp = self._parse_response(response)
-                    
+
                     # Apply fallback parsing here too
                     if not llm_resp.tool_calls and llm_resp.content and "<tool_call>" in llm_resp.content:
                          cleaned_content, xml_calls = self._extract_xml_tool_calls(llm_resp.content)
@@ -377,16 +377,16 @@ class OpenAIProvider(LLMProvider):
                              llm_resp.tool_calls = xml_calls
                              # llm_resp.content = cleaned_content if cleaned_content else None # Keep content
                              llm_resp.finish_reason = "tool_calls"
-                    
+
                     return llm_resp
-                            
+
             except (TimeoutError, openai.RateLimitError, openai.InternalServerError, openai.APITimeoutError, openai.APIConnectionError) as e:
                 last_exception = e
                 # httpx.ReadTimeout and ConnectTimeout often bubble up here or under APIConnectionError
                 # We normalize the check
                 e_str = str(e).lower()
                 is_transient = any(phrase in e_str for phrase in ["timeout", "429", "500", "502", "503", "connection reset", "readtimeout"])
-                
+
                 if attempt < retries - 1:
                     wait_time = 2 ** attempt
                     logger.warning(f"Retriable LLM error ({type(e).__name__}): {e}. Attempt {attempt+1}/{retries}. Retrying in {wait_time}s...")
@@ -421,18 +421,18 @@ class OpenAIProvider(LLMProvider):
                     content=f"Error calling LLM: {error_msg}",
                     finish_reason="error",
                 )
-        
+
         error_msg = str(last_exception) or "Unknown error"
         return LLMResponse(
             content=f"Error calling LLM after {retries} attempts: {error_msg}",
             finish_reason="error",
         )
-    
+
     def _parse_response(self, response: Any) -> LLMResponse:
         """Parse OpenAI response into our standard format."""
         choice = response.choices[0]
         message = choice.message
-        
+
         tool_calls = []
         if message.tool_calls:
             for tc in message.tool_calls:
@@ -442,13 +442,13 @@ class OpenAIProvider(LLMProvider):
                     args = json.loads(tc.function.arguments)
                 except json.JSONDecodeError:
                     args = {"raw": tc.function.arguments}
-                
+
                 tool_calls.append(ToolCallRequest(
                     id=tc.id,
                     name=tc.function.name,
                     arguments=args,
                 ))
-        
+
         usage = {}
         if response.usage:
             usage = {
@@ -456,14 +456,14 @@ class OpenAIProvider(LLMProvider):
                 "completion_tokens": response.usage.completion_tokens,
                 "total_tokens": response.usage.total_tokens,
             }
-        
+
         return LLMResponse(
             content=message.content,
             tool_calls=tool_calls,
             finish_reason=choice.finish_reason or "stop",
             usage=usage,
         )
-    
+
     def get_default_model(self) -> str:
         """Get the default model."""
         return self.default_model

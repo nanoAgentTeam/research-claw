@@ -107,7 +107,7 @@ class BashTool(BaseTool):
             # [SECURITY FIX] In CHAT mode, ensure we use a separate subprocess isolation
             # and prefix logs for visibility.
             # ... (prefixing logic already handled by AgentLoop mostly, but we can add more here)
-            
+
             # Run command synchronously
             result = subprocess.run(
                 command,
@@ -117,30 +117,30 @@ class BashTool(BaseTool):
                 text=True,
                 timeout=300 # Changed timeout from 60 to 300
             )
-            
+
             # Prepare output with sandbox context
             if self.session:
                 session_id = self.session.id
             else:
                 session_id = "default"
             header = f"[🛡️ SANDBOX: {session_id}]\n"
-            
+
             output = f"{header}sandbox:{rel_cwd}$ {command}\n"
             if result.stdout:
                 output += f"STDOUT:\n{result.stdout.strip()}\n"
             if result.stderr:
                 output += f"STDERR:\n{result.stderr.strip()}\n"
-            
+
             if result.returncode != 0:
                 output += f"\nCommand failed with exit code {result.returncode}"
-            
+
             # Truncation
             MAX_CHARS = 32000
             if len(output) > MAX_CHARS:
                 output = f"{output[:MAX_CHARS]}\n... [OUTPUT TRUNCATED]"
 
             return output.strip() if output.strip() else "Command executed successfully (no output)."
-            
+
         except subprocess.TimeoutExpired:
             return "[ERROR] Command timed out after 60 seconds."
         except Exception as e:

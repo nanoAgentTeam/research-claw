@@ -22,13 +22,13 @@ import re
 class FeishuChannel(BaseChannel):
     """
     Feishu channel using WebSocket (no public IP needed).
-    
+
     Uses the official lark-oapi SDK.
     Supports streaming responses via message patching.
     """
-    
+
     name = "im_feishu"
-    
+
     def __init__(self, config: FeishuConfig, bus: MessageBus):
         super().__init__(config, bus)
         self.config: FeishuConfig = config
@@ -40,29 +40,29 @@ class FeishuChannel(BaseChannel):
         # Streaming support
         self._message_buffers: dict[str, dict[str, Any]] = {}  # chat_id -> {message_id, content, dirty, last_flush}
         self._flush_task: Optional[asyncio.Task] = None
-        
+
     async def start(self) -> None:
         """Start the Feishu WebSocket client."""
         if not self.config.app_id or not self.config.app_secret:
             logger.error("Feishu app_id or app_secret not configured")
             return
-            
+
         logger.info(f"Starting Feishu channel (App ID: {self.config.app_id})...")
         self._running = True
-        
+
         # Store the main loop for scheduling tasks from the WS thread
         try:
             self._main_loop = asyncio.get_running_loop()
         except RuntimeError:
             logger.warning("No running event loop found, Feishu callbacks might fail")
-        
+
         # Initialize API client for sending messages
         self._api_client = lark.Client.builder() \
             .app_id(self.config.app_id) \
             .app_secret(self.config.app_secret) \
             .log_level(lark.LogLevel.INFO) \
             .build()
-            
+
         # Initialize Event Handler
         event_handler = EventDispatcherHandler.builder("", "") \
             .register_p2_im_message_receive_v1(self._handle_im_message) \
@@ -79,7 +79,7 @@ class FeishuChannel(BaseChannel):
         except Exception as e:
             logger.error(f"Failed to initialize Feishu WS client: {e}")
             raise e
-            
+
         # Start WebSocket client in a separate thread
         def run_ws():
             try:
@@ -90,13 +90,13 @@ class FeishuChannel(BaseChannel):
                 self._ws_client.start()
             except Exception as e:
                 logger.error(f"Feishu WebSocket thread error: {e}")
-                
+
         self._ws_thread = threading.Thread(target=run_ws, daemon=True)
         self._ws_thread.start()
-        
+
         # Start flush task
         self._flush_task = asyncio.create_task(self._flush_loop())
-        
+
         logger.info("Feishu WebSocket client started in background thread")
 
     def _preprocess_markdown(self, text: str) -> str:
@@ -107,13 +107,13 @@ class FeishuChannel(BaseChannel):
         """
         if not text:
              return ""
-             
+
         # Replace headers (e.g. "## Title") with bold ("**Title**")
         # (?m) enables multiline matching, ^ matches start of line
         text = re.sub(r'(?m)^\s*#{1,6}\s+(.+)$', r'**\1**', text)
-        
+
         # Replace \[ and \] with $ (LaTeX) - Feishu supports LaTeX via $
-        # But we need to be careful not to break other things. 
+        # But we need to be careful not to break other things.
         # For now, just fix the header issue as requested.
         return text
 
@@ -287,7 +287,7 @@ class FeishuChannel(BaseChannel):
         chat_id = msg.chat_id
         content = msg.content
         stream_id = getattr(msg, "stream_id", None) or "main"
-        
+
         # If new_message flag is set, force start a new message bubble
         # This is crucial for ReAct steps (Thought -> Tool Result -> Final Answer)
         # where we want to "commit" the previous thought and start fresh.
@@ -296,16 +296,16 @@ class FeishuChannel(BaseChannel):
                 # Flush and close existing buffer
                 await self._flush_buffer(chat_id)
                 del self._message_buffers[chat_id]
-        
+
         if chat_id not in self._message_buffers:
             # First chunk: send initial message
             # We treat the first chunk as the initial content for its stream
             # initial_content = self._render_streams({stream_id: content})
             # message_id = await self._send_initial_message(chat_id, initial_content)
-            
+
             streams = {stream_id: content}
             message_id = await self._send_initial_message(chat_id, streams=streams)
-            
+
             if message_id:
                 self._message_buffers[chat_id] = {
                     "message_id": message_id,
@@ -319,17 +319,17 @@ class FeishuChannel(BaseChannel):
             if "streams" not in buffer:
                  # Migration/Fallback if structure somehow wrong
                  buffer["streams"] = {"main": buffer.get("content", "")}
-            
+
             if stream_id not in buffer["streams"]:
                 buffer["streams"][stream_id] = ""
-                
+
             buffer["streams"][stream_id] += content
             buffer["dirty"] = True
 
     async def _finalize_message(self, msg: OutboundMessage) -> None:
         """Finalize message (flush buffer and update with final content)."""
         chat_id = msg.chat_id
-        
+
         # If new_message flag is set, force a new message regardless of buffer
         if getattr(msg, "new_message", False):
             if chat_id in self._message_buffers:
@@ -343,7 +343,7 @@ class FeishuChannel(BaseChannel):
         if chat_id in self._message_buffers:
             # We have an ongoing stream
             buffer = self._message_buffers[chat_id]
-            
+
             # Update main stream with final content (usually msg.content is full final response)
             # If msg.content is provided, it usually replaces the "main" stream or IS the final result.
             if msg.content:
@@ -352,10 +352,10 @@ class FeishuChannel(BaseChannel):
                     buffer["streams"] = {"main": ""}
                 buffer["streams"]["main"] = msg.content
                 buffer["dirty"] = True
-            
+
             # Flush immediately
             await self._flush_buffer(chat_id)
-            
+
             # Remove from buffer
             del self._message_buffers[chat_id]
         else:
@@ -365,7 +365,7 @@ class FeishuChannel(BaseChannel):
     def _render_card_elements(self, streams: dict[str, str]) -> list[dict]:
         """Render multiple streams into Feishu Card Elements (using column_set for subagents)."""
         elements = []
-        
+
         # 1. Main stream
         main_content = streams.get("main", "").strip()
         if main_content:
@@ -376,7 +376,7 @@ class FeishuChannel(BaseChannel):
                     "content": self._preprocess_markdown(main_content)
                 }
             })
-            
+
         # 2. Sub-agent streams
         sorted_streams = sorted([k for k in streams.keys() if k != "main"])
         if sorted_streams:
@@ -387,7 +387,7 @@ class FeishuChannel(BaseChannel):
                     # Clean up content for display
                     # If it's a task log, extract the task name if possible or just use stream_id
                     display_title = s_id.replace("progress_", "Task: ") if s_id.startswith("progress_") else s_id
-                    
+
                     columns.append({
                         "tag": "column",
                         "width": "weighted",
@@ -402,19 +402,19 @@ class FeishuChannel(BaseChannel):
                             }
                         ]
                     })
-            
+
             if columns:
                 # Add a separator line if main content exists
                 if elements:
                     elements.append({"tag": "hr"})
-                    
+
                 elements.append({
                     "tag": "column_set",
                     "flex_mode": "none",
                     "background_style": "grey",
                     "columns": columns
                 })
-        
+
         # Fallback if empty
         if not elements:
             elements.append({
@@ -424,7 +424,7 @@ class FeishuChannel(BaseChannel):
                     "content": "..."
                 }
             })
-            
+
         return elements
 
     async def _send_initial_message(self, chat_id: str, content_text: str = "", streams: Optional[dict[str, str]] = None) -> Optional[str]:
@@ -438,17 +438,17 @@ class FeishuChannel(BaseChannel):
                 elements = [{
                     "tag": "div",
                     "text": {
-                        "tag": "lark_md", 
+                        "tag": "lark_md",
                         "content": self._preprocess_markdown(content_text)
                     }
                 }]
-            
+
             card_content = {
                 "config": {"wide_screen_mode": True},
                 "elements": elements
             }
             content = json.dumps(card_content)
-            
+
             # 根据 chat_id 前缀动态选择 receive_id_type
             # oc_ 开头是群聊 chat_id，否则是 open_id
             receive_id_type = "chat_id" if chat_id.startswith("oc_") else "open_id"
@@ -461,11 +461,11 @@ class FeishuChannel(BaseChannel):
                     .content(content)
                     .build()) \
                 .build()
-                
+
             response = await asyncio.to_thread(
                 self._api_client.im.v1.message.create, request
             )
-            
+
             if response.success():
                 return response.data.message_id
             else:
@@ -479,7 +479,7 @@ class FeishuChannel(BaseChannel):
         """Periodic flush loop."""
         while self._running:
             await asyncio.sleep(0.3)  # Flush every 300ms for smoother typing
-            
+
             # Create a copy of keys to iterate
             chat_ids = list(self._message_buffers.keys())
             for chat_id in chat_ids:
@@ -491,37 +491,37 @@ class FeishuChannel(BaseChannel):
         buffer = self._message_buffers.get(chat_id)
         if not buffer or not buffer["dirty"]:
             return
-            
+
         try:
             # Render streams to Card Elements
             streams = buffer.get("streams", {"main": buffer.get("content", "")})
             elements = self._render_card_elements(streams)
-            
+
             # Construct Card Update JSON
             card_content = {
                 "config": {"wide_screen_mode": True},
                 "elements": elements
             }
             content = json.dumps(card_content)
-            
+
             request = PatchMessageRequest.builder() \
                 .message_id(buffer["message_id"]) \
                 .request_body(PatchMessageRequestBody.builder()
                     .content(content)
                     .build()) \
                 .build()
-            
+
             response = await asyncio.to_thread(
                 self._api_client.im.v1.message.patch, request
             )
-            
+
             if response.success():
                 buffer["dirty"] = False
                 buffer["last_flush"] = time.time()
             else:
                 logger.warning(f"Failed to patch message: {response.code} - {response.msg}")
                 # If patch fails (e.g. rate limit), keep dirty to retry next loop
-                
+
         except Exception as e:
             logger.error(f"Error flushing buffer: {e}")
 
@@ -582,12 +582,12 @@ class FeishuChannel(BaseChannel):
 
             message = data.event.message
             sender = data.event.sender
-            
+
             open_id = sender.sender_id.open_id
             content_json = message.content
             msg_type = message.message_type
             message_id = message.message_id
-            
+
             text = ""
             media_paths = []
 
@@ -686,7 +686,7 @@ class FeishuChannel(BaseChannel):
                     logger.error(f"Failed to schedule task on main loop (loop might be closed): {e}")
             else:
                 logger.warning("Main loop not available to process Feishu message")
-                
+
         except Exception as e:
             logger.error(f"Error handling Feishu event: {e}")
 

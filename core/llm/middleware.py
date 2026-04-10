@@ -44,19 +44,19 @@ from core.prompts import render as render_prompt
 class StrategyMiddleware(ABC):
     """
     LLM 中间件抽象基类
-    
+
     定义中间件的标准接口，所有具体中间件必须继承此类。
-    
+
     中间件模式：
         中间件位于 LLM 调用链中，可以在调用前后执行逻辑：
         - 调用前：检查和修改 session 状态
         - 调用后：处理和转换响应结果
-    
+
     设计理念：
         - 单一职责：每个中间件专注一个任务
         - 可组合性：多个中间件可以串联
         - 透明性：对 LLM 调用逻辑透明
-    
+
     实现要求：
         子类必须实现 __call__ 方法，该方法：
         1. 接收 session 和 next_call
@@ -64,7 +64,7 @@ class StrategyMiddleware(ABC):
         3. 调用 next_call(session) 继续链
         4. 可以处理 next_call 的返回值
         5. 返回最终结果
-    
+
     典型实现模式：
         ```python
         class MyMiddleware(StrategyMiddleware):
@@ -72,32 +72,32 @@ class StrategyMiddleware(ABC):
                 # 前置处理
                 print("Before LLM call")
                 session.metadata["start_time"] = time.time()
-                
+
                 # 调用下一个中间件或 LLM
                 result = next_call(session)
-                
+
                 # 后置处理
                 print("After LLM call")
                 session.metadata["end_time"] = time.time()
-                
+
                 return result
         ```
     """
-    
+
     @abstractmethod
     def __call__(self, session: AgentSession, next_call: Callable[[AgentSession], Any]) -> Any:
         """
         中间件调用接口
-        
+
         Args:
             session: 当前 Agent 会话状态
             next_call: 下一个中间件或 LLM 调用函数
                       签名: (AgentSession) -> Any
                       返回: LLM 响应（可能是 generator）
-        
+
         Returns:
             Any: LLM 响应或处理后的结果
-        
+
         实现建议：
             - 总是调用 next_call(session) 继续链
             - 修改 session 时要谨慎，避免破坏状态
@@ -109,55 +109,55 @@ class StrategyMiddleware(ABC):
 class ExecutionBudgetManager(StrategyMiddleware):
     """
     执行预算管理中间件
-    
+
     限制总迭代次数和工具调用次数，控制成本和时间。
-    
+
     预算管理目标：
         - Token 成本控制：减少不必要的 LLM 调用
         - 响应时间控制：避免用户等待过久
         - 资源保护：防止恶意或错误的无限循环
         - 服务质量：保证系统稳定性
-    
+
     工作原理：
         1. 统计 session.history 中 assistant 消息数量
         2. 与 max_iterations 比较
         3. 超过预算时注入强制终止指令
-    
+
     干预措施：
         - 通过 system_config.set() 注入 CRITICAL 警告（key-based，跨迭代幂等）
         - 明确要求 AI 立即给出最终答案
         - 禁止继续调用工具
         - 不会抛出异常（AI 理论上可以忽略）
-    
+
     参数：
         max_iterations: 最大迭代次数（默认 50）
                        一次迭代 = 一次 assistant 响应
-    
+
     与 AgentEngine 的关系：
         - AgentEngine 的 run 有自己的 max_iterations 参数
         - 那个参数是硬限制（for 循环）
         - 这个中间件是软限制（通过提示词）
         - 两者配合使用效果最佳
-    
+
     最佳实践：
         - 根据任务复杂度调整 max_iterations
         - 简单问答：3-5 次
         - 中等任务：10-15 次
         - 复杂任务：20-30 次
         - 超过 50 次通常表示设计问题
-    
+
     示例：
         >>> budget = ExecutionBudgetManager(max_iterations=50)
         >>> # 第 50 次迭代时，注入指令：
         >>> # "CRITICAL: You have exceeded your execution budget.
-        >>> #  You MUST provide your final best answer NOW 
+        >>> #  You MUST provide your final best answer NOW
         >>> #  and stop calling tools."
     """
-    
+
     def __init__(self, max_iterations: int = 50):
         """
         初始化执行预算管理器
-        
+
         Args:
             max_iterations: 最大允许的迭代次数，默认 50
                            建议根据任务复杂度调整
@@ -167,9 +167,9 @@ class ExecutionBudgetManager(StrategyMiddleware):
     def __call__(self, session: AgentSession, next_call: Callable[[AgentSession], Any]) -> Any:
         # In this architecture, AgentEngine's run handles the loop.
         # However, middleware can still monitor the history length.
-        
+
         turns = sum(1 for msg in session.history if msg.get("role") == "assistant")
-        
+
         if turns >= self.max_iterations:
             Logger.error(f"Execution budget exceeded: {turns} turns.")
             # We can't easily 'stop' the loop from here without raising an exception
@@ -183,7 +183,7 @@ class ExecutionBudgetManager(StrategyMiddleware):
                 "mw:budget_warning",
                 render_prompt("mw_budget_warning.txt", _BUDGET_FALLBACK)
             )
-            
+
         return next_call(session)
 
 

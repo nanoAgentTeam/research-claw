@@ -62,7 +62,6 @@ class CreateSubagentTool:
         return f"Successfully created agent '{name}'. You can now use it with 'assign_task'."
 
 
-
 class TaskTool:
     """
     Tool to assign a task to a sub-agent.
@@ -226,7 +225,7 @@ class TaskTool:
                         artifact_manifest.append(f"- [FILE] {f}")
             except Exception as harvest_err:
                 logger.warning(f"Failed to harvest subagent results: {harvest_err}")
-            
+
             # Truncation
             MAX_CHARS = 50000
             if len(result) > MAX_CHARS:
@@ -238,12 +237,12 @@ class TaskTool:
             report = f"Sub-agent '{agent_name}' completed task in `{task_id}`.\n"
             if artifact_manifest:
                 report += f"\n### 📦 Produced Artifacts (merged to {merge_target}):\n" + "\n".join(artifact_manifest) + "\n"
-            
+
             report += f"\n### 📝 Final Report:\n{result}"
-            
+
             if preserve_context and child_session:
                 report += f"\n\n[CONTEXT]: Working directory preserved at: {child_session.root}"
-            
+
             return report
         except Exception as e:
             return f"Sub-agent '{agent_name}' failed: {str(e)}"

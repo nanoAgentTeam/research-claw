@@ -15,9 +15,9 @@ class UserConfig:
     """
     用户配置管理类（单例）
     """
-    
+
     _instance = None
-    
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(UserConfig, cls).__new__(cls)
@@ -46,7 +46,7 @@ class UserConfig:
     @property
     def user_profile(self) -> str:
         return self.data.get("user_profile", "")
-    
+
     @user_profile.setter
     def user_profile(self, val: str) -> None:
         self.data["user_profile"] = val

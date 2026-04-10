@@ -5,7 +5,7 @@ Intent 数据模型（Layer 2）
 
 数据层级：
     Layer 1 (Behavior) → Layer 2 (Intent) → Layer 3 (Goal)
-    
+
 意图类型：
     - Information Seeking: 信息查找
     - Learning: 学习
@@ -29,7 +29,7 @@ Intent 数据模型（Layer 2）
 依赖关系：
     - 依赖: BaseModel, Behavior (通过 behavior_id 关联)
     - 被依赖: Goal (通过 intent_id 关联)
-    
+
 数据来源：
     - AnalysisWorker 通过 LLM 从 Behavior 推断生成
 """
@@ -43,23 +43,23 @@ from core.infra.models.base import BaseModel
 class Intent(BaseModel):
     """
     用户意图数据模型（Layer 2）
-    
+
     从单个或多个行为推断出的用户短期意图。
-    
+
     属性：
         intent_id: 意图唯一标识符（格式：i_{timestamp}_{random}）
         behavior_id: 关联的行为 ID（1对1关系）
         intent_type: 意图类型分类
         description: 意图的自然语言描述
         confidence: 置信度（0.0-1.0）
-    
+
     关联关系：
         - 一个 Intent 对应一个 Behavior（1:1）
         - 多个 Intent 可以属于一个 Goal（N:1）
-    
+
     分析流程：
         Behavior → LLM 分析 → Intent → 聚合到 Goal
-    
+
     示例：
         >>> intent = Intent(
         ...     intent_id="i_1641024000_xyz",
@@ -69,7 +69,7 @@ class Intent(BaseModel):
         ...     confidence=0.9
         ... )
     """
-    
+
     def __init__(
         self,
         intent_id: str,
@@ -80,7 +80,7 @@ class Intent(BaseModel):
     ):
         """
         初始化 Intent 实例
-        
+
         Args:
             intent_id: 意图唯一标识符
             behavior_id: 关联的行为 ID
