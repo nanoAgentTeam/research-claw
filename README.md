@@ -3,21 +3,32 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="README/images/logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="README/images/logo.svg">
-  <img alt="Research Claw" src="README/images/logo.svg" width="420">
+  <img alt="Research Claw" src="README/images/logo.svg" width="380">
 </picture>
 
-<br><br>
+<h3>Your self-hosted AI research assistant</h3>
 
-**Your self-hosted AI research assistant — manage papers, search literature, track deadlines, and collaborate across channels.**
+<p>Manage papers &middot; search literature &middot; track deadlines &middot; collaborate across channels</p>
 
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![OS: Linux | macOS | Windows (WSL)](https://img.shields.io/badge/OS-Linux%20%7C%20macOS%20%7C%20Windows%20(WSL)-blue)](#getting-started)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/nanoAgentTeam/research-claw/pulls)
+<p>
+  <a href="https://www.python.org/downloads/"><img alt="Python 3.11+" src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green.svg"></a>
+  <a href="#getting-started"><img alt="OS: Linux | macOS | Windows (WSL)" src="https://img.shields.io/badge/OS-Linux%20%7C%20macOS%20%7C%20Windows%20(WSL)-blue"></a>
+  <a href="https://github.com/nanoAgentTeam/research-claw/pulls"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+</p>
 
-**[English](README.md)** &nbsp;|&nbsp; **[中文](README_zh.md)**
+<p>
+  <a href="#getting-started"><b>Quick Start</b></a> &nbsp;&middot;&nbsp;
+  <a href="#key-features"><b>Features</b></a> &nbsp;&middot;&nbsp;
+  <a href="#how-it-works"><b>How It Works</b></a> &nbsp;&middot;&nbsp;
+  <a href="#documentation"><b>Docs</b></a>
+</p>
 
-<br>
+<p><b>English</b> &nbsp;|&nbsp; <a href="README_zh.md">中文</a></p>
+
+</div>
+
+<div align="center">
 
 https://github.com/user-attachments/assets/4bb9cdb6-6e4f-4325-9307-a8518d225761
 

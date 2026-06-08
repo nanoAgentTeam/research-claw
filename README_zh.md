@@ -3,21 +3,32 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="README/images/logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="README/images/logo.svg">
-  <img alt="Research Claw" src="README/images/logo.svg" width="420">
+  <img alt="Research Claw" src="README/images/logo.svg" width="380">
 </picture>
 
-<br><br>
+<h3>你自己的 AI 学术研究助手</h3>
 
-**你自己的 AI 学术研究助手 — 管理论文、检索文献、追踪截稿日期，在你常用的渠道随时响应。**
+<p>管理论文 &middot; 检索文献 &middot; 追踪截稿日期 &middot; 在你常用的渠道随时响应</p>
 
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![OS: Linux | macOS | Windows (WSL)](https://img.shields.io/badge/OS-Linux%20%7C%20macOS%20%7C%20Windows%20(WSL)-blue)](#快速开始)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/nanoAgentTeam/research-claw/pulls)
+<p>
+  <a href="https://www.python.org/downloads/"><img alt="Python 3.11+" src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green.svg"></a>
+  <a href="#快速开始"><img alt="OS: Linux | macOS | Windows (WSL)" src="https://img.shields.io/badge/OS-Linux%20%7C%20macOS%20%7C%20Windows%20(WSL)-blue"></a>
+  <a href="https://github.com/nanoAgentTeam/research-claw/pulls"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+</p>
 
-**[English](README.md)** &nbsp;|&nbsp; **[中文](README_zh.md)**
+<p>
+  <a href="#快速开始"><b>快速开始</b></a> &nbsp;&middot;&nbsp;
+  <a href="#核心功能"><b>核心功能</b></a> &nbsp;&middot;&nbsp;
+  <a href="#工作原理"><b>工作原理</b></a> &nbsp;&middot;&nbsp;
+  <a href="#文档"><b>文档</b></a>
+</p>
 
-<br>
+<p><a href="README.md">English</a> &nbsp;|&nbsp; <b>中文</b></p>
+
+</div>
+
+<div align="center">
 
 https://github.com/user-attachments/assets/9280d4dc-c666-4688-84b7-d9534ab0e979
 
