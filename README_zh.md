@@ -485,15 +485,3 @@ config/.skills/
 ## 许可证
 
 [MIT License](LICENSE) — 可自由用于学术和商业用途。
-
-## Star History
-
-<p align="center">
-  <a href="https://star-history.com/#nanoAgentTeam/research-claw&Date">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=nanoAgentTeam/research-claw&type=Date&theme=dark">
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=nanoAgentTeam/research-claw&type=Date">
-      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=nanoAgentTeam/research-claw&type=Date" width="600">
-    </picture>
-  </a>
-</p>
